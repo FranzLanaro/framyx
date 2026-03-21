@@ -1304,6 +1304,8 @@ function importStoricoFile(f){
   };
   if(f.name.endsWith('.csv')) reader.readAsText(f,'UTF-8'); else reader.readAsBinaryString(f);
 }
+
+function scaricaTemplateCorsi(){
   const csv='Titolo;Normativa;Durata (ore);Validità (anni);Tipo\n'+
     'Formazione Antincendio Livello 1;D.M. 02/09/2021;4;5;Antincendio\n'+
     'Formazione Primo Soccorso Gruppo B;D.Lgs. 81/08 - D.M. 388/03;12;3;Primo soccorso\n'+
@@ -1959,18 +1961,6 @@ window.renderPage = function(p) {
 };
 
 
-// ══ LOGIN ══
-const PWD_HASH = '8a3b2c9f1d4e7a6b5c8d9e2f1a4b7c3d'; // Formazione2026@
-
-function simpleHash(str) {
-  let hash = 0;
-  for(let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + c;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(16);
-}
 
 // ══ INIT ══
 async function init() {
