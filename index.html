@@ -469,8 +469,9 @@ textarea.fc{min-height:68px;resize:vertical}
           <option>Sicurezza</option><option>Antincendio</option><option>Primo soccorso</option><option>Attrezzature</option><option>Altro</option>
         </select>
       </div>
-      <div class="card"><div class="card-header"><span class="card-title">Catalogo corsi</span><div style="display:flex;gap:8px;align-items:center">
+      <div class="card"><div class="card-header"><span class="card-title">Catalogo corsi</span><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="openM('m-corso')">+ Nuovo</button>
+        <button class="btn btn-sm" style="background:#FDC400;color:#1A1916;font-weight:600" onclick="ripristinaCatalogoStandard()">⚡ Carica standard</button>
         <button class="btn btn-danger btn-sm" id="btn-del-sel-cor" style="display:none" onclick="delSelCorsi()">🗑 Elimina selezionati</button>
         <button class="btn btn-danger btn-sm" onclick="delAllCorsi()">🗑 Elimina tutti</button>
       </div></div>
@@ -709,7 +710,8 @@ textarea.fc{min-height:68px;resize:vertical}
             <div style="padding:12px">
               <p class="text-xs text-muted" style="margin-bottom:10px">Questi sono i template di offerta disponibili. Seleziona un tipo dalla lista a sinistra per generare l'offerta per il cliente.</p>
               <div id="off-catalogo-list"></div>
-              <div style="margin-top:10px;display:flex;gap:8px">
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-xs" style="background:#FDC400;color:#1A1916;font-weight:600" onclick="ripristinaCatalogoStandard()">⚡ Ripristina standard</button>
                 <button class="btn btn-xs btn-primary" onclick="scaricaTemplateCatalogoOfferte()">⬇️ Scarica template CSV</button>
                 <button class="btn btn-xs" onclick="aggiungiTemplateOfferta()">+ Nuovo template</button>
               </div>
@@ -895,6 +897,11 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="card-header"><span class="card-title">⚠️ Dati</span></div>
         <div style="padding:18px">
           <p class="text-sm text-muted" style="margin-bottom:12px">Cancella tutti i dati locali e da Supabase. <strong>Operazione irreversibile.</strong></p>
+          <div style="background:linear-gradient(135deg,#FDC40015,#FDC40005);border:2px solid #FDC400;border-radius:var(--r);padding:14px 16px;margin-bottom:16px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:4px">🔄 Ripristina catalogo standard</div>
+            <p class="text-sm text-muted" style="margin-bottom:10px">Carica i <strong>38 corsi standard</strong> (Accordo Stato-Regioni 2025) e i <strong>6 template offerte</strong> (DVR, Formazione, RSPP, SLC, Piano Emergenza, POS). I dati esistenti non vengono toccati.</p>
+            <button class="btn btn-primary btn-sm" onclick="ripristinaCatalogoStandard()">⚡ Carica corsi e offerte standard</button>
+          </div>
           <button class="btn btn-danger btn-sm" onclick="if(confirm('Cancellare TUTTI i dati? Questa operazione è irreversibile.')){clearAll()}">🗑 Cancella tutti i dati</button>
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
             <div style="font-weight:600;font-size:12px;margin-bottom:6px">🔄 Auto-backup locale</div>
@@ -4249,6 +4256,76 @@ async function creaTabellaSupabase(){
     if(msg) msg.innerHTML='<span style="color:var(--red)">❌ Errore: '+e.message+'</span>';
   }
   if(btn) btn.disabled=false;
+}
+
+
+function ripristinaCatalogoStandard(){
+  if(!confirm('Aggiungere i corsi standard e le offerte predefinite?\nI corsi già presenti con lo stesso titolo non verranno duplicati.')) return;
+
+  // ── CORSI STANDARD ──
+  const corsiStd = [
+    {titolo:'Formazione generale lavoratori',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'4',validita:5,tipo:'Sicurezza',argomenti:'Concetti di rischio, danno, prevenzione e protezione | organizzazione della prevenzione aziendale | diritti, doveri e sanzioni dei soggetti aziendali | organi di vigilanza, controllo e assistenza'},
+    {titolo:'Formazione specifica lavoratori rischio basso',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'4',validita:5,tipo:'Sicurezza',argomenti:'Rischi infortuni | rischi meccanici | rischio elettrico | rischio incendio | rischi fisici | movimentazione manuale dei carichi | segnaletica | DPI | procedure di sicurezza ed emergenza'},
+    {titolo:'Formazione specifica lavoratori rischio medio',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'8',validita:5,tipo:'Sicurezza',argomenti:'Rischi infortuni | rischi meccanici | rischio elettrico | rischio incendio ed esplosione | rischi fisici (rumore, vibrazioni) | movimentazione manuale dei carichi | movimentazione merci | segnaletica | DPI | procedure di sicurezza ed emergenza'},
+    {titolo:'Formazione specifica lavoratori rischio alto',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'12',validita:5,tipo:'Sicurezza',argomenti:'Rischi infortuni | rischi meccanici | rischio elettrico | rischio incendio ed esplosione | rischi fisici | rischi chimici | rischi biologici | movimentazione manuale dei carichi | cadute dall alto | segnaletica | DPI | procedure di sicurezza ed emergenza'},
+    {titolo:'Aggiornamento formazione lavoratori',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'6',validita:5,tipo:'Sicurezza',argomenti:'Aggiornamento su rischi specifici | aggiornamento normativo | aggiornamento su procedure di sicurezza | aggiornamento su DPI | aggiornamento su gestione emergenze'},
+    {titolo:'Formazione preposti',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'8',validita:5,tipo:'Sicurezza',argomenti:'Compiti, obblighi e responsabilità del preposto | vigilanza sull osservanza delle disposizioni | gestione operativa della sicurezza | valutazione dei rischi | comunicazione e formazione | gestione delle emergenze'},
+    {titolo:'Aggiornamento preposti',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'6',validita:5,tipo:'Sicurezza',argomenti:'Aggiornamento su compiti e responsabilità | aggiornamento normativo | aggiornamento su tecniche di vigilanza | aggiornamento su gestione sicurezza'},
+    {titolo:'Formazione dirigenti',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'12',validita:5,tipo:'Sicurezza',argomenti:'Sistema legislativo in materia di sicurezza | gestione e organizzazione della sicurezza | individuazione e valutazione dei rischi | comunicazione, formazione e consultazione dei lavoratori'},
+    {titolo:'Formazione datore di lavoro (nuovo obbligo ASR 2025)',norma:'Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025',durata:'16',validita:5,tipo:'Sicurezza',argomenti:'Modulo giuridico e normativo: obblighi del datore di lavoro | Modulo organizzazione e gestione SSL: pianificazione e controllo dei rischi | Gestione del sistema di prevenzione | Comunicazione e consultazione dei lavoratori'},
+    {titolo:'Formazione antincendio rischio basso',norma:'D.M. 02/09/2021',durata:'4',validita:5,tipo:'Antincendio',argomenti:'Principi della combustione | rischi di incendio | misure di prevenzione | procedure di emergenza | uso degli estintori'},
+    {titolo:'Formazione antincendio rischio medio',norma:'D.M. 02/09/2021',durata:'8',validita:5,tipo:'Antincendio',argomenti:'Principi della combustione | sostanze estinguenti | rischi incendio | misure di prevenzione e protezione | procedure di emergenza | uso attrezzature antincendio'},
+    {titolo:'Formazione antincendio rischio alto',norma:'D.M. 02/09/2021',durata:'16',validita:5,tipo:'Antincendio',argomenti:'Principi della combustione | dinamica incendio | sostanze estinguenti | sistemi di protezione attiva e passiva | procedure complesse di emergenza | uso attrezzature antincendio'},
+    {titolo:'Aggiornamento antincendio rischio basso',norma:'D.M. 02/09/2021',durata:'2',validita:5,tipo:'Antincendio',argomenti:'Aggiornamento su prevenzione incendi | procedure di emergenza | uso estintori'},
+    {titolo:'Aggiornamento antincendio rischio medio',norma:'D.M. 02/09/2021',durata:'5',validita:5,tipo:'Antincendio',argomenti:'Aggiornamento su rischi incendio | misure di prevenzione | procedure di emergenza | uso attrezzature antincendio'},
+    {titolo:'Aggiornamento antincendio rischio alto',norma:'D.M. 02/09/2021',durata:'8',validita:5,tipo:'Antincendio',argomenti:'Aggiornamento su dinamica incendio | sistemi di protezione | gestione emergenze complesse | uso attrezzature antincendio'},
+    {titolo:'Primo soccorso gruppo A',norma:'D.Lgs. 81/08 - D.M. 388/03',durata:'16',validita:3,tipo:'Primo soccorso',argomenti:'Allertare il sistema di soccorso | riconoscere emergenza sanitaria | interventi di primo soccorso | traumi e patologie specifiche | tecniche di intervento pratico'},
+    {titolo:'Primo soccorso gruppo B',norma:'D.Lgs. 81/08 - D.M. 388/03',durata:'12',validita:3,tipo:'Primo soccorso',argomenti:'Allertare il sistema di soccorso | riconoscere emergenza sanitaria | interventi di primo soccorso | tecniche di intervento'},
+    {titolo:'Primo soccorso gruppo C',norma:'D.Lgs. 81/08 - D.M. 388/03',durata:'12',validita:3,tipo:'Primo soccorso',argomenti:'Allertare il sistema di soccorso | riconoscere emergenza sanitaria | interventi di primo soccorso | tecniche di intervento'},
+    {titolo:'Aggiornamento primo soccorso gruppo A',norma:'D.Lgs. 81/08 - D.M. 388/03',durata:'6',validita:3,tipo:'Primo soccorso',argomenti:'Aggiornamento su tecniche di primo soccorso | aggiornamento pratico | gestione emergenze sanitarie'},
+    {titolo:'Aggiornamento primo soccorso gruppo B/C',norma:'D.Lgs. 81/08 - D.M. 388/03',durata:'4',validita:3,tipo:'Primo soccorso',argomenti:'Aggiornamento su tecniche di primo soccorso | aggiornamento pratico | gestione emergenze sanitarie'},
+    {titolo:'Uso carrello elevatore frontale',norma:'Accordo Stato-Regioni 22/02/2012',durata:'12',validita:5,tipo:'Attrezzature',argomenti:'Normativa di riferimento | caratteristiche tecniche | controlli e verifiche | utilizzo in sicurezza | rischi specifici | manovre operative | procedure di emergenza'},
+    {titolo:'Aggiornamento carrello elevatore frontale',norma:'Accordo Stato-Regioni 22/02/2012',durata:'4',validita:5,tipo:'Attrezzature',argomenti:'Aggiornamento normativo | aggiornamento su utilizzo in sicurezza | rischi e procedure operative'},
+    {titolo:'Uso piattaforme elevabili (PLE) senza stabilizzatori',norma:'Accordo Stato-Regioni 22/02/2012',durata:'10',validita:5,tipo:'Attrezzature',argomenti:'Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre | emergenze'},
+    {titolo:'Uso piattaforme elevabili (PLE) con stabilizzatori',norma:'Accordo Stato-Regioni 22/02/2012',durata:'14',validita:5,tipo:'Attrezzature',argomenti:'Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre | emergenze'},
+    {titolo:'Uso gru su autocarro',norma:'Accordo Stato-Regioni 22/02/2012',durata:'12',validita:5,tipo:'Attrezzature',argomenti:'Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze'},
+    {titolo:'Uso gru a torre',norma:'Accordo Stato-Regioni 22/02/2012',durata:'14',validita:5,tipo:'Attrezzature',argomenti:'Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze'},
+    {titolo:'Uso escavatore idraulico',norma:'Accordo Stato-Regioni 22/02/2012',durata:'10',validita:5,tipo:'Attrezzature',argomenti:'Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze'},
+    {titolo:'Uso macchine movimento terra',norma:'Accordo Stato-Regioni 22/02/2012',durata:'16',validita:5,tipo:'Attrezzature',argomenti:'Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze'},
+    {titolo:'Formazione DPI',norma:'Art. 77 D.Lgs. 81/08',durata:'4',validita:5,tipo:'Sicurezza',argomenti:'Normativa DPI | classificazione DPI | criteri di scelta | utilizzo corretto | manutenzione | obblighi dei lavoratori'},
+    {titolo:'Lavori in quota',norma:'Art. 115-116 D.Lgs. 81/08',durata:'8',validita:5,tipo:'Sicurezza',argomenti:'Definizione lavoro in quota | rischio caduta dall alto | sistemi di protezione | DPI anticaduta | procedure operative'},
+    {titolo:'Lavori in spazi confinati',norma:'D.P.R. 177/2011',durata:'8',validita:5,tipo:'Sicurezza',argomenti:'Definizione | rischi specifici | procedure di accesso | permessi di lavoro | gestione emergenze'},
+    {titolo:'Formazione RSPP datore di lavoro rischio basso',norma:'Art. 34 D.Lgs. 81/08',durata:'16',validita:5,tipo:'Sicurezza',argomenti:'Normativa sicurezza | gestione sicurezza | valutazione rischi | organizzazione prevenzione'},
+    {titolo:'Formazione RSPP datore di lavoro rischio medio',norma:'Art. 34 D.Lgs. 81/08',durata:'32',validita:5,tipo:'Sicurezza',argomenti:'Normativa sicurezza | gestione sicurezza | valutazione rischi | organizzazione prevenzione | rischi specifici'},
+    {titolo:'Formazione RSPP datore di lavoro rischio alto',norma:'Art. 34 D.Lgs. 81/08',durata:'48',validita:5,tipo:'Sicurezza',argomenti:'Normativa sicurezza | gestione sicurezza | valutazione rischi | organizzazione prevenzione | gestione avanzata dei rischi'},
+    {titolo:'Movimentazione manuale dei carichi',norma:'Art. 37 D.Lgs. 81/08 - Tit. VI',durata:'4',validita:5,tipo:'Sicurezza',argomenti:'Normativa | rischi ergonomici | tecniche corrette | prevenzione'},
+    {titolo:'Uso videoterminali',norma:'Art. 37 D.Lgs. 81/08 - Tit. VII',durata:'4',validita:5,tipo:'Sicurezza',argomenti:'Rischi postura e vista | ergonomia | organizzazione lavoro'},
+    {titolo:'Rischio chimico',norma:'Art. 37 D.Lgs. 81/08 - Tit. IX',durata:'8',validita:5,tipo:'Sicurezza',argomenti:'Classificazione | etichettatura | schede sicurezza | prevenzione | DPI'},
+    {titolo:'Rischio rumore',norma:'Art. 37 D.Lgs. 81/08 - Tit. VIII',durata:'4',validita:5,tipo:'Sicurezza',argomenti:'Effetti | valori limite | prevenzione | DPI uditivi'},
+  ];
+
+  const norm = s => s.toLowerCase().replace(/\s+/g,' ').trim();
+  const existing = db.corsi();
+  let addedCorsi = 0;
+  corsiStd.forEach(c => {
+    if(existing.find(e => norm(e.titolo) === norm(c.titolo))) return;
+    const punti = c.argomenti.split('|').map(a=>a.trim()).filter(Boolean);
+    existing.push({
+      id: uid(), titolo: c.titolo, norma: c.norma,
+      durata: c.durata, validita: c.validita, tipo: c.tipo,
+      sezioni: punti.length ? [{titolo:'Contenuti del corso', punti}] : [],
+      domande: []
+    });
+    addedCorsi++;
+  });
+  db.save.corsi(existing);
+
+  // ── CATALOGO OFFERTE — reset to default ──
+  saveCatalogoOfferte(CATALOGO_OFFERTE_DEFAULT);
+
+  renderCorsi();
+  renderOfferte && renderOfferte();
+  toast(addedCorsi + ' corsi aggiunti + catalogo offerte ripristinato (6 template)','✅');
 }
 
 function renderImpostazioni(){
