@@ -452,7 +452,7 @@ textarea.fc{min-height:68px;resize:vertical}
         <button class="btn btn-danger btn-sm" id="btn-del-sel-cor" style="display:none" onclick="delSelCorsi()">🗑 Elimina selezionati</button>
         <button class="btn btn-danger btn-sm" onclick="delAllCorsi()">🗑 Elimina tutti</button>
       </div></div>
-      <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-cor-all" onchange="toggleAllCor(this)"></th><th>Titolo</th><th>Normativa</th><th>Durata</th><th>Validità</th><th>Tipo</th><th>Test</th><th></th></tr></thead><tbody id="tb-corsi"></tbody></table></div>
+      <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-cor-all" onchange="toggleAllCor(this)"></th><th>Titolo</th><th>Normativa</th><th>Durata</th><th>Validità</th><th>Tipo</th><th>Prezzo</th><th>Test</th><th></th></tr></thead><tbody id="tb-corsi"></tbody></table></div>
     </div>
 
     <!-- ═══ SESSIONI ═══ -->
@@ -531,7 +531,24 @@ textarea.fc{min-height:68px;resize:vertical}
           </div>
 
           <div class="card mt-2">
-            <div class="card-header"><span class="card-title">📋 Corsi preventivati</span><button class="btn btn-primary btn-xs" onclick="addRigaPrev()">+ Aggiungi riga</button></div>
+            <div class="card-header"><span class="card-title">📋 Corsi preventivati</span>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-primary btn-xs" onclick="openSelettoreCorsi()">📋 Dal catalogo</button>
+                <button class="btn btn-xs" onclick="addRigaPrev()">+ Riga libera</button>
+              </div>
+            </div>
+            <!-- Selettore corsi dal catalogo -->
+            <div id="selettore-corsi-panel" style="display:none;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface2)">
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+                <input class="fc" id="sel-cor-q" placeholder="🔍 Cerca nel catalogo..." oninput="renderSelettoreCorsi()" style="flex:1">
+                <select class="fc" id="sel-cor-tipo" onchange="renderSelettoreCorsi()" style="max-width:140px">
+                  <option value="">Tutti i tipi</option>
+                  <option>Sicurezza</option><option>Antincendio</option><option>Primo soccorso</option><option>Attrezzature</option><option>Altro</option>
+                </select>
+                <button class="btn btn-xs" onclick="closeSelettoreCorsi()">✕</button>
+              </div>
+              <div id="sel-cor-lista" style="max-height:240px;overflow-y:auto"></div>
+            </div>
             <div style="padding:12px">
               <div id="prev-righe-list"></div>
               <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
@@ -903,7 +920,11 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="mb">
       <input type="hidden" id="ss-id">
       <div class="fr2">
-        <div class="fg"><label class="fl">Corso *</label><select class="fc" id="ss-corso" onchange="onCorsoChange()"><option value="">Seleziona...</option></select></div>
+        <div class="fg">
+          <label class="fl">Corso *</label>
+          <select class="fc" id="ss-corso" onchange="onCorsoChange()"><option value="">Seleziona corso...</option></select>
+          <div id="ss-corso-scheda" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:11px"></div>
+        </div>
         <div class="fg"><label class="fl">Azienda *</label><select class="fc" id="ss-az" onchange="onAzChange()"><option value="">Seleziona...</option></select></div>
       </div>
       <div class="fg">
@@ -1767,7 +1788,39 @@ function popSessSelects(){
   document.getElementById('ss-doc').innerHTML='<option value="">Seleziona...</option>'+db.docenti().map(d=>`<option value="${d.id}">${d.nome} ${d.cognome}</option>`).join('');
   selPart=[]; renderArgS([]); document.getElementById('chip-part').innerHTML=''; document.getElementById('cnt-part').textContent='0 selezionati';
 }
-function onCorsoChange(){ const c=db.corsi().find(x=>x.id===v('ss-corso')); const flat=c?sezToFlat(c.sezioni||[]):[]; renderArgS(flat.length?flat:(c?.argomenti||[])) }
+function onCorsoChange(){
+  const c=db.corsi().find(x=>x.id===v('ss-corso'));
+  const flat=c?sezToFlat(c.sezioni||[]):[];
+  renderArgS(flat.length?flat:(c?.argomenti||[]));
+  const scheda=document.getElementById('ss-corso-scheda');
+  if(!scheda) return;
+  if(!c){ scheda.style.display='none'; return; }
+  const tb2={'Sicurezza':'#1A56DB','Antincendio':'#C0392B','Primo soccorso':'#2D7D46','Attrezzature':'#D4620A','Altro':'#666'};
+  const colore=tb2[c.tipo]||'#666';
+  scheda.style.display='block';
+  scheda.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="background:${colore};color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${c.tipo||'—'}</span>
+      <strong style="font-size:12px">${c.titolo}</strong>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+      <div style="background:white;border-radius:4px;padding:6px 8px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Durata</div>
+        <div style="font-weight:700;font-size:13px">${c.durata||'—'} ore</div>
+      </div>
+      <div style="background:white;border-radius:4px;padding:6px 8px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Validità</div>
+        <div style="font-weight:700;font-size:13px">${c.validita||'—'} anni</div>
+      </div>
+      <div style="background:white;border-radius:4px;padding:6px 8px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Test</div>
+        <div style="font-weight:700;font-size:13px">${(c.domande||[]).length?c.domande.length+' dom.':'—'}</div>
+      </div>
+    </div>
+    ${c.norma?`<div style="color:var(--text2);font-size:10px;border-top:1px solid var(--border);padding-top:5px;margin-top:2px">📋 <em>${c.norma}</em></div>`:''}
+    ${(c.sezioni||[]).length?`<div style="color:var(--text2);font-size:10px;margin-top:4px">📖 ${c.sezioni.length} sezioni · ${c.sezioni.map(s=>s.titolo).filter(Boolean).join(', ')}</div>`:''}
+  `;
+}
 function onAzChange(){ const azId=v('ss-az'); renderChip(azId,selPart); const az=db.aziende().find(a=>a.id===azId); if(az?.indirizzo) document.getElementById('ss-sede').value=az.indirizzo+(az.comune?' — '+az.comune:'') }
 
 function renderArgS(items){
@@ -2840,6 +2893,57 @@ function addRigaDaListino(i){
   prevRighe.push({desc:v.desc, qta:1, prezzo:v.prezzo, nota:''});
   renderRighePrev();
   aggiornaTotaliPrev();
+}
+
+function openSelettoreCorsi(){
+  const p=document.getElementById('selettore-corsi-panel');
+  if(p){ p.style.display=p.style.display==='none'?'block':'none'; renderSelettoreCorsi(); }
+}
+function closeSelettoreCorsi(){
+  const p=document.getElementById('selettore-corsi-panel');
+  if(p) p.style.display='none';
+}
+
+function renderSelettoreCorsi(){
+  const el=document.getElementById('sel-cor-lista'); if(!el) return;
+  const q=(document.getElementById('sel-cor-q')?.value||'').toLowerCase();
+  const tipo=document.getElementById('sel-cor-tipo')?.value||'';
+  const tb2={'Sicurezza':'#1A56DB','Antincendio':'#C0392B','Primo soccorso':'#2D7D46','Attrezzature':'#D4620A','Altro':'#666'};
+  let corsi=db.corsi();
+  if(q) corsi=corsi.filter(c=>c.titolo.toLowerCase().includes(q)||(c.norma||'').toLowerCase().includes(q));
+  if(tipo) corsi=corsi.filter(c=>c.tipo===tipo);
+  if(!corsi.length){ el.innerHTML='<div class="text-xs text-muted" style="padding:8px">Nessun corso trovato</div>'; return; }
+
+  // Match with listino prices
+  const listino=getListino();
+  el.innerHTML=corsi.map(c=>{
+    const colore=tb2[c.tipo]||'#666';
+    // Try to find price from listino by partial title match
+    const match=listino.find(l=>c.titolo.toLowerCase().includes(l.desc.toLowerCase().slice(0,20))||l.desc.toLowerCase().includes(c.titolo.toLowerCase().slice(0,20)));
+    const prezzo=match?match.prezzo:0;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;margin-bottom:4px;background:white;border:1px solid var(--border);cursor:pointer" onclick="addCorsoDaCatalogo('${c.id}')">
+      <span style="background:${colore};color:white;padding:2px 6px;border-radius:8px;font-size:9px;white-space:nowrap;font-weight:700">${c.tipo||'—'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.titolo}</div>
+        <div style="font-size:10px;color:var(--text2)">${c.durata||'?'}h · val. ${c.validita||'?'}a${c.norma?' · '+c.norma.slice(0,40):''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;font-weight:700;color:var(--accent-dark)">${prezzo>0?'€ '+prezzo.toFixed(2):'—'}</div>
+        <div style="font-size:9px;color:var(--green)">+ aggiungi</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addCorsoDaCatalogo(corsoId){
+  const c=db.corsi().find(x=>x.id===corsoId); if(!c) return;
+  const listino=getListino();
+  const match=listino.find(l=>c.titolo.toLowerCase().includes(l.desc.toLowerCase().slice(0,20))||l.desc.toLowerCase().includes(c.titolo.toLowerCase().slice(0,20)));
+  const prezzo=match?match.prezzo:0;
+  prevRighe.push({desc:c.titolo+(c.norma?' ('+c.norma+')':''), qta:1, prezzo, nota:''});
+  renderRighePrev();
+  aggiornaTotaliPrev();
+  toast(c.titolo+' aggiunto','✅');
 }
 
 function addRigaPrev(){
