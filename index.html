@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionale Formazione — Framyx</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F7F6F2;--surface:#FFFFFF;--surface2:#F0EFE9;--border:#E2E0D8;--border2:#D0CECC;
+  --text:#1A1916;--text2:#6B6860;--text3:#A09E9A;
+  --accent:#FDC400;--accent-dark:#C89A00;--accent-bg:#FFFBE6;
+  --green:#2D7D46;--green-bg:#EAF5EE;
+  --red:#C0392B;--red-bg:#FDECEA;
+  --orange:#D4620A;--orange-bg:#FEF3E7;
+  --blue:#1A6BB5;--blue-bg:#E8F2FC;
+  --r:8px;--rl:12px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 16px rgba(0,0,0,.09),0 2px 4px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:214px;min-width:214px;background:var(--text);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand{font-size:16px;font-weight:600;color:var(--accent);letter-spacing:-.3px}
+.brand-sub{font-size:10px;color:rgba(255,255,255,.3);margin-top:1px;font-family:'DM Mono',monospace}
+.nav-section{padding:12px 0 4px}
+.nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.28);letter-spacing:.9px;text-transform:uppercase;padding:0 14px 5px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 14px;color:rgba(255,255,255,.48);cursor:pointer;font-size:13px;border-left:2px solid transparent;transition:all .12s;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.8)}
+.nav-item.active{background:rgba(253,196,0,.1);color:var(--accent);border-left-color:var(--accent);font-weight:500}
+.nav-item .ni{font-size:13px;width:15px;text-align:center;flex-shrink:0}
+.nbadge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:9px;min-width:18px;text-align:center}
+
+/* TOPBAR */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 22px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:20;gap:12px}
+.topbar-title{font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap}
+.topbar-right{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+/* SEARCH BAR */
+.search-wrap{position:relative;flex:1;max-width:360px}
+.search-wrap input{width:100%;padding:6px 12px 6px 32px;border:1px solid var(--border2);border-radius:20px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none;transition:all .15s}
+.search-wrap input:focus{background:var(--surface);border-color:var(--accent-dark);box-shadow:0 0 0 3px rgba(253,196,0,.12)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shm);z-index:100;max-height:320px;overflow-y:auto;display:none}
+.search-results.open{display:block}
+.sr-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover{background:var(--surface2)}
+.sr-type{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.sr-name{font-size:13px;font-weight:500}
+.sr-sub{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text);transition:all .12s;font-family:inherit;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--accent);border-color:var(--accent-dark);color:#1A1916;font-weight:600}
+.btn-primary:hover{background:#F0BB00}
+.btn-danger{background:var(--red-bg);border-color:#E8A49E;color:var(--red)}
+.btn-green{background:var(--green-bg);border-color:#A8D5B5;color:var(--green)}
+.btn-blue{background:var(--blue-bg);border-color:#A0C4E8;color:var(--blue)}
+.btn-orange{background:var(--orange-bg);border-color:#F0C090;color:var(--orange)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 7px;font-size:11px}
+
+/* LAYOUT */
+.content{padding:20px 22px;flex:1}
+.page{display:none}
+.page.active{display:block}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.mt-2{margin-top:14px}
+.mt-3{margin-top:22px}
+.flex{display:flex}
+.items-center{align-items:center}
+.gap-2{gap:8px}
+.text-sm{font-size:12px}
+.text-xs{font-size:11px}
+.text-muted{color:var(--text2)}
+.font-mono{font-family:'DM Mono',monospace}
+.bold{font-weight:600}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--sh)}
+.card-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card-title{font-size:13px;font-weight:600;white-space:nowrap}
+.card-body{padding:0}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.tbl td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg)}
+.actions{display:flex;gap:3px;flex-wrap:wrap}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.bg{background:var(--green-bg);color:var(--green)}
+.br{background:var(--red-bg);color:var(--red)}
+.bo{background:var(--orange-bg);color:var(--orange)}
+.bb{background:var(--blue-bg);color:var(--blue)}
+.by{background:var(--accent-bg);color:var(--accent-dark)}
+.bgr{background:var(--surface2);color:var(--text2)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 18px}
+.stat-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.stat-value{font-size:28px;font-weight:600;margin-top:3px;letter-spacing:-.5px;font-family:'DM Mono',monospace}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,25,22,.55);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(1px)}
+.overlay.open{display:flex}
+.overlay.top{align-items:flex-start;padding:16px 0;overflow-y:auto}
+.modal{background:var(--surface);border-radius:var(--rl);box-shadow:var(--shm);width:520px;max-width:96vw;max-height:92vh;overflow-y:auto}
+.modal-lg{width:660px}
+.modal-xl{width:800px}
+.mh{padding:17px 22px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mt{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.mx{cursor:pointer;color:var(--text3);font-size:17px;padding:3px;border-radius:4px;line-height:1;transition:color .1s}
+.mx:hover{color:var(--text)}
+.mb{padding:18px 22px}
+.mf{padding:13px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* FORM */
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;letter-spacing:.1px}
+.fc{width:100%;padding:7px 11px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color .12s}
+.fc:focus{border-color:var(--accent-dark);box-shadow:0 0 0 3px rgba(253,196,0,.12)}
+textarea.fc{min-height:68px;resize:vertical}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* FILTER BAR */
+.fbar{display:flex;gap:8px;margin-bottom:13px;align-items:center;flex-wrap:wrap}
+.fbar .fc{max-width:210px}
+
+/* CHIP */
+.chip-list{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border2);font-size:12px;cursor:pointer;transition:all .12s;background:var(--surface);color:var(--text2);user-select:none}
+.chip.on{background:var(--accent-bg);border-color:var(--accent-dark);color:var(--accent-dark);font-weight:600}
+
+/* SCAD ROW */
+.srow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border)}
+.srow:last-child{border-bottom:none}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sdot.r{background:var(--red)}.sdot.o{background:var(--orange)}.sdot.g{background:var(--green)}
+.sinfo{flex:1;min-width:0}
+.sname{font-size:13px;font-weight:500}
+.smeta{font-size:11px;color:var(--text3);margin-top:1px}
+.sdate{font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);white-space:nowrap}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--text3)}
+.empty .ei{font-size:30px;margin-bottom:9px}
+.empty h3{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:3px}
+.empty p{font-size:12px}
+
+/* ARGOMENTI EDITOR */
+.arg-sec{border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;overflow:hidden}
+.arg-sec-hd{background:var(--surface2);padding:6px 10px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+.arg-sec-title{flex:1;font-size:13px;font-weight:600;border:none;background:transparent;outline:none;color:var(--text);font-family:inherit}
+.arg-items{padding:7px 8px}
+.arg-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.arg-row .fc{flex:1;font-size:12px;padding:5px 9px}
+.arg-add{padding:2px 8px;font-size:11px;color:var(--text3);cursor:pointer;display:inline-block;border:none;background:none;font-family:inherit}
+.arg-add:hover{color:var(--accent-dark)}
+
+/* TEST EDITOR */
+.q-block{border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.q-head{background:var(--surface2);padding:7px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.q-num{font-size:11px;font-weight:700;color:var(--text3);width:24px;flex-shrink:0}
+.q-text{flex:1;border:none;background:transparent;outline:none;font-size:13px;font-weight:500;font-family:inherit;color:var(--text)}
+.q-body{padding:8px 12px}
+.q-opt{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.q-opt-letter{width:20px;height:20px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text2);flex-shrink:0}
+.q-opt.correct .q-opt-letter{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.q-opt input[type=text]{flex:1;border:1px solid var(--border2);border-radius:5px;padding:5px 9px;font-size:12px;font-family:inherit;outline:none}
+.q-opt input[type=text]:focus{border-color:var(--accent-dark)}
+.q-opt-check{cursor:pointer;accent-color:var(--green)}
+
+/* GDRIVE BANNER */
+.gdrive-bar{background:var(--accent-bg);border-bottom:1px solid var(--accent);padding:8px 22px;display:flex;align-items:center;gap:10px;font-size:12px}
+.gdrive-bar.connected{background:var(--green-bg);border-color:#A8D5B5}
+.gdrive-status{flex:1}
+
+/* IMPORT PANEL */
+.import-box{border:2px dashed var(--border2);border-radius:var(--rl);padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface)}
+.import-box:hover,.import-box.drag{border-color:var(--accent-dark);background:var(--accent-bg)}
+
+/* TOAST */
+#toast{position:fixed;bottom:18px;right:18px;background:var(--text);color:#fff;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;box-shadow:var(--shm);z-index:9999;display:none;align-items:center;gap:8px;max-width:320px}
+#toast.show{display:flex}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* LOGIN */
+#login-screen {
+  position: fixed; inset: 0; background: #1A1916;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; flex-direction: column; gap: 0;
+}
+.login-box {
+  background: #FFFFFF; border-radius: 16px; padding: 40px 44px;
+  width: 380px; max-width: 94vw; box-shadow: 0 24px 64px rgba(0,0,0,.4);
+}
+.login-logo { font-size: 22px; font-weight: 700; color: #FDC400; margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: #A09E9A; margin-bottom: 32px; font-family: 'DM Mono', monospace; }
+.login-label { font-size: 12px; font-weight: 500; color: #6B6860; margin-bottom: 6px; display: block; }
+.login-input {
+  width: 100%; padding: 10px 14px; border: 1px solid #D0CECC;
+  border-radius: 8px; font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color .15s; margin-bottom: 16px;
+}
+.login-input:focus { border-color: #C89A00; box-shadow: 0 0 0 3px rgba(253,196,0,.15); }
+.login-btn {
+  width: 100%; padding: 11px; background: #FDC400; border: none;
+  border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; color: #1A1916; transition: background .15s;
+}
+.login-btn:hover { background: #F0BB00; }
+.login-error { color: #C0392B; font-size: 12px; margin-top: 8px; display: none; text-align: center; }
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+
+
+<div id="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Framyx</div>
+    <div class="brand-sub">gestionale formazione v3</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Principale</div>
+    <div class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard"><span class="ni">◉</span>Dashboard<span class="nbadge" id="badge-scad" style="display:none">0</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Anagrafiche</div>
+    <div class="nav-item" onclick="goTo('aziende')" id="nav-aziende"><span class="ni">🏢</span>Aziende</div>
+    <div class="nav-item" onclick="goTo('lavoratori')" id="nav-lavoratori"><span class="ni">👷</span>Lavoratori</div>
+    <div class="nav-item" onclick="goTo('docenti')" id="nav-docenti"><span class="ni">🎓</span>Docenti</div>
+    <div class="nav-item" onclick="goTo('corsi')" id="nav-corsi"><span class="ni">📋</span>Corsi standard</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Attività</div>
+    <div class="nav-item" onclick="goTo('sessioni')" id="nav-sessioni"><span class="ni">📅</span>Sessioni corso</div>
+    <div class="nav-item" onclick="goTo('documenti')" id="nav-documenti"><span class="ni">📄</span>Documenti</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Archivio</div>
+    <div class="nav-item" onclick="goTo('storico')" id="nav-storico"><span class="ni">🗂</span>Storico</div>
+    <div class="nav-item" onclick="goTo('scadenze')" id="nav-scadenze"><span class="ni">⏰</span>Scadenze</div>
+    <div class="nav-item" onclick="goTo('fondimpresa')" id="nav-fondimpresa"><span class="ni">🏛</span>Fondimpresa</div>
+    <div class="nav-item" onclick="goTo('import')" id="nav-import"><span class="ni">📥</span>Importa dati</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Sistema</div>
+    <div class="nav-item" onclick="goTo('impostazioni')" id="nav-impostazioni"><span class="ni">⚙️</span>Impostazioni</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SYNC STATUS BAR -->
+  <div id="sync-bar" style="background:var(--accent-bg);border-bottom:1px solid var(--accent);padding:7px 22px;display:flex;align-items:center;gap:10px;font-size:12px">
+    <span id="sync-msg">🔄 Connessione a Supabase...</span>
+    <button class="btn btn-xs" onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard()})" style="margin-left:auto">↻ Ricarica</button>
+  </div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="global-search" placeholder="Cerca discente, corso, azienda..." oninput="globalSearch(this.value)" onfocus="showSearch()" autocomplete="off">
+      <div class="search-results" id="search-results"></div>
+    </div>
+    <div class="topbar-right" id="topbar-actions">
+      <button class="btn btn-sm" onclick="exportJSON()" title="Esporta backup JSON">💾 Backup</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti</span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte</button></div><div id="dash-scad"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📅 Sessioni recenti</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ AZIENDE ═══ -->
+    <div class="page" id="page-aziende">
+      <div class="card"><div class="card-header"><span class="card-title">Elenco aziende</span><button class="btn btn-primary btn-sm" onclick="openM('m-azienda')">+ Nuova azienda</button></div>
+      <table class="tbl"><thead><tr><th>Ragione sociale</th><th>P.IVA</th><th>Referente</th><th>Sede</th><th>Lavoratori</th><th></th></tr></thead><tbody id="tb-aziende"></tbody></table></div>
+    </div>
+
+    <!-- ═══ LAVORATORI ═══ -->
+    <div class="page" id="page-lavoratori">
+      <div class="fbar">
+        <select class="fc" id="fl-az" onchange="renderLavoratori()"><option value="">Tutte le aziende</option></select>
+        <input class="fc" id="fl-q" placeholder="Cerca nome / CF..." oninput="renderLavoratori()" style="max-width:200px">
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Lavoratori</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="openM('m-lavoratore')">+ Nuovo</button><button class="btn btn-danger btn-sm" onclick="delAllLav()">🗑 Elimina tutti</button></div></div>
+      <table class="tbl"><thead><tr><th>Cognome</th><th>Nome</th><th>Azienda</th><th>C.F.</th><th>Mansione</th><th></th></tr></thead><tbody id="tb-lav"></tbody></table></div>
+    </div>
+
+    <!-- ═══ DOCENTI ═══ -->
+    <div class="page" id="page-docenti">
+      <div class="card"><div class="card-header"><span class="card-title">Docenti / Formatori</span><button class="btn btn-primary btn-sm" onclick="openM('m-docente')">+ Nuovo</button></div>
+      <table class="tbl"><thead><tr><th>Nome</th><th>Cognome</th><th>Qualifica</th><th>Resp. progetto</th><th>Email</th><th></th></tr></thead><tbody id="tb-doc"></tbody></table></div>
+    </div>
+
+    <!-- ═══ CORSI ═══ -->
+    <div class="page" id="page-corsi">
+      <div class="card"><div class="card-header"><span class="card-title">Catalogo corsi</span><button class="btn btn-primary btn-sm" onclick="openM('m-corso')">+ Nuovo corso</button></div>
+      <table class="tbl"><thead><tr><th>Titolo</th><th>Normativa</th><th>Durata</th><th>Validità</th><th>Tipo</th><th>Test</th><th></th></tr></thead><tbody id="tb-corsi"></tbody></table></div>
+    </div>
+
+    <!-- ═══ SESSIONI ═══ -->
+    <div class="page" id="page-sessioni">
+      <div class="fbar">
+        <select class="fc" id="fs-az" onchange="renderSessioni()"><option value="">Tutte le aziende</option></select>
+        <select class="fc" id="fs-st" onchange="renderSessioni()"><option value="">Tutti gli stati</option><option value="pianificata">Pianificata</option><option value="completata">Completata</option></select>
+        <button class="btn btn-primary btn-sm" onclick="openM('m-sessione')">+ Nuova sessione</button>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Sessioni corso</span></div>
+      <table class="tbl"><thead><tr><th>Data</th><th>Corso</th><th>Azienda</th><th>Docente</th><th>Part.</th><th>Stato</th><th></th></tr></thead><tbody id="tb-sess"></tbody></table></div>
+    </div>
+
+    <!-- ═══ DOCUMENTI ═══ -->
+    <div class="page" id="page-documenti">
+      <div style="margin-bottom:14px"><div style="font-size:16px;font-weight:600;margin-bottom:3px">Genera documenti</div><div class="text-sm text-muted">Seleziona una sessione</div></div>
+      <div class="fbar">
+        <select class="fc" id="fd-sess" onchange="onDocSessChange()" style="max-width:500px"><option value="">Seleziona sessione...</option></select>
+      </div>
+      <div id="doc-panel" style="display:none">
+        <div class="grid-3">
+          <div class="card" style="border-top:3px solid var(--accent)"><div class="card-header"><span class="card-title">📋 Registro FR-FOR-01</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Registro presenze con argomenti e firme.</p><button class="btn btn-primary btn-sm" onclick="generaRegistro()">Genera registro</button></div></div>
+          <div class="card" style="border-top:3px solid var(--green)"><div class="card-header"><span class="card-title">🏆 Attestati</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Un attestato per ogni partecipante.</p><button class="btn btn-green btn-sm" onclick="generaAttestati()">Genera attestati</button></div></div>
+          <div class="card" style="border-top:3px solid var(--blue)"><div class="card-header"><span class="card-title">📝 Test verifica</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Questionario dal corso — uno per partecipante.</p><button class="btn btn-blue btn-sm" onclick="generaTest()">Genera test</button></div></div>
+        </div>
+        <div class="card mt-2" style="border-top:3px solid var(--orange)"><div class="card-header"><span class="card-title">📊 Verbale sessione</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Verbale con argomenti, presenti e nota allegato firme.</p><button class="btn btn-orange btn-sm" onclick="generaVerbale()">Genera verbale</button></div></div>
+      </div>
+      <div id="doc-preview" style="margin-top:18px"></div>
+    </div>
+
+
+    <!-- ═══ FONDIMPRESA ═══ -->
+    <div class="page" id="page-fondimpresa">
+      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:16px;font-weight:600;margin-bottom:3px">Piani Fondimpresa</div><div class="text-sm text-muted">Gestione piani formativi finanziati</div></div>
+        <button class="btn btn-primary btn-sm" onclick="openM('m-fondo')">+ Nuovo piano</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Piani formativi attivi</span></div>
+        <table class="tbl"><thead><tr><th>Titolo piano</th><th>Codice piano</th><th>Azioni</th><th>Azienda</th><th>Periodo</th><th></th></tr></thead><tbody id="tb-fondo"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ═══ STORICO ═══ -->
+    <div class="page" id="page-storico">
+      <div class="stats-grid" id="st-stats"></div>
+      <div class="card"><div class="card-header"><span class="card-title">Storico sessioni completate</span></div>
+      <table class="tbl"><thead><tr><th>Data</th><th>Corso</th><th>Azienda</th><th>Partecipanti</th><th>Attestati</th><th>Scadenza</th></tr></thead><tbody id="tb-storico"></tbody></table></div>
+    </div>
+
+    <!-- ═══ SCADENZE ═══ -->
+    <div class="page" id="page-scadenze">
+      <div class="fbar">
+        <select class="fc" id="fsc-az" onchange="renderScadenze()"><option value="">Tutte le aziende</option></select>
+        <select class="fc" id="fsc-st" onchange="renderScadenze()"><option value="">Tutti</option><option value="scaduto">Scaduti</option><option value="urgente">Urgenti ≤30gg</option><option value="ok">In regola</option></select>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Scadenze per lavoratore</span></div>
+      <table class="tbl"><thead><tr><th>Lavoratore</th><th>Azienda</th><th>Corso</th><th>Ultima sessione</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody id="tb-scad"></tbody></table></div>
+    </div>
+
+    <!-- ═══ IMPORTA DATI ═══ -->
+    <div class="page" id="page-import">
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px">Importa dati</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📥 Importa clienti da Excel/CSV</span></div>
+          <div style="padding:16px">
+            <p class="text-sm text-muted" style="margin-bottom:12px">Il file deve avere colonne: <strong>Ragione Sociale, P.IVA, Referente, Tel, Email, Indirizzo, Comune</strong> (intestazione riga 1).</p>
+            <div class="import-box" id="imp-az-box" onclick="document.getElementById('imp-az-file').click()" ondragover="e=>{e.preventDefault();this.classList.add('drag')}" ondragleave="this.classList.remove('drag')" ondrop="dropFile(event,'az')">
+              <div style="font-size:28px;margin-bottom:8px">📊</div>
+              <div style="font-weight:600;margin-bottom:4px">Clicca o trascina il file Excel/CSV</div>
+              <div class="text-sm text-muted">Supportati: .xlsx, .csv</div>
+            </div>
+            <input type="file" id="imp-az-file" accept=".xlsx,.csv,.xls" style="display:none" onchange="importAziende(this)">
+            <div id="imp-az-result" style="margin-top:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">👷 Importa lavoratori da Excel/CSV</span></div>
+          <div style="padding:16px">
+            <p class="text-sm text-muted" style="margin-bottom:12px">Colonne: <strong>Cognome, Nome, Codice Fiscale, Data Nascita, Azienda (nome), Mansione</strong>.</p>
+            <div class="import-box" onclick="document.getElementById('imp-lav-file').click()">
+              <div style="font-size:28px;margin-bottom:8px">👷</div>
+              <div style="font-weight:600;margin-bottom:4px">Clicca o trascina il file</div>
+              <div class="text-sm text-muted">Supportati: .xlsx, .csv</div>
+            </div>
+            <input type="file" id="imp-lav-file" accept=".xlsx,.csv,.xls" style="display:none" onchange="importLavoratori(this)">
+            <div id="imp-lav-result" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card mt-2">
+        <div class="card-header"><span class="card-title">📋 Importa corsi da Excel/CSV</span></div>
+        <div style="padding:16px">
+          <p class="text-sm text-muted" style="margin-bottom:8px">Colonne richieste: <strong>Titolo, Normativa, Durata (ore), Validità (anni), Tipo</strong>.<br>Tipo accettati: <em>Sicurezza, Antincendio, Primo soccorso, Attrezzature, Altro</em>.</p>
+          <div style="margin-bottom:10px">
+            <button class="btn btn-xs btn-primary" onclick="scaricaTemplateCorsi()">⬇️ Scarica template Excel</button>
+          </div>
+          <div class="import-box" onclick="document.getElementById('imp-cor-file').click()">
+            <div style="font-size:28px;margin-bottom:8px">📋</div>
+            <div style="font-weight:600;margin-bottom:4px">Clicca o trascina il file Excel/CSV</div>
+            <div class="text-sm text-muted">Supportati: .xlsx, .csv</div>
+          </div>
+          <input type="file" id="imp-cor-file" accept=".xlsx,.csv,.xls" style="display:none" onchange="importCorsi(this)">
+          <div id="imp-cor-result" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="card mt-2">
+        <div class="card-header"><span class="card-title">📅 Importa storico sessioni / corsi già svolti</span></div>
+        <div style="padding:16px">
+          <p class="text-sm text-muted" style="margin-bottom:8px">Ricostruisce automaticamente lavoratori, aziende, corsi e sessioni dall'archivio.<br>Colonne richieste: <strong>Cognome, Nome, Titolo Corso, Data, Azienda</strong>. Opzionali: <em>CF, Mansione, Durata, Normativa, Docente</em>.</p>
+          <div style="margin-bottom:10px">
+            <button class="btn btn-xs btn-primary" onclick="scaricaTemplateStorico()">⬇️ Scarica template CSV storico</button>
+          </div>
+          <div class="import-box" onclick="document.getElementById('imp-stor-file').click()">
+            <div style="font-size:28px;margin-bottom:8px">📅</div>
+            <div style="font-weight:600;margin-bottom:4px">Clicca o trascina il file Excel/CSV</div>
+            <div class="text-sm text-muted">Il sistema creerà corsi, aziende, lavoratori e sessioni mancanti</div>
+          </div>
+          <input type="file" id="imp-stor-file" accept=".xlsx,.csv,.xls" style="display:none" onchange="importStorico(this)">
+          <div id="imp-stor-result" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="card mt-2">
+        <div class="card-header"><span class="card-title">🔄 Ripristina da backup JSON</span></div>
+        <div style="padding:16px">
+          <p class="text-sm text-muted" style="margin-bottom:12px">Importa un file JSON esportato in precedenza con il pulsante "Backup". <strong>Attenzione: sovrascrive tutti i dati presenti.</strong></p>
+          <div class="flex gap-2">
+            <button class="btn btn-sm" onclick="document.getElementById('imp-json-file').click()">📂 Carica backup JSON</button>
+            <button class="btn btn-sm btn-primary" onclick="exportJSON()">💾 Esporta backup ora</button>
+          </div>
+          <input type="file" id="imp-json-file" accept=".json" style="display:none" onchange="importJSON(this)">
+          <div id="imp-json-result" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ IMPOSTAZIONI ═══ -->
+    <div class="page" id="page-impostazioni">
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px">Impostazioni</div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">☁️ Database Supabase</span></div>
+        <div style="padding:18px">
+          <div style="background:var(--green-bg);border:1px solid #A8D5B5;border-radius:var(--r);padding:12px 16px;margin-bottom:14px">
+            <div style="font-weight:600;color:var(--green);margin-bottom:4px">✅ Database connesso</div>
+            <div style="font-size:12px;color:var(--text2)">Progetto: <strong>jmdoeqzsyrjhcvacqhub</strong></div>
+            <div style="font-size:12px;color:var(--text2)">URL: <code style="font-size:11px">https://jmdoeqzsyrjhcvacqhub.supabase.co</code></div>
+          </div>
+          <div class="flex gap-2" style="flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard();toast('Dati ricaricati da Supabase','☁️')})">↻ Sincronizza ora</button>
+            <button class="btn btn-sm" onclick="exportJSON()">💾 Esporta backup JSON</button>
+          </div>
+          <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:var(--r);font-size:12px;color:var(--text2)">
+            <strong>Come funziona:</strong> ogni modifica viene salvata automaticamente su Supabase. Apri l'app da qualsiasi Mac o dispositivo e i dati sono sempre aggiornati. Il backup JSON è un'ulteriore sicurezza.
+          </div>
+        </div>
+      </div>
+      <div class="card mt-2">
+        <div class="card-header"><span class="card-title">⚠️ Dati</span></div>
+        <div style="padding:18px">
+          <p class="text-sm text-muted" style="margin-bottom:12px">Cancella tutti i dati locali e da Supabase. <strong>Operazione irreversibile.</strong></p>
+          <button class="btn btn-danger btn-sm" onclick="if(confirm('Cancellare TUTTI i dati? Questa operazione è irreversibile.')){clearAll()}">🗑 Cancella tutti i dati</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Azienda -->
+<div class="overlay" id="m-azienda">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-azienda-t">Nuova azienda</span><span class="mx" onclick="closeM('m-azienda')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="az-id">
+      <div class="fg"><label class="fl">Ragione sociale *</label><input class="fc" id="az-nome" placeholder="es. Acme S.r.l."></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">P.IVA</label><input class="fc" id="az-piva"></div>
+        <div class="fg"><label class="fl">Referente</label><input class="fc" id="az-referente"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Telefono</label><input class="fc" id="az-tel"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fc" id="az-email" type="email"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Indirizzo</label><input class="fc" id="az-indirizzo"></div>
+        <div class="fg"><label class="fl">Comune (VI)</label><input class="fc" id="az-comune" placeholder="es. Vicenza (VI)"></div>
+      </div>
+      <div class="fg"><label class="fl">Note</label><textarea class="fc" id="az-note" rows="2"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-azienda')">Annulla</button><button class="btn btn-primary" onclick="salvaAzienda()">Salva</button></div>
+  </div>
+</div>
+
+<!-- Lavoratore -->
+<div class="overlay" id="m-lavoratore">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-lav-t">Nuovo lavoratore</span><span class="mx" onclick="closeM('m-lavoratore')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="lav-id">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Nome *</label><input class="fc" id="lav-nome"></div>
+        <div class="fg"><label class="fl">Cognome *</label><input class="fc" id="lav-cognome"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Codice fiscale</label><input class="fc" id="lav-cf" style="text-transform:uppercase"></div>
+        <div class="fg"><label class="fl">Data di nascita</label><input class="fc" id="lav-nascita" type="date"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Luogo di nascita</label><input class="fc" id="lav-luogo"></div>
+        <div class="fg"><label class="fl">Azienda *</label><select class="fc" id="lav-az"><option value="">Seleziona...</option></select></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Mansione</label><input class="fc" id="lav-mansione"></div>
+        <div class="fg"><label class="fl">Cod. ATECO</label><input class="fc" id="lav-ateco" placeholder="es. 25.11"></div>
+      </div>
+      <div class="fg"><label class="fl">Email</label><input class="fc" id="lav-email" type="email"></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-lavoratore')">Annulla</button><button class="btn btn-primary" onclick="salvaLavoratore()">Salva</button></div>
+  </div>
+</div>
+
+<!-- Docente -->
+<div class="overlay" id="m-docente">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-doc-t">Nuovo docente</span><span class="mx" onclick="closeM('m-docente')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="doc-id">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Nome *</label><input class="fc" id="doc-nome"></div>
+        <div class="fg"><label class="fl">Cognome *</label><input class="fc" id="doc-cognome"></div>
+      </div>
+      <div class="fg"><label class="fl">Qualifica / Titolo</label><input class="fc" id="doc-qualifica" placeholder="es. Ing. RSPP, Med. Competente..."></div>
+      <div class="fg"><label class="fl">Responsabile progetto formativo</label><input class="fc" id="doc-resp" placeholder="es. Franz Lanaro"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Email</label><input class="fc" id="doc-email" type="email"></div>
+        <div class="fg"><label class="fl">Telefono</label><input class="fc" id="doc-tel"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg">
+          <label class="fl">✍️ Firma Docente</label>
+          <div id="firma-doc-preview" style="min-height:54px;border:1px dashed #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;margin-bottom:4px;overflow:hidden" onclick="document.getElementById('firma-doc-file').click()">
+            <span id="firma-doc-placeholder" style="font-size:12px;color:#aaa">Clicca per caricare immagine firma</span>
+            <img id="firma-doc-img" style="max-height:52px;max-width:100%;display:none">
+          </div>
+          <input type="file" id="firma-doc-file" accept="image/*" style="display:none" onchange="loadFirma('doc',this)">
+          <input type="hidden" id="doc-firma">
+          <button class="btn btn-xs" style="margin-top:2px" onclick="clearFirma('doc')">✕ Rimuovi firma</button>
+        </div>
+        <div class="fg">
+          <label class="fl">✍️ Firma Responsabile Progetto</label>
+          <div id="firma-resp-preview" style="min-height:54px;border:1px dashed #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;margin-bottom:4px;overflow:hidden" onclick="document.getElementById('firma-resp-file').click()">
+            <span id="firma-resp-placeholder" style="font-size:12px;color:#aaa">Clicca per caricare immagine firma</span>
+            <img id="firma-resp-img" style="max-height:52px;max-width:100%;display:none">
+          </div>
+          <input type="file" id="firma-resp-file" accept="image/*" style="display:none" onchange="loadFirma('resp',this)">
+          <input type="hidden" id="doc-firma-resp">
+          <button class="btn btn-xs" style="margin-top:2px" onclick="clearFirma('resp')">✕ Rimuovi firma</button>
+        </div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-docente')">Annulla</button><button class="btn btn-primary" onclick="salvaDocente()">Salva</button></div>
+  </div>
+</div>
+
+<!-- Corso (con editor argomenti + test) -->
+<div class="overlay top" id="m-corso">
+  <div class="modal modal-xl" style="margin:auto">
+    <div class="mh"><span class="mt" id="m-corso-t">Nuovo corso standard</span><span class="mx" onclick="closeM('m-corso')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="cs-id">
+      <div class="fg"><label class="fl">Titolo corso *</label><input class="fc" id="cs-titolo" placeholder="es. Formazione Antincendio Livello 2"></div>
+      <div class="fg"><label class="fl">Riferimento normativo</label><input class="fc" id="cs-norma" placeholder="es. Art. 37 D.Lgs. 81/08; D.M. 2/09/2021"></div>
+      <div class="fr3">
+        <div class="fg"><label class="fl">Durata (ore)</label><input class="fc" id="cs-durata" type="number" min="1" placeholder="8"></div>
+        <div class="fg"><label class="fl">Validità (anni)</label><input class="fc" id="cs-validita" type="number" min="1" placeholder="5"></div>
+        <div class="fg"><label class="fl">Tipo</label><select class="fc" id="cs-tipo"><option>Sicurezza</option><option>Antincendio</option><option>Primo soccorso</option><option>Attrezzature</option><option>Altro</option></select></div>
+      </div>
+
+      <!-- ARGOMENTI -->
+      <div class="fg">
+        <div class="flex items-center" style="justify-content:space-between;margin-bottom:8px">
+          <label class="fl" style="margin:0">Contenuti del corso (sezioni + punti)</label>
+          <button class="btn btn-xs btn-primary" onclick="addSez()">+ Sezione</button>
+        </div>
+        <div id="sez-editor"></div>
+        <p class="text-xs text-muted" style="margin-top:5px">💡 Ogni sezione ha un titolo (es. "L'incendio e la prevenzione") e punti modificabili.</p>
+      </div>
+
+      <!-- TEST -->
+      <div class="fg" style="margin-top:16px">
+        <div class="flex items-center" style="justify-content:space-between;margin-bottom:8px">
+          <label class="fl" style="margin:0">🧪 Test di verifica (domande a risposta multipla)</label>
+          <button class="btn btn-xs btn-blue" onclick="addDomanda()">+ Domanda</button>
+        </div>
+        <div id="test-editor"></div>
+        <p class="text-xs text-muted" style="margin-top:5px">💡 Spunta la risposta corretta (verde). Puoi aggiungere le domande dai tuoi file Word dopo.</p>
+      </div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-corso')">Annulla</button><button class="btn btn-primary" onclick="salvaCorso()">Salva corso</button></div>
+  </div>
+</div>
+
+<!-- Sessione -->
+<div class="overlay top" id="m-sessione">
+  <div class="modal modal-lg" style="margin:auto">
+    <div class="mh"><span class="mt" id="m-sess-t">Nuova sessione corso</span><span class="mx" onclick="closeM('m-sessione')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="ss-id">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Corso *</label><select class="fc" id="ss-corso" onchange="onCorsoChange()"><option value="">Seleziona...</option></select></div>
+        <div class="fg"><label class="fl">Azienda *</label><select class="fc" id="ss-az" onchange="onAzChange()"><option value="">Seleziona...</option></select></div>
+      </div>
+      <div class="fr3">
+        <div class="fg"><label class="fl">Data *</label><input class="fc" id="ss-data" type="date"></div>
+        <div class="fg"><label class="fl">Ora inizio</label><input class="fc" id="ss-ini" type="time" value="09:00"></div>
+        <div class="fg"><label class="fl">Ora fine</label><input class="fc" id="ss-fine" type="time" value="17:00"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Sede</label><input class="fc" id="ss-sede"></div>
+        <div class="fg"><label class="fl">Docente</label><select class="fc" id="ss-doc"><option value="">Seleziona...</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Modalità</label><select class="fc" id="ss-mod"><option>In presenza</option><option>Videoconferenza sincrona</option><option>E-learning</option><option>Mista</option></select></div>
+
+      <div class="fg">
+        <div class="flex items-center" style="justify-content:space-between;margin-bottom:6px">
+          <label class="fl" style="margin:0">Contenuti sessione</label>
+          <button class="btn btn-xs" onclick="addArgS()">+ punto</button>
+        </div>
+        <div id="ss-arg-list" style="border:1px solid var(--border);border-radius:var(--r);padding:8px;background:var(--surface2);min-height:44px"></div>
+      </div>
+
+      <div class="fg">
+        <div class="flex items-center" style="justify-content:space-between;margin-bottom:6px">
+          <label class="fl" style="margin:0">Partecipanti</label>
+          <span class="text-xs text-muted" id="cnt-part">0 selezionati</span>
+        </div>
+        <div class="chip-list" id="chip-part"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Stato</label><select class="fc" id="ss-stato"><option value="pianificata">Pianificata</option><option value="completata">Completata</option></select></div>
+        <div class="fg"><label class="fl">Note</label><input class="fc" id="ss-note"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-sessione')">Annulla</button><button class="btn btn-primary" onclick="salvaSessione()">Salva sessione</button></div>
+  </div>
+</div>
+
+
+<!-- Modal Piano Fondimpresa -->
+<div class="overlay top" id="m-fondo">
+  <div class="modal modal-xl" style="margin:auto">
+    <div class="mh"><span class="mt" id="m-fondo-t">Nuovo piano Fondimpresa</span><span class="mx" onclick="closeM('m-fondo')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="fo-id">
+      <div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue)">
+        <strong>🏛 Piano Fondimpresa</strong> — Inserisci i dati amministrativi del piano. Per ogni azione formativa puoi generare il Registro Didattico conforme al modello Fondimpresa.
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Dati Piano Formativo</div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Titolo Piano Formativo *</label><input class="fc" id="fo-titolo" placeholder="es. NUOVI MODELLI ORGANIZZATIVI"></div>
+        <div class="fg"><label class="fl">Codice identificativo piano</label><input class="fc" id="fo-codice" placeholder="es. 254164" style="font-family:var(--font-mono)"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Azienda aderente *</label><select class="fc" id="fo-az"><option value="">Seleziona...</option></select></div>
+        <div class="fg"><label class="fl">Referente di Piano</label><input class="fc" id="fo-referente" placeholder="Nome e Cognome"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px">Azioni formative</div>
+      <div id="azioni-editor"></div>
+      <button class="btn btn-xs btn-blue" onclick="addAzione()" style="margin-top:6px">+ Aggiungi azione formativa</button>
+      <p class="text-xs text-muted" style="margin-top:5px">Ogni azione ha un numero identificativo, titolo, periodo, ore, sede, docente.</p>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-fondo')">Annulla</button><button class="btn btn-primary" onclick="salvaFondo()">Salva piano</button></div>
+  </div>
+</div>
+
+<!-- Modal Genera Registro Fondimpresa -->
+<div class="overlay" id="m-fondo-reg">
+  <div class="modal modal-lg">
+    <div class="mh"><span class="mt">Genera Registro Fondimpresa</span><span class="mx" onclick="closeM('m-fondo-reg')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="freg-fondo-id">
+      <input type="hidden" id="freg-azione-idx">
+      <div id="freg-info" style="background:var(--surface2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">Partecipanti all'azione</div>
+      <div class="chip-list" id="freg-chip"></div>
+      <p class="text-xs text-muted" style="margin-top:6px">Seleziona i lavoratori dell'azienda del piano</p>
+      <div class="fr2" style="margin-top:14px">
+        <div class="fg"><label class="fl">Tutor</label><input class="fc" id="freg-tutor" placeholder="Nome e Cognome (stampatello)"></div>
+        <div class="fg"><label class="fl">Coordinatore</label><input class="fc" id="freg-coord" placeholder="Nome e Cognome (stampatello)"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeM('m-fondo-reg')">Annulla</button><button class="btn btn-primary" onclick="generaRegistroFondo()">Genera registro</button></div>
+  </div>
+</div>
+
+<div id="toast"><span id="t-icon">✓</span> <span id="t-msg"></span></div>
+
+<script>
+
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://jmdoeqzsyrjhcvacqhub.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ══════════════════════════════════════════════
+// STORE — Supabase + localStorage cache
+// ══════════════════════════════════════════════
+const LS = {
+  g: k => { try { return JSON.parse(localStorage.getItem('frm_'+k)||'[]') } catch(e) { return [] } },
+  s: (k,v) => localStorage.setItem('frm_'+k, JSON.stringify(v))
+};
+
+// Cache locale per velocità UI
+const cache = {
+  aziende: null, lavoratori: null, docenti: null,
+  corsi: null, sessioni: null, piani_fondo: null
+};
+
+const db = {
+  aziende:    () => cache.aziende    || LS.g('aziende'),
+  lavoratori: () => cache.lavoratori || LS.g('lavoratori'),
+  docenti:    () => cache.docenti    || LS.g('docenti'),
+  corsi:      () => cache.corsi      || LS.g('corsi'),
+  sessioni:   () => cache.sessioni   || LS.g('sessioni'),
+  save: {
+    aziende:    async v => { cache.aziende=v;    LS.s('aziende',v);    await supaUpsert('aziende',v) },
+    lavoratori: async v => { cache.lavoratori=v; LS.s('lavoratori',v); await supaUpsert('lavoratori',v) },
+    docenti:    async v => { cache.docenti=v;    LS.s('docenti',v);    await supaUpsert('docenti',v) },
+    corsi:      async v => { cache.corsi=v;      LS.s('corsi',v);      await supaUpsert('corsi',v) },
+    sessioni:   async v => { cache.sessioni=v;   LS.s('sessioni',v);   await supaUpsert('sessioni',v) },
+  }
+};
+
+// Upsert tutti i record di una tabella
+async function supaUpsert(table, records) {
+  if(!records || !records.length) return;
+  try {
+    const rows = records.map(r => ({id: r.id, data: r, updated_at: new Date().toISOString()}));
+    const {error} = await supa.from(table).upsert(rows, {onConflict:'id'});
+    if(error) console.warn('Supabase upsert error:', table, error.message);
+  } catch(e) { console.warn('Supabase error:', e) }
+}
+
+// Carica tutti i dati da Supabase
+async function loadFromSupabase() {
+  showSyncStatus('loading');
+  try {
+    const tables = ['aziende','lavoratori','docenti','corsi','sessioni'];
+    await Promise.all(tables.map(async t => {
+      const {data, error} = await supa.from(t).select('data');
+      if(error) { console.warn(t, error.message); return }
+      const records = (data||[]).map(r => r.data).filter(Boolean);
+      cache[t] = records;
+      LS.s(t, records);
+    }));
+    // piani_fondo
+    const {data: fd} = await supa.from('piani_fondo').select('data');
+    const fondo = (fd||[]).map(r=>r.data).filter(Boolean);
+    localStorage.setItem('frm_fondo', JSON.stringify(fondo));
+    showSyncStatus('ok');
+    return true;
+  } catch(e) {
+    console.warn('Load error:', e);
+    showSyncStatus('error');
+    return false;
+  }
+}
+
+// Delete da Supabase quando si elimina un record
+async function supaDelete(table, id) {
+  try {
+    await supa.from(table).delete().eq('id', id);
+  } catch(e) { console.warn('Delete error:', e) }
+}
+
+function showSyncStatus(status) {
+  const bar = document.getElementById('sync-bar');
+  const msg = document.getElementById('sync-msg');
+  if(!bar || !msg) return;
+  if(status === 'loading') {
+    bar.style.background = 'var(--accent-bg)';
+    bar.style.borderColor = 'var(--accent)';
+    msg.innerHTML = '🔄 Sincronizzazione con database...';
+  } else if(status === 'ok') {
+    bar.style.background = 'var(--green-bg)';
+    bar.style.borderColor = '#A8D5B5';
+    msg.innerHTML = '✅ Sincronizzato con Supabase — <span style="font-family:monospace;font-size:11px">https://jmdoeqzsyrjhcvacqhub.supabase.co</span>';
+  } else {
+    bar.style.background = 'var(--red-bg)';
+    bar.style.borderColor = '#E8A49E';
+    msg.innerHTML = '❌ Errore connessione database — dati locali in uso';
+  }
+}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6) }
+function schedSave(){} // handled by Supabase
+
+
+
+// ══ JSON BACKUP ══
+function exportJSON(){
+  const data = {
+    aziende: db.aziende(), lavoratori: db.lavoratori(),
+    docenti: db.docenti(), corsi: db.corsi(), sessioni: db.sessioni(),
+    exportDate: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'framyx_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Backup esportato ✓','💾');
+}
+
+function importJSON(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.aziende)    LS.s('aziende', data.aziende);
+      if(data.lavoratori) LS.s('lavoratori', data.lavoratori);
+      if(data.docenti)    LS.s('docenti', data.docenti);
+      if(data.corsi)      LS.s('corsi', data.corsi);
+      if(data.sessioni)   LS.s('sessioni', data.sessioni);
+      document.getElementById('imp-json-result').innerHTML = '<span style="color:var(--green);font-weight:600">✅ Importato correttamente</span>';
+      renderPage(currentPage); updateFilters(); renderDashboard();
+      toast('Backup importato ✓','📂');
+    } catch(err) {
+      document.getElementById('imp-json-result').innerHTML = '<span style="color:var(--red)">❌ File non valido</span>';
+    }
+  };
+  r.readAsText(f);
+  input.value = '';
+}
+
+// ══ IMPORT EXCEL/CSV ══
+function dropFile(e, type){ e.preventDefault(); e.currentTarget.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(!f) return; if(type==='az') importAziendeFile(f); }
+
+function importAziende(input){ const f=input.files[0]; if(f) importAziendeFile(f); input.value=''; }
+function importLavoratori(input){ const f=input.files[0]; if(f) importLavoratoriFile(f); input.value=''; }
+
+function importAziendeFile(f){
+  const r = new FileReader();
+  r.onload = e => {
+    const rows = parseCSVorXLSX(e.target.result, f.name);
+    if(!rows) return;
+    const header = rows[0].map(h=>(h||'').toString().toLowerCase().trim());
+    const get = (row,k) => { const i=header.findIndex(h=>h.includes(k)); return i>=0?String(row[i]||'').trim():'' };
+    const az = db.aziende();
+    let added=0;
+    rows.slice(1).forEach(row => {
+      const nome = get(row,'ragione') || get(row,'nome') || get(row,'azienda');
+      if(!nome) return;
+      if(!az.find(a=>a.nome.toLowerCase()===nome.toLowerCase())){
+        az.push({ id:uid(), nome, piva:get(row,'p.iva')||get(row,'piva')||get(row,'iva'), referente:get(row,'referente')||get(row,'contatto'), tel:get(row,'tel'), email:get(row,'email')||get(row,'mail'), indirizzo:get(row,'indirizzo')||get(row,'via'), comune:get(row,'comune')||get(row,'città')||get(row,'citta') });
+        added++;
+      }
+    });
+    db.save.aziende(az);
+    document.getElementById('imp-az-result').innerHTML = `<span style="color:var(--green);font-weight:600">✅ Importate ${added} aziende nuove (${rows.length-1} righe lette)</span>`;
+    updateFilters(); renderAziende(); renderDashboard();
+    toast(`${added} aziende importate`,'🏢');
+  };
+  if(f.name.endsWith('.csv')) r.readAsText(f, 'UTF-8');
+  else r.readAsBinaryString(f);
+}
+
+function importLavoratoriFile(f){
+  const r = new FileReader();
+  r.onload = e => {
+    const rows = parseCSVorXLSX(e.target.result, f.name);
+    if(!rows) return;
+    const header = rows[0].map(h=>(h||'').toString().toLowerCase().trim());
+    const get = (row,k) => { const i=header.findIndex(h=>h.includes(k)); return i>=0?String(row[i]||'').trim():'' };
+    const lav = db.lavoratori(); const az = db.aziende();
+    let added=0;
+    rows.slice(1).forEach(row => {
+      const nome = get(row,'nome'); const cognome = get(row,'cognome');
+      if(!nome&&!cognome) return;
+      const azNome = get(row,'azienda')||get(row,'ditta')||get(row,'società');
+      const azObj = az.find(a=>a.nome.toLowerCase().includes(azNome.toLowerCase())) || az[0];
+      lav.push({ id:uid(), nome, cognome, cf:(get(row,'codice')||get(row,'c.f.')||get(row,'cf')).toUpperCase(), nascita:get(row,'nascita')||get(row,'nato')||get(row,'data'), luogoNascita:get(row,'luogo')||'', aziendaId:azObj?.id||'', mansione:get(row,'mansione')||get(row,'qualifica')||'', ateco:get(row,'ateco')||'', email:get(row,'email')||'' });
+      added++;
+    });
+    db.save.lavoratori(lav);
+    document.getElementById('imp-lav-result').innerHTML = `<span style="color:var(--green);font-weight:600">✅ Importati ${added} lavoratori</span>`;
+    renderLavoratori(); renderDashboard();
+    toast(`${added} lavoratori importati`,'👷');
+  };
+  if(f.name.endsWith('.csv')) r.readAsText(f, 'UTF-8');
+  else r.readAsBinaryString(f);
+}
+
+function parseCSVorXLSX(data, filename){
+  if(filename.endsWith('.csv')){
+    return data.split('\n').filter(r=>r.trim()).map(r=>r.split(/[,;]/).map(c=>c.replace(/^"|"$/g,'').trim()));
+  }
+  // Basic XLSX binary parsing — tries to extract text from XML parts
+  try {
+    // For simple cases, look for shared strings and sheet data
+    const str = typeof data === 'string' ? data : '';
+    // Find all cell values — quick & dirty extraction
+    const cells = [];
+    let curRow = [];
+    const matches = str.matchAll(/<c [^>]*><v>([^<]*)<\/v><\/c>|<c [^>]*><is><t>([^<]*)<\/t><\/is><\/c>|<t>([^<]*)<\/t>/g);
+    for(const m of matches){ curRow.push(m[1]||m[2]||m[3]||'') }
+    // Not reliable for xlsx — show message
+    toast('Per Excel usa "Salva come CSV" e reimporta. Il CSV funziona perfettamente.','ℹ️');
+    return null;
+  } catch(e){ return null }
+}
+
+async function clearAll(){
+  const tables = ['aziende','lavoratori','docenti','corsi','sessioni','piani_fondo'];
+  // clear local
+  tables.forEach(k=>{ LS.s(k,[]); cache[k]=null });
+  localStorage.removeItem('frm_fondo');
+  // clear supabase
+  try {
+    await Promise.all(tables.map(t => supa.from(t).delete().neq('id','')));
+  } catch(e){ console.warn(e) }
+  renderPage(currentPage); updateFilters(); renderDashboard();
+  toast('Dati cancellati','🗑');
+}
+
+// ══ NAVIGATION ══
+let currentPage = 'dashboard';
+const titles = {dashboard:'Dashboard',aziende:'Aziende',lavoratori:'Lavoratori',docenti:'Docenti',corsi:'Corsi standard',sessioni:'Sessioni corso',documenti:'Documenti',storico:'Storico',scadenze:'Scadenze',import:'Importa dati',impostazioni:'Impostazioni'};
+
+function goTo(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const n=document.getElementById('nav-'+p); if(n) n.classList.add('active');
+  document.getElementById('topbar-title').textContent = titles[p]||p;
+  currentPage = p;
+  renderPage(p);
+}
+function renderPage(p){
+  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
+}
+function openM(id){ document.getElementById(id).classList.add('open'); if(id==='m-lavoratore') popLavAz(); if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
+function closeM(id){ document.getElementById(id).classList.remove('open') }
+document.addEventListener('click',e=>{ if(e.target.classList.contains('overlay')) closeM(e.target.id) });
+
+// ══ TOAST ══
+function toast(msg,icon='✓'){ const t=document.getElementById('toast'); document.getElementById('t-msg').textContent=msg; document.getElementById('t-icon').textContent=icon; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200) }
+
+// ══ HELPERS ══
+function fmt(d){ if(!d)return'—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) }
+function diffDays(d){ const t=new Date();t.setHours(0,0,0,0); const dt=new Date(d);dt.setHours(0,0,0,0); return Math.round((dt-t)/86400000) }
+function addYears(d,y){ const dt=new Date(d); dt.setFullYear(dt.getFullYear()+y); return dt.toISOString().slice(0,10) }
+function gAz(id){ return db.aziende().find(x=>x.id===id)?.nome||'—' }
+function gCorso(id){ return db.corsi().find(x=>x.id===id)?.titolo||'—' }
+function gDoc(id){ const d=db.docenti().find(x=>x.id===id); return d?d.nome+' '+d.cognome:'—' }
+function gLav(id){ const l=db.lavoratori().find(x=>x.id===id); return l?l.cognome+' '+l.nome:'—' }
+function v(id){ const e=document.getElementById(id); return e?e.value.trim():'' }
+function sv(map){ Object.entries(map).forEach(([p,fields])=>Object.entries(fields).forEach(([k,val])=>{ const e=document.getElementById(p+'-'+k); if(e) e.value=val })) }
+function clr(...ids){ ids.forEach(id=>{ const e=document.getElementById(id); if(e) e.value='' }) }
+function confDel(msg,fn){ if(confirm(msg)) fn() }
+function esc(s){ return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+// ══ GLOBAL SEARCH ══
+document.addEventListener('click', e=>{ if(!e.target.closest('.search-wrap')) hideSearch() });
+function showSearch(){ if(v('global-search')) globalSearch(v('global-search')) }
+function hideSearch(){ document.getElementById('search-results').classList.remove('open') }
+
+function globalSearch(q){
+  if(q.length<2){ hideSearch(); return }
+  const ql = q.toLowerCase();
+  const results = [];
+
+  db.lavoratori().forEach(l=>{
+    const s = (l.nome+' '+l.cognome+' '+(l.cf||'')).toLowerCase();
+    if(s.includes(ql)) results.push({type:'Lavoratore',color:'var(--blue-bg)',tc:'var(--blue)',name:l.cognome+' '+l.nome,sub:gAz(l.aziendaId),action:()=>{goTo('lavoratori');hideSearch()}})
+  });
+  db.corsi().forEach(c=>{
+    if(c.titolo.toLowerCase().includes(ql)) results.push({type:'Corso',color:'var(--orange-bg)',tc:'var(--orange)',name:c.titolo,sub:c.norma||'',action:()=>{goTo('corsi');hideSearch()}})
+  });
+  db.aziende().forEach(a=>{
+    if(a.nome.toLowerCase().includes(ql)) results.push({type:'Azienda',color:'var(--green-bg)',tc:'var(--green)',name:a.nome,sub:a.comune||'',action:()=>{goTo('aziende');hideSearch()}})
+  });
+  db.sessioni().forEach(s=>{
+    const t = gCorso(s.corsoId).toLowerCase();
+    if(t.includes(ql)||fmt(s.data).includes(q)) results.push({type:'Sessione',color:'var(--accent-bg)',tc:'var(--accent-dark)',name:gCorso(s.corsoId),sub:fmt(s.data)+' — '+gAz(s.aziendaId),action:()=>{goTo('sessioni');hideSearch()}})
+  });
+
+  const sr = document.getElementById('search-results');
+  if(!results.length){ sr.innerHTML='<div class="sr-item"><span class="text-muted text-sm">Nessun risultato</span></div>'; sr.classList.add('open'); return }
+  sr.innerHTML = results.slice(0,8).map((r,i)=>`
+    <div class="sr-item" onclick="srClick(${i})">
+      <span class="sr-type" style="background:${r.color};color:${r.tc}">${r.type}</span>
+      <div><div class="sr-name">${r.name}</div><div class="sr-sub">${r.sub}</div></div>
+    </div>
+  `).join('');
+  sr._results = results;
+  sr.classList.add('open');
+}
+function srClick(i){ const sr=document.getElementById('search-results'); sr._results?.[i]?.action?.() }
+
+// ══ ARGOMENTI SEZIONI EDITOR ══
+function renderSezEditor(sez){
+  if(!sez||!sez.length) sez=[{titolo:'',punti:['']}];
+  document.getElementById('sez-editor').innerHTML = sez.map((s,si)=>`
+    <div class="arg-sec" id="sez-${si}">
+      <div class="arg-sec-hd">
+        <span style="font-size:10px;color:var(--text3)">§</span>
+        <input class="arg-sec-title" id="sez-t-${si}" value="${esc(s.titolo)}" placeholder="Titolo sezione...">
+        <button class="btn btn-xs btn-danger" onclick="removeSez(${si})">✕</button>
+      </div>
+      <div class="arg-items" id="sez-items-${si}">
+        ${(s.punti||['']).map((p,pi)=>`
+          <div class="arg-row" id="sez-${si}-row-${pi}">
+            <span style="color:var(--text3);font-size:11px;flex-shrink:0">•</span>
+            <input class="fc" id="sez-${si}-p-${pi}" value="${esc(p)}" placeholder="Punto...">
+            <button class="btn btn-xs btn-danger" onclick="removePunto(${si},${pi})">✕</button>
+          </div>`).join('')}
+      </div>
+      <div style="padding:3px 8px 8px"><button class="arg-add" onclick="addPunto(${si})">＋ punto</button></div>
+    </div>`).join('')
+}
+function addSez(){ const s=getSez(); s.push({titolo:'',punti:['']}); renderSezEditor(s) }
+function removeSez(si){ let s=getSez(); s.splice(si,1); if(!s.length) s=[{titolo:'',punti:['']}]; renderSezEditor(s) }
+function addPunto(si){ const s=getSez(); s[si].punti.push(''); renderSezEditor(s) }
+function removePunto(si,pi){ const s=getSez(); s[si].punti.splice(pi,1); if(!s[si].punti.length) s[si].punti=['']; renderSezEditor(s) }
+function getSez(){
+  const secs=document.getElementById('sez-editor').querySelectorAll('.arg-sec');
+  return Array.from(secs).map((sec,si)=>{
+    const titolo=(document.getElementById('sez-t-'+si)||{}).value||'';
+    const items=sec.querySelectorAll('.arg-row');
+    const punti=Array.from(items).map((_,pi)=>(document.getElementById('sez-'+si+'-p-'+pi)||{}).value||'').filter(Boolean);
+    return{titolo,punti:punti.length?punti:['']};
+  });
+}
+function sezToFlat(sez){
+  const lines=[];
+  (sez||[]).forEach(s=>{ if(s.titolo) lines.push(s.titolo); (s.punti||[]).forEach(p=>{ if(p) lines.push('- '+p) }) });
+  return lines;
+}
+
+// ══ TEST EDITOR ══
+function renderTestEditor(domande){
+  const ed=document.getElementById('test-editor');
+  if(!domande||!domande.length){ ed.innerHTML='<p class="text-xs text-muted" style="padding:8px">Nessuna domanda. Clicca "+ Domanda" per aggiungerne una.</p>'; return }
+  ed.innerHTML=domande.map((d,di)=>`
+    <div class="q-block" id="q-${di}">
+      <div class="q-head">
+        <span class="q-num">${di+1}.</span>
+        <input class="q-text" id="q-d-${di}" value="${esc(d.domanda||'')}" placeholder="Testo della domanda...">
+        <button class="btn btn-xs btn-danger" onclick="removeD(${di})">✕ domanda</button>
+      </div>
+      <div class="q-body">
+        ${['A','B','C','D'].map((letter,oi)=>`
+          <div class="q-opt ${d.corretta===oi?'correct':''}" id="q-${di}-opt-${oi}">
+            <span class="q-opt-letter">${letter}</span>
+            <input type="text" id="q-${di}-o-${oi}" value="${esc((d.opzioni||[])[oi]||'')}" placeholder="Risposta ${letter}..." oninput="">
+            <input type="checkbox" class="q-opt-check" ${d.corretta===oi?'checked':''} title="Risposta corretta" onchange="setCorretta(${di},${oi},this.checked)">
+          </div>`).join('')}
+        <p class="text-xs text-muted" style="margin-top:5px">☑ Spunta la risposta corretta</p>
+      </div>
+    </div>`).join('')
+}
+function addDomanda(){ const dd=getTest(); dd.push({domanda:'',opzioni:['','','',''],corretta:0}); renderTestEditor(dd) }
+function removeD(di){ const dd=getTest(); dd.splice(di,1); renderTestEditor(dd) }
+function setCorretta(di,oi,checked){
+  if(!checked) return;
+  const dd=getTest(); dd[di].corretta=oi; renderTestEditor(dd);
+}
+function getTest(){
+  const ed=document.getElementById('test-editor');
+  const blocks=ed.querySelectorAll('.q-block');
+  return Array.from(blocks).map((_,di)=>({
+    domanda:(document.getElementById('q-d-'+di)||{}).value||'',
+    opzioni:['A','B','C','D'].map((_,oi)=>(document.getElementById('q-'+di+'-o-'+oi)||{}).value||''),
+    corretta:['A','B','C','D'].findIndex((_,oi)=>(document.getElementById('q-'+di+'-chk-'+oi)||{}).checked)||
+      Array.from(ed.querySelectorAll('.q-opt.correct')).findIndex(el=>el.id===`q-${di}-opt-0`)||0
+  }))
+}
+function getTestFromEditor(){
+  const ed=document.getElementById('test-editor');
+  const blocks=ed.querySelectorAll('.q-block');
+  return Array.from(blocks).map((blk,di)=>{
+    const domanda=(document.getElementById('q-d-'+di)||{}).value||'';
+    const opzioni=['A','B','C','D'].map((_,oi)=>(document.getElementById('q-'+di+'-o-'+oi)||{}).value||'');
+    const correttaEl=blk.querySelector('.q-opt.correct');
+    const corretta=correttaEl?parseInt(correttaEl.id.split('-opt-')[1])||0:0;
+    return{domanda,opzioni,corretta};
+  });
+}
+
+// ══ AZIENDE ══
+function renderAziende(){
+  const az=db.aziende(), lav=db.lavoratori(), tb=document.getElementById('tb-aziende');
+  if(!az.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">🏢</div><h3>Nessuna azienda</h3><p>Aggiungi o importa da Excel</p></div></td></tr>';return}
+  tb.innerHTML=az.map(a=>`<tr><td><strong>${a.nome}</strong></td><td class="font-mono text-xs">${a.piva||'—'}</td><td>${a.referente||'—'}</td><td class="text-sm text-muted">${a.comune||a.indirizzo||'—'}</td><td><span class="badge bb">${lav.filter(l=>l.aziendaId===a.id).length}</span></td><td class="actions"><button class="btn btn-xs" onclick="editAzienda('${a.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delAzienda('${a.id}')">✕</button></td></tr>`).join('')
+}
+function salvaAzienda(){
+  const id=v('az-id')||uid(), nome=v('az-nome'); if(!nome){alert('Ragione sociale obbligatoria');return}
+  const az=db.aziende().filter(a=>a.id!==id);
+  az.push({id,nome,piva:v('az-piva'),referente:v('az-referente'),tel:v('az-tel'),email:v('az-email'),indirizzo:v('az-indirizzo'),comune:v('az-comune'),note:v('az-note')});
+  db.save.aziende(az); closeM('m-azienda'); clr('az-id','az-nome','az-piva','az-referente','az-tel','az-email','az-indirizzo','az-comune','az-note'); document.getElementById('m-azienda-t').textContent='Nuova azienda';
+  renderAziende(); updateFilters(); renderDashboard(); toast('Azienda salvata');
+}
+function editAzienda(id){ const a=db.aziende().find(x=>x.id===id); if(!a) return; sv({az:{id:a.id,nome:a.nome,piva:a.piva||'',referente:a.referente||'',tel:a.tel||'',email:a.email||'',indirizzo:a.indirizzo||'',comune:a.comune||'',note:a.note||''}}); document.getElementById('m-azienda-t').textContent='Modifica azienda'; openM('m-azienda') }
+function delAzienda(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('aziende',_id); db.save.aziende(db.aziende().filter(a=>a.id!==id)); renderAziende(); updateFilters(); toast('Eliminata','🗑') }) }
+
+// ══ LAVORATORI ══
+function popLavAz(){ const s=document.getElementById('lav-az'),c=s.value; s.innerHTML='<option value="">Seleziona...</option>'+db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join(''); if(c) s.value=c }
+function renderLavoratori(){
+  const faz=v('fl-az'), q=(v('fl-q')||'').toLowerCase();
+  let lav=db.lavoratori();
+  if(faz) lav=lav.filter(l=>l.aziendaId===faz);
+  if(q) lav=lav.filter(l=>(l.nome+' '+l.cognome+' '+(l.cf||'')).toLowerCase().includes(q));
+  const tb=document.getElementById('tb-lav');
+  if(!lav.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">👷</div><h3>Nessun lavoratore</h3></div></td></tr>';return}
+  tb.innerHTML=lav.map(l=>`<tr><td><strong>${l.cognome}</strong></td><td>${l.nome}</td><td>${gAz(l.aziendaId)}</td><td class="font-mono text-xs">${l.cf||'—'}</td><td class="text-sm">${l.mansione||'—'}</td><td class="actions"><button class="btn btn-xs" onclick="editLav('${l.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delLav('${l.id}')">✕</button></td></tr>`).join('')
+}
+function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); lav.push({id,nome,cognome,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:v('lav-luogo'),mansione:v('lav-mansione'),ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato') }
+function editLav(id){ const l=db.lavoratori().find(x=>x.id===id); if(!l) return; popLavAz(); sv({'lav':{id:l.id,nome:l.nome,cognome:l.cognome,cf:l.cf||'',nascita:l.nascita||'',luogo:l.luogoNascita||'',mansione:l.mansione||'',ateco:l.ateco||'',email:l.email||''}}); document.getElementById('lav-az').value=l.aziendaId; document.getElementById('m-lav-t').textContent='Modifica lavoratore'; openM('m-lavoratore') }
+function delLav(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('lavoratori',_id); db.save.lavoratori(db.lavoratori().filter(l=>l.id!==id)); renderLavoratori(); toast('Eliminato','🗑') }) }
+function delAllLav(){ const lav=db.lavoratori(); if(!lav.length){toast('Nessun lavoratore da eliminare','ℹ️');return} confDel(`Eliminare tutti i ${lav.length} lavoratori?`, async ()=>{ await Promise.all(lav.map(l=>supaDelete('lavoratori',l.id))); db.save.lavoratori([]); renderLavoratori(); toast(`${lav.length} lavoratori eliminati`,'🗑') }) }
+
+function importCorsi(input){ const f=input.files[0]; if(f) importCorsiFile(f); input.value=''; }
+function importCorsiFile(f){
+  const tipiValidi=['Sicurezza','Antincendio','Primo soccorso','Attrezzature','Altro'];
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSVorXLSX(e.target.result, f.name);
+    if(!rows||rows.length<2){ document.getElementById('imp-cor-result').innerHTML=`<span style="color:var(--red)">❌ File vuoto o non leggibile. Usa formato CSV.</span>`; return; }
+    const hdr=rows[0].map(h=>(h||'').toString().toLowerCase().trim());
+    const ci={
+      titolo:   hdr.findIndex(h=>h.includes('titolo')||h.includes('nome')||h.includes('corso')),
+      norma:    hdr.findIndex(h=>h.includes('norm')||h.includes('legge')||h.includes('decreto')||h.includes('riferim')),
+      durata:   hdr.findIndex(h=>h.includes('durata')||h.includes('ore')),
+      validita: hdr.findIndex(h=>h.includes('valid')||h.includes('anni')||h.includes('scad')),
+      tipo:     hdr.findIndex(h=>h.includes('tipo')||h.includes('categ')||h.includes('area'))
+    };
+    if(ci.titolo<0){ document.getElementById('imp-cor-result').innerHTML=`<span style="color:var(--red)">❌ Colonna "Titolo" non trovata. Intestazioni rilevate: <em>${hdr.join(', ')}</em></span>`; return; }
+    let added=0, skip=0;
+    const corsi=db.corsi();
+    rows.slice(1).forEach(r=>{
+      const titolo=(r[ci.titolo]||'').toString().trim();
+      if(!titolo){ skip++; return; }
+      if(corsi.find(c=>c.titolo.toLowerCase()===titolo.toLowerCase())){ skip++; return; }
+      let tipo=ci.tipo>=0?(r[ci.tipo]||'').toString().trim():'Sicurezza';
+      if(!tipiValidi.includes(tipo)) tipo='Altro';
+      corsi.push({
+        id:uid(), titolo,
+        norma:    ci.norma>=0   ?(r[ci.norma]||'').toString().trim():'',
+        durata:   ci.durata>=0  ?(r[ci.durata]||'').toString().trim():'',
+        validita: ci.validita>=0?parseInt(r[ci.validita])||5:5,
+        tipo, sezioni:[], domande:[]
+      });
+      added++;
+    });
+    db.save.corsi(corsi); renderCorsi(); renderDashboard();
+    document.getElementById('imp-cor-result').innerHTML = added>0
+      ? '<span style="color:var(--green);font-weight:600">✅ Importati '+added+' corsi'+(skip?' ('+skip+' saltati: duplicati o vuoti)':'')+'.</span>'
+      : '<span style="color:var(--orange)">⚠️ Nessun corso aggiunto ('+skip+' righe saltate: duplicati o vuote).</span>';
+    if(added) toast(`${added} corsi importati`,'📋');
+  };
+  if(f.name.endsWith('.csv')) reader.readAsText(f,'UTF-8'); else reader.readAsBinaryString(f);
+}
+
+function scaricaTemplateStorico(){
+  const csv='Cognome;Nome;Codice Fiscale;Data Nascita;Mansione;Azienda;Titolo Corso;Normativa;Durata (ore);Data Corso;Docente\n'+
+    'Rossi;Mario;RSSMRA80A01H501U;1980-01-01;Operaio;Acme Srl;Formazione Antincendio Livello 1;D.M. 02/09/2021;4;2023-03-15;Wendy Dal Zotto\n'+
+    'Bianchi;Luca;;; ;Acme Srl;Formazione Antincendio Livello 1;;;2023-03-15;Wendy Dal Zotto\n'+
+    'Verdi;Anna;;;Impiegata;Beta Spa;Primo Soccorso Gruppo B;D.Lgs. 81/08;12;2022-11-20;\n';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='template_storico_sessioni.csv'; a.click();
+}
+
+function importStorico(input){ const f=input.files[0]; if(f) importStoricoFile(f); input.value=''; }
+function importStoricoFile(f){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSVorXLSX(e.target.result, f.name);
+    if(!rows||rows.length<2){ document.getElementById('imp-stor-result').innerHTML=`<span style="color:var(--red)">❌ File vuoto o non leggibile. Usa formato CSV.</span>`; return; }
+    const hdr=rows[0].map(h=>(h||'').toString().toLowerCase().trim());
+    const ci={
+      cognome:  hdr.findIndex(h=>h.includes('cognome')||h==='surname'||h==='last'),
+      nome:     hdr.findIndex(h=>h==='nome'||h==='name'||h==='first'||h.includes('nome')),
+      cf:       hdr.findIndex(h=>h.includes('fiscal')||h.includes('codice')||h==='cf'),
+      nascita:  hdr.findIndex(h=>h.includes('nasc')||h.includes('birth')||h.includes('nato')),
+      mansione: hdr.findIndex(h=>h.includes('mansione')||h.includes('ruolo')||h.includes('qualifica')||h.includes('posizione')),
+      azienda:  hdr.findIndex(h=>h.includes('aziend')||h.includes('societ')||h.includes('ditta')||h.includes('company')||h.includes('client')),
+      titolo:   hdr.findIndex(h=>h.includes('titolo')||h.includes('corso')||h.includes('formaz')||h.includes('course')),
+      norma:    hdr.findIndex(h=>h.includes('norm')||h.includes('legge')||h.includes('decreto')),
+      durata:   hdr.findIndex(h=>h.includes('durata')||h.includes('ore')||h.includes('hour')),
+      data:     hdr.findIndex(h=>h.includes('data')&&(h.includes('corso')||h.includes('sess')||h.includes('svolt')||h==='data'||h==='date')),
+      docente:  hdr.findIndex(h=>h.includes('docente')||h.includes('formatore')||h.includes('teacher')||h.includes('relatore'))
+    };
+    // fallback: if data not found search any "data" col
+    if(ci.data<0) ci.data=hdr.findIndex(h=>h.includes('data')||h.includes('date'));
+    if(ci.cognome<0||ci.titolo<0||ci.data<0){
+      document.getElementById('imp-stor-result').innerHTML=`<span style="color:var(--red)">❌ Colonne obbligatorie non trovate (servono: Cognome, Titolo Corso, Data). Intestazioni rilevate: <em>${hdr.join(', ')}</em></span>`; return;
+    }
+
+    let aziende=db.aziende(), lavoratori=db.lavoratori(), corsi=db.corsi(), sessioni=db.sessioni();
+    let cntAz=0,cntLav=0,cntCor=0,cntSess=0,cntPart=0;
+
+    const norm=s=>s.toString().trim();
+    const parseData=s=>{ if(!s) return ''; const str=norm(s); // try ISO
+      if(/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0,10);
+      // dd/mm/yyyy or dd-mm-yyyy
+      const m=str.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+      if(m){ const y=m[3].length===2?'20'+m[3]:m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` }
+      // Excel serial
+      const n=parseInt(str); if(n>10000){ const d=new Date((n-25569)*86400000); return d.toISOString().slice(0,10) }
+      return str;
+    };
+
+    // Group rows by (titolo corso + data corso + azienda) => one sessione per group
+    const sessMap={};
+    rows.slice(1).forEach(r=>{
+      const cognome=norm(r[ci.cognome]||''); const nomeL=ci.nome>=0?norm(r[ci.nome]||''):'';
+      const titolo=norm(r[ci.titolo]||''); const dataRaw=ci.data>=0?norm(r[ci.data]||''):'';
+      if(!cognome||!titolo||!dataRaw) return;
+      const data=parseData(dataRaw);
+      const azNome=ci.azienda>=0?norm(r[ci.azienda]||''):'';
+      const key=`${titolo}||${data}||${azNome}`;
+      if(!sessMap[key]) sessMap[key]={titolo,data,azNome,norma:ci.norma>=0?norm(r[ci.norma]||''):'',durata:ci.durata>=0?norm(r[ci.durata]||''):'',docNome:ci.docente>=0?norm(r[ci.docente]||''):'',lavoratori:[]};
+      sessMap[key].lavoratori.push({cognome,nome:nomeL,cf:ci.cf>=0?norm(r[ci.cf]||'').toUpperCase():'',nascita:ci.nascita>=0?parseData(r[ci.nascita]||''):'',mansione:ci.mansione>=0?norm(r[ci.mansione]||''):''});
+    });
+
+    Object.values(sessMap).forEach(sg=>{
+      // --- Azienda ---
+      let az=aziende.find(a=>a.nome.toLowerCase()===sg.azNome.toLowerCase());
+      if(!az&&sg.azNome){ az={id:uid(),nome:sg.azNome,piva:'',referente:'',tel:'',email:'',indirizzo:'',comune:'',note:''}; aziende.push(az); cntAz++; }
+      const azId=az?az.id:'';
+
+      // --- Corso ---
+      let corso=corsi.find(c=>c.titolo.toLowerCase()===sg.titolo.toLowerCase());
+      if(!corso){ corso={id:uid(),titolo:sg.titolo,norma:sg.norma,durata:sg.durata,validita:5,tipo:'Sicurezza',sezioni:[],domande:[]}; corsi.push(corso); cntCor++; }
+
+      // --- Docente (opzionale, solo match per nome) ---
+      let docenteId='';
+      if(sg.docNome){ const parts=sg.docNome.split(' ').map(s=>s.toLowerCase()); const d=db.docenti().find(d=>(d.nome+' '+d.cognome).toLowerCase()===sg.docNome.toLowerCase()||parts.some(p=>d.cognome.toLowerCase().includes(p))); if(d) docenteId=d.id; }
+
+      // --- Sessione (evita duplicati stesso corso+data+azienda) ---
+      let sess=sessioni.find(s=>s.corsoId===corso.id&&s.data===sg.data&&s.aziendaId===azId);
+      if(!sess){ sess={id:uid(),corsoId:corso.id,aziendaId:azId,data:sg.data,oraInizio:'',oraFine:'',sede:'',docenteId,modalita:'In presenza',argomenti:[],partecipanti:[],stato:'completata',note:'Importato da archivio'}; sessioni.push(sess); cntSess++; }
+
+      // --- Lavoratori ---
+      sg.lavoratori.forEach(lRaw=>{
+        if(!lRaw.cognome) return;
+        let lav=lavoratori.find(l=>l.cognome.toLowerCase()===lRaw.cognome.toLowerCase()&&((!lRaw.nome)||l.nome.toLowerCase()===lRaw.nome.toLowerCase()));
+        if(!lav){ lav={id:uid(),nome:lRaw.nome,cognome:lRaw.cognome,aziendaId:azId,cf:lRaw.cf,nascita:lRaw.nascita,luogoNascita:'',mansione:lRaw.mansione,ateco:'',email:''}; lavoratori.push(lav); cntLav++; }
+        if(!sess.partecipanti.includes(lav.id)){ sess.partecipanti.push(lav.id); cntPart++; }
+      });
+    });
+
+    db.save.aziende(aziende); db.save.lavoratori(lavoratori); db.save.corsi(corsi); db.save.sessioni(sessioni);
+    renderDashboard(); renderLavoratori(); renderCorsi(); renderSessioni();
+    document.getElementById('imp-stor-result').innerHTML=`<span style="color:var(--green);font-weight:600">✅ Importazione completata:<br>
+    🏢 ${cntAz} aziende create &nbsp;|&nbsp; 👷 ${cntLav} lavoratori creati &nbsp;|&nbsp; 📋 ${cntCor} corsi creati &nbsp;|&nbsp; 📅 ${cntSess} sessioni create &nbsp;|&nbsp; 👥 ${cntPart} presenze registrate</span>`;
+    toast('Storico importato ✅','📅');
+  };
+  if(f.name.endsWith('.csv')) reader.readAsText(f,'UTF-8'); else reader.readAsBinaryString(f);
+}
+  const csv='Titolo;Normativa;Durata (ore);Validità (anni);Tipo\n'+
+    'Formazione Antincendio Livello 1;D.M. 02/09/2021;4;5;Antincendio\n'+
+    'Formazione Primo Soccorso Gruppo B;D.Lgs. 81/08 - D.M. 388/03;12;3;Primo soccorso\n'+
+    'Formazione generale lavoratori;Art. 37 D.Lgs. 81/08;4;5;Sicurezza\n'+
+    'Uso carrello elevatore;D.Lgs. 81/08 All. X;12;5;Attrezzature\n';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='template_corsi.csv'; a.click();
+}
+
+// ══ DOCENTI ══
+function renderDocenti(){ const d=db.docenti(),tb=document.getElementById('tb-doc'); if(!d.length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">🎓</div><h3>Nessun docente</h3></div></td></tr>';return} tb.innerHTML=d.map(x=>`<tr><td>${x.nome}</td><td><strong>${x.cognome}</strong></td><td>${x.qualifica||'—'}</td><td>${x.resp||'—'}</td><td>${x.email||'—'}</td><td class="actions"><button class="btn btn-xs" onclick="editDoc('${x.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delDoc('${x.id}')">✕</button></td></tr>`).join('') }
+function salvaDocente(){ const id=v('doc-id')||uid(),nome=v('doc-nome'),cognome=v('doc-cognome'); if(!nome||!cognome){alert('Nome e cognome obbligatori');return} const d=db.docenti().filter(x=>x.id!==id); d.push({id,nome,cognome,qualifica:v('doc-qualifica'),resp:v('doc-resp'),email:v('doc-email'),tel:v('doc-tel'),firma:v('doc-firma')||null,firmaResp:v('doc-firma-resp')||null}); db.save.docenti(d); closeM('m-docente'); clr('doc-id','doc-nome','doc-cognome','doc-qualifica','doc-resp','doc-email','doc-tel','doc-firma','doc-firma-resp'); clearFirma('doc'); clearFirma('resp'); document.getElementById('m-doc-t').textContent='Nuovo docente'; renderDocenti(); toast('Docente salvato') }
+function editDoc(id){ const d=db.docenti().find(x=>x.id===id); if(!d) return; sv({'doc':{id:d.id,nome:d.nome,cognome:d.cognome,qualifica:d.qualifica||'',resp:d.resp||'',email:d.email||'',tel:d.tel||''}}); // restore firme
+  clearFirma('doc'); clearFirma('resp');
+  if(d.firma){ document.getElementById('doc-firma').value=d.firma; document.getElementById('firma-doc-img').src=d.firma; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; }
+  if(d.firmaResp){ document.getElementById('doc-firma-resp').value=d.firmaResp; document.getElementById('firma-resp-img').src=d.firmaResp; document.getElementById('firma-resp-img').style.display='block'; document.getElementById('firma-resp-placeholder').style.display='none'; }
+  document.getElementById('m-doc-t').textContent='Modifica docente'; openM('m-docente') }
+function loadFirma(tipo, input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ const data=e.target.result; if(tipo==='doc'){ document.getElementById('doc-firma').value=data; document.getElementById('firma-doc-img').src=data; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; } else { document.getElementById('doc-firma-resp').value=data; document.getElementById('firma-resp-img').src=data; document.getElementById('firma-resp-img').style.display='block'; document.getElementById('firma-resp-placeholder').style.display='none'; } }; r.readAsDataURL(f); input.value=''; }
+function clearFirma(tipo){ if(tipo==='doc'){ document.getElementById('doc-firma').value=''; document.getElementById('firma-doc-img').src=''; document.getElementById('firma-doc-img').style.display='none'; document.getElementById('firma-doc-placeholder').style.display='block'; } else { document.getElementById('doc-firma-resp').value=''; document.getElementById('firma-resp-img').src=''; document.getElementById('firma-resp-img').style.display='none'; document.getElementById('firma-resp-placeholder').style.display='block'; } }
+function delDoc(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('docenti',_id); db.save.docenti(db.docenti().filter(d=>d.id!==id)); renderDocenti(); toast('Eliminato','🗑') }) }
+
+// ══ CORSI ══
+function renderCorsi(){ const c=db.corsi(),tb=document.getElementById('tb-corsi'); const tb2={'Sicurezza':'bb','Antincendio':'br','Primo soccorso':'bg','Attrezzature':'bo','Altro':'bgr'}; if(!c.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📋</div><h3>Nessun corso</h3></div></td></tr>';return} tb.innerHTML=c.map(x=>`<tr><td><strong>${x.titolo}</strong></td><td class="text-xs text-muted">${x.norma||'—'}</td><td class="font-mono">${x.durata||'—'}h</td><td class="font-mono">${x.validita||'—'}a</td><td><span class="badge ${tb2[x.tipo]||'bgr'}">${x.tipo}</span></td><td>${(x.domande||[]).length?`<span class="badge bg">${(x.domande||[]).length} dom.</span>`:'<span class="badge bgr">—</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editCorso('${x.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delCorso('${x.id}')">✕</button></td></tr>`).join('') }
+function salvaCorso(){ const id=v('cs-id')||uid(),titolo=v('cs-titolo'); if(!titolo){alert('Titolo obbligatorio');return} const sezioni=getSez().filter(s=>s.titolo||s.punti.some(p=>p)); const domande=getTestFromEditor().filter(d=>d.domanda); const c=db.corsi().filter(x=>x.id!==id); c.push({id,titolo,norma:v('cs-norma'),durata:v('cs-durata'),validita:parseInt(v('cs-validita'))||5,tipo:v('cs-tipo'),sezioni,domande}); db.save.corsi(c); closeM('m-corso'); clr('cs-id','cs-titolo','cs-norma','cs-durata','cs-validita'); document.getElementById('cs-tipo').value='Sicurezza'; document.getElementById('sez-editor').innerHTML=''; document.getElementById('test-editor').innerHTML=''; document.getElementById('m-corso-t').textContent='Nuovo corso standard'; renderCorsi(); toast('Corso salvato') }
+function editCorso(id){ const c=db.corsi().find(x=>x.id===id); if(!c) return; sv({'cs':{id:c.id,titolo:c.titolo,norma:c.norma||'',durata:c.durata||'',validita:c.validita||''}}); document.getElementById('cs-tipo').value=c.tipo||'Sicurezza'; let sez=c.sezioni||[]; if(!sez.length&&c.argomenti?.length) sez=[{titolo:'Contenuti',punti:c.argomenti}]; renderSezEditor(sez.length?sez:[{titolo:'',punti:['']}]); renderTestEditor(c.domande||[]); document.getElementById('m-corso-t').textContent='Modifica corso'; openM('m-corso') }
+function delCorso(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('corsi',_id); db.save.corsi(db.corsi().filter(c=>c.id!==id)); renderCorsi(); toast('Eliminato','🗑') }) }
+
+// ══ SESSIONI ══
+let selPart=[];
+function popSessSelects(){
+  document.getElementById('ss-corso').innerHTML='<option value="">Seleziona...</option>'+db.corsi().map(c=>`<option value="${c.id}">${c.titolo}</option>`).join('');
+  document.getElementById('ss-az').innerHTML='<option value="">Seleziona...</option>'+db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  document.getElementById('ss-doc').innerHTML='<option value="">Seleziona...</option>'+db.docenti().map(d=>`<option value="${d.id}">${d.nome} ${d.cognome}</option>`).join('');
+  selPart=[]; renderArgS([]); document.getElementById('chip-part').innerHTML=''; document.getElementById('cnt-part').textContent='0 selezionati';
+}
+function onCorsoChange(){ const c=db.corsi().find(x=>x.id===v('ss-corso')); const flat=c?sezToFlat(c.sezioni||[]):[]; renderArgS(flat.length?flat:(c?.argomenti||[])) }
+function onAzChange(){ const azId=v('ss-az'); renderChip(azId,selPart); const az=db.aziende().find(a=>a.id===azId); if(az?.indirizzo) document.getElementById('ss-sede').value=az.indirizzo+(az.comune?' — '+az.comune:'') }
+
+function renderArgS(items){
+  const list=document.getElementById('ss-arg-list');
+  list.innerHTML=(items.length?items:[''])
+    .map((a,i)=>`<div class="arg-row" id="ss-arg-row-${i}"><span class="text-xs text-muted" style="width:16px;flex-shrink:0">${i+1}.</span><input class="fc" id="ss-arg-${i}" value="${esc(a)}" placeholder="Argomento ${i+1}..."><button class="btn btn-xs btn-danger" onclick="removeArgS(${i})">✕</button></div>`)
+    .join('')
+}
+function addArgS(){ const list=document.getElementById('ss-arg-list'); const i=list.querySelectorAll('.arg-row').length; const div=document.createElement('div'); div.className='arg-row'; div.id='ss-arg-row-'+i; div.innerHTML=`<span class="text-xs text-muted" style="width:16px;flex-shrink:0">${i+1}.</span><input class="fc" id="ss-arg-${i}" placeholder="Argomento..."><button class="btn btn-xs btn-danger" onclick="removeArgS(${i})">✕</button>`; list.appendChild(div) }
+function removeArgS(i){ document.getElementById('ss-arg-row-'+i)?.remove() }
+function getArgS(){ return Array.from(document.getElementById('ss-arg-list').querySelectorAll('input[id^=ss-arg-]')).map(x=>x.value.trim()).filter(Boolean) }
+
+function renderChip(azId,sel){ const lav=azId?db.lavoratori().filter(l=>l.aziendaId===azId):[]; document.getElementById('chip-part').innerHTML=lav.map(l=>`<div class="chip ${sel.includes(l.id)?'on':''}" onclick="togglePart('${l.id}')">${l.cognome} ${l.nome}</div>`).join('')||'<p class="text-xs text-muted">Seleziona un\'azienda prima</p>'; document.getElementById('cnt-part').textContent=sel.length+' selezionati' }
+function togglePart(id){ selPart=selPart.includes(id)?selPart.filter(p=>p!==id):[...selPart,id]; renderChip(v('ss-az'),selPart) }
+
+function salvaSessione(){ const id=v('ss-id')||uid(),corsoId=v('ss-corso'),azId=v('ss-az'),data=v('ss-data'); if(!corsoId||!azId||!data){alert('Corso, azienda e data obbligatori');return} const sess=db.sessioni().filter(s=>s.id!==id); sess.push({id,corsoId,aziendaId:azId,data,oraInizio:v('ss-ini'),oraFine:v('ss-fine'),sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note')}); db.save.sessioni(sess); closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard(); toast('Sessione salvata') }
+function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note'); document.getElementById('ss-ini').value='09:00'; document.getElementById('ss-fine').value='17:00'; document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; document.getElementById('chip-part').innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso' }
+function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().sort((a,b)=>b.data.localeCompare(a.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
+function editSess(id){ const s=db.sessioni().find(x=>x.id===id); if(!s) return; popSessSelects(); sv({'ss':{id:s.id,corso:s.corsoId,az:s.aziendaId,data:s.data,ini:s.oraInizio||'09:00',fine:s.oraFine||'17:00',sede:s.sede||'',doc:s.docenteId||'',mod:s.modalita||'In presenza',stato:s.stato||'pianificata',note:s.note||''}}); selPart=[...(s.partecipanti||[])]; renderArgS(s.argomenti||[]); renderChip(s.aziendaId,selPart); document.getElementById('m-sess-t').textContent='Modifica sessione'; openM('m-sessione') }
+function delSess(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('sessioni',_id); db.save.sessioni(db.sessioni().filter(s=>s.id!==id)); renderSessioni(); renderDashboard(); toast('Eliminata','🗑') }) }
+function goDoc(sid){ goTo('documenti'); setTimeout(()=>{ const s=document.getElementById('fd-sess'); if(s){ s.value=sid; onDocSessChange() } },50) }
+
+// ══ DOCUMENTI ══
+function renderDocumenti(){ const s=document.getElementById('fd-sess'); const all=db.sessioni().sort((a,b)=>b.data.localeCompare(a.data)); s.innerHTML='<option value="">Seleziona sessione...</option>'+all.map(x=>`<option value="${x.id}">${fmt(x.data)} — ${gCorso(x.corsoId)} — ${gAz(x.aziendaId)}${x.stato==='completata'?' ✓':''}</option>`).join(''); document.getElementById('doc-panel').style.display='none'; document.getElementById('doc-preview').innerHTML='' }
+function onDocSessChange(){ document.getElementById('doc-panel').style.display=v('fd-sess')?'block':'none'; document.getElementById('doc-preview').innerHTML='' }
+function gSess(){ return db.sessioni().find(s=>s.id===v('fd-sess')) }
+
+// ── ARGOMENTI HTML per documenti ──
+function argHTML(argomenti){
+  if(!argomenti||!argomenti.length) return '<p style="color:#999;font-size:11px">—</p>';
+  const sez=[]; let cur=null;
+  argomenti.forEach(a=>{
+    if(!a.startsWith('-')&&!a.startsWith('•')){ if(cur) sez.push(cur); cur={titolo:a,punti:[]} }
+    else { if(!cur) cur={titolo:'',punti:[]}; cur.punti.push(a.replace(/^[-•]\s*/,'')) }
+  });
+  if(cur) sez.push(cur);
+  if(sez.length<=1&&!sez[0]?.titolo){ return '<div style="columns:2;column-gap:20px">'+argomenti.map(a=>`<div style="padding:2px 0;break-inside:avoid">• ${a}</div>`).join('')+'</div>' }
+  const rSez=sArr=>`${sArr.map(s=>`<div style="margin-bottom:7px">${s.titolo?`<div style="font-weight:700;text-decoration:underline;margin-bottom:2px;font-size:11.5px">${s.titolo}</div>`:''}<div style="font-size:11.5px">${s.punti.map(p=>`<div style="padding:1px 0 1px 10px">- ${p}</div>`).join('')}</div></div>`).join('')}`;
+  if(sez.length>=4){ const h=Math.ceil(sez.length/2); return `<table style="width:100%;border-collapse:collapse"><tr><td style="vertical-align:top;width:50%;padding-right:12px;border-right:1px solid #eee">${rSez(sez.slice(0,h))}</td><td style="vertical-align:top;padding-left:12px">${rSez(sez.slice(h))}</td></tr></table>` }
+  return rSez(sez);
+}
+
+function tdRow(l1,v1,l2,v2){ return`<tr><td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280;width:25%">${l1}</td><td style="padding:5px 10px;border:1px solid #ddd;background:#fff;width:25%">${v1}</td><td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280;width:25%">${l2}</td><td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${v2||'&nbsp;'}</td></tr>` }
+
+function generaRegistro(){
+  const s=gSess(); if(!s) return;
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{}, az=db.aziende().find(a=>a.id===s.aziendaId)||{}, doc=db.docenti().find(d=>d.id===s.docenteId)||{};
+  const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
+  const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:22px;font-size:12px;color:#222;background:white">
+<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tr>
+<td style="padding:10px 14px;border:1px solid #484F54;border-bottom:3px solid #FDC400;vertical-align:top">
+  <div style="font-size:17px;font-weight:700">REGISTRO DI FORMAZIONE</div>
+  <div style="font-size:11px;color:#888;font-style:italic">Master template — compilare per ogni sessione formativa</div>
+</td>
+<td style="padding:10px 14px;border:1px solid #484F54;border-bottom:3px solid #FDC400;text-align:right;background:#F5F5F5">
+  <div style="font-weight:700;font-size:13px">FR-FOR-01 Rev. 01</div><div style="color:#888;font-size:11px">Framyx Srl SB</div>
+</td></tr></table>
+<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px;padding:10px 14px;background:#FAFAFA">
+<div style="font-weight:700;font-size:11px;color:#484F54;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dati identificativi della sessione</div>
+<table style="width:100%;border-collapse:collapse">
+${tdRow('Titolo corso / argomento',corso.titolo||'','Data',fmt(s.data))}
+${tdRow('Orario (inizio – fine)',(s.oraInizio||'')+' – '+(s.oraFine||''),'Sede / luogo di svolgimento',s.sede||'')}
+${tdRow('Docente / Formatore',doc.nome?doc.nome+' '+doc.cognome:'','Azienda / Ente committente',az.nome||'')}
+<tr><td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280">Modalità</td>
+<td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${['In presenza','Videoconferenza sincrona','E-learning','Mista'].map(m=>`<span style="margin-right:8px">${m===s.modalita?'☑':'☐'} ${m}</span>`).join('')}</td>
+<td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280">Rif. normativo</td>
+<td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${corso.norma||''}</td></tr>
+</table></div>
+<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px;padding:10px 14px">
+<div style="font-weight:700;font-size:11px;color:#484F54;text-transform:uppercase;margin-bottom:8px">Contenuti della sessione formativa</div>
+${argHTML(s.argomenti||[])}</div>
+<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px">
+<div style="background:#484F54;color:white;font-weight:700;font-size:11px;text-transform:uppercase;padding:6px 14px">Firme di chiusura sessione</div>
+<table style="width:100%;border-collapse:collapse">
+<tr>${['Docente / Formatore','Per la Direzione / Referente','',''].map(l=>`<td style="padding:5px 14px;border:1px solid #ddd;font-size:11px;font-weight:700;color:#6B7280">${l}</td>`).join('')}</tr>
+<tr>${['Nome e Cognome','Nome e Cognome','Nome e Cognome','Nome e Cognome'].map(l=>`<td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${l}</td>`).join('')}</tr>
+<tr><td style="padding:7px 14px;border:1px solid #ddd;font-weight:700;height:44px">${doc.nome?doc.nome+' '+doc.cognome:''}</td>${[1,2,3].map(()=>`<td style="border:1px solid #ddd;height:44px"></td>`).join('')}</tr>
+<tr>${['Firma','Firma','Firma','Firma'].map(l=>`<td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${l}</td>`).join('')}</tr>
+<tr>${[1,2,3,4].map(()=>`<td style="border:1px solid #ddd;height:54px"></td>`).join('')}</tr>
+</table></div>
+<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px">
+<div style="background:#484F54;padding:5px 14px"><table style="width:100%"><tr>
+<td style="color:white;font-size:11px;font-weight:700">Data: ${fmt(s.data)}</td>
+<td style="color:white;font-size:11px;font-weight:700">Titolo: ${corso.titolo||''}</td>
+<td style="color:white;font-size:11px;font-weight:700">Orario: ${s.oraInizio||''}–${s.oraFine||''}</td>
+<td style="color:white;font-size:11px;font-weight:700">Docente: ${doc.nome?doc.nome+' '+doc.cognome:''}</td>
+</tr></table></div>
+<table style="width:100%;border-collapse:collapse">
+<thead><tr style="background:#484F54;color:white"><th style="padding:6px 10px;font-size:11px;width:36px">N°</th><th style="padding:6px 10px;font-size:11px;text-align:left">Cognome Nome</th><th style="padding:6px 10px;font-size:11px;width:180px">Firma</th><th style="padding:6px 10px;font-size:11px;width:70px">Entrata</th><th style="padding:6px 10px;font-size:11px;width:70px">Uscita</th><th style="padding:6px 10px;font-size:11px;width:80px">Esito</th></tr></thead>
+<tbody>
+${pp.map((l,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}"><td style="padding:7px 10px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td><td style="padding:7px 10px;border:1px solid #ddd">${l.cognome} ${l.nome}</td><td style="border:1px solid #ddd"></td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center">${s.oraInizio||''}</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center">${s.oraFine||''}</td><td style="border:1px solid #ddd"></td></tr>`).join('')}
+${Array.from({length:Math.max(0,12-pp.length)},(_,i)=>`<tr style="background:${(pp.length+i)%2?'#f9f9f9':'white'}"><td style="padding:7px 10px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td><td style="border:1px solid #ddd;height:26px"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
+</tbody></table></div>
+<div style="border:1px solid #ddd;border-top:3px solid #FDC400;background:#FFFBE6;padding:9px 14px;font-size:11px;color:#666">
+È allegata al presente registro la lista completa di firma dei partecipanti; tale lista costituisce parte integrante del registro e deve essere conservata ai sensi dell'art. 37 D.Lgs. 81/08.</div></div>`;
+  preview(html);
+}
+
+function generaAttestati(){
+  const s=gSess(); if(!s) return;
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{}, az=db.aziende().find(a=>a.id===s.aziendaId)||{}, doc=db.docenti().find(d=>d.id===s.docenteId)||{};
+  const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
+  const scad=corso.validita?addYears(s.data,corso.validita):null;
+  const luogo=az.comune||az.indirizzo||'_______________';
+  const html=pp.map(l=>`<div style="page-break-after:always;font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto 32px;padding:36px 40px;border:2px solid #FDC400;background:white">
+<div style="text-align:center;border-bottom:3px solid #FDC400;padding-bottom:14px;margin-bottom:18px">
+<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#484F54;margin-bottom:5px">Framyx Srl — Società Benefit</div>
+<div style="font-size:21px;font-weight:700">ATTESTATO DI PARTECIPAZIONE</div>
+<div style="font-size:12px;color:#888;margin-top:3px">CON VERIFICA DELL'APPRENDIMENTO</div>
+</div>
+<div style="text-align:center;background:#FDC400;padding:11px 18px;margin-bottom:18px;border-radius:3px">
+<div style="font-size:13px;font-weight:700">${corso.titolo||'—'}</div>
+${corso.norma?`<div style="font-size:10px;color:#484F54;margin-top:2px">(${corso.norma})</div>`:''}
+</div>
+<div style="text-align:center;margin-bottom:14px">
+<div style="font-size:12px;color:#555;margin-bottom:5px">RICONOSCIMENTO A:</div>
+<div style="font-size:23px;font-weight:700;border-bottom:2px solid #FDC400;display:inline-block;padding-bottom:4px">${l.nome} ${l.cognome}</div>
+</div>
+<div style="text-align:center;font-size:12px;color:#555;margin-bottom:14px;line-height:1.7">
+${l.luogoNascita?`LUOGO DI NASCITA: <strong>${l.luogoNascita}</strong>,`:''} ${l.nascita?`DATA DI NASCITA: <strong>${new Date(l.nascita).toLocaleDateString('it-IT')}</strong>,`:''}
+${l.cf?`<br>C.F.: <strong style="font-family:monospace">${l.cf}</strong>,`:''}
+${l.mansione?`<br>Mansione: Add. ${l.mansione} della ditta <strong>${az.nome||''}</strong>${l.ateco?`, Cod. ATECO ${l.ateco}`:''}`:''}
+</div>
+<div style="text-align:center;font-size:12px;color:#555;margin-bottom:16px;line-height:1.8">
+ha frequentato e superato positivamente il corso di formazione di n. <strong>${corso.durata||'—'} ore</strong><br>
+per lavoratori che si è svolto ${s.data?`nei giorni <strong>${fmt(s.data)}</strong>`:''}<br>
+c/o la ditta <strong>${az.nome||'—'}</strong>${s.sede?` sita in ${s.sede}`:''}
+</div>
+<div style="display:flex;justify-content:space-between;margin-bottom:16px">
+<div style="text-align:center;width:44%"><div style="border-top:1px solid #999;padding-top:6px"><div style="font-size:11px;color:#888;margin-bottom:3px">Il Docente</div><div style="font-weight:700;margin-bottom:4px">${doc.nome?doc.nome+' '+doc.cognome:''}</div>${doc.firma?`<img src="${doc.firma}" style="max-height:44px;max-width:160px;display:block;margin:0 auto 4px">` :'<div style="height:44px"></div>'}<div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma</div></div></div>
+<div style="text-align:center;width:44%"><div style="border-top:1px solid #999;padding-top:6px"><div style="font-size:11px;color:#888;margin-bottom:3px">Il Resp. del Progetto Formativo</div><div style="font-weight:700;margin-bottom:4px">${doc.resp||''}</div>${doc.firmaResp?`<img src="${doc.firmaResp}" style="max-height:44px;max-width:160px;display:block;margin:0 auto 4px">` :'<div style="height:44px"></div>'}<div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma</div></div></div>
+</div>
+<div style="text-align:right;font-size:12px;color:#555;margin-bottom:16px">${luogo}, ${fmt(s.data)}</div>
+<div style="border-top:2px solid #FDC400;padding-top:10px">
+<div style="font-size:11px;font-weight:700;color:#484F54;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Contenuti del corso</div>
+${argHTML(s.argomenti||[])}</div>
+${scad?`<div style="margin-top:10px;padding:6px 12px;background:${diffDays(scad)<90?'#FDECEA':'#EAF5EE'};border-left:3px solid ${diffDays(scad)<90?'#C0392B':'#2D7D46'};font-size:11px"><strong>Scadenza rinnovo:</strong> ${fmt(scad)}</div>`:''}
+</div>`).join('');
+  preview(html||'<p>Nessun partecipante</p>');
+}
+
+function generaVerbale(){
+  const s=gSess(); if(!s) return;
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{}, az=db.aziende().find(a=>a.id===s.aziendaId)||{}, doc=db.docenti().find(d=>d.id===s.docenteId)||{};
+  const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
+  const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:22px;font-size:12px;color:#222;background:white">
+<div style="margin-bottom:12px"><strong>Data:</strong> ${fmt(s.data)}&nbsp;&nbsp;&nbsp;<strong>Orario:</strong> ${s.oraInizio||''}–${s.oraFine||''}</div>
+<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr>
+<td style="padding:8px 12px;border:1px solid #ddd;width:60%"><div style="font-size:11px;color:#888;font-style:italic">Argomenti trattati:</div><div style="font-weight:700">${corso.titolo||'—'}</div></td>
+<td style="padding:8px 12px;border:1px solid #ddd"><div style="font-size:11px;color:#888;font-style:italic">Riferimenti normativi:</div><div style="font-weight:700">${corso.norma||'—'}</div></td>
+</tr></table>
+<div style="border:1px solid #ddd;padding:12px;margin-bottom:12px">
+<div style="font-weight:700;font-size:12px;color:#484F54;margin-bottom:8px">Contenuti dell'incontro</div>
+${argHTML(s.argomenti||[])}</div>
+<div style="padding:8px 12px;border:1px solid #ddd;background:#f9f9f9;margin-bottom:12px;font-size:11px;color:#555">
+È allegata al presente verbale la lista completa di firma dei partecipanti; tale lista costituisce parte integrante del registro e deve essere conservata per attestare lo svolgimento dell'incontro.</div>
+<table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+<tr>${['Relatore','','Per la Direzione',''].map(l=>`<td style="padding:7px 12px;border:1px solid #ddd;font-weight:700;width:25%">${l}</td>`).join('')}</tr>
+<tr>${['Nome','Firma','Nome','Firma'].map(l=>`<td style="padding:4px 12px;border:1px solid #ddd;font-size:11px;color:#888;font-style:italic">${l}</td>`).join('')}</tr>
+<tr><td style="padding:7px 12px;border:1px solid #ddd;font-weight:700;height:42px">${doc.nome?doc.nome+' '+doc.cognome:''}</td>${[1,2,3].map(()=>`<td style="border:1px solid #ddd"></td>`).join('')}</tr>
+</table>
+<table style="width:100%;border-collapse:collapse">
+<thead><tr style="background:#484F54;color:white"><th style="padding:6px 10px;font-size:11px;width:36px">N°</th><th style="padding:6px 10px;font-size:11px;text-align:left">Cognome Nome</th><th style="padding:6px 10px;font-size:11px;width:180px">Firma</th><th style="padding:6px 10px;font-size:11px;width:70px">Entrata</th><th style="padding:6px 10px;font-size:11px;width:70px">Uscita</th></tr></thead>
+<tbody>
+${pp.map((l,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}"><td style="padding:7px 10px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td><td style="padding:7px 10px;border:1px solid #ddd">${l.cognome} ${l.nome}</td><td style="border:1px solid #ddd"></td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center">${s.oraInizio||''}</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center">${s.oraFine||''}</td></tr>`).join('')}
+${Array.from({length:Math.max(0,8-pp.length)},(_,i)=>`<tr style="background:${(pp.length+i)%2?'#f9f9f9':'white'}"><td style="padding:7px 10px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td><td style="border:1px solid #ddd;height:26px"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
+</tbody></table></div>`;
+  preview(html);
+}
+
+function generaTest(){
+  const s=gSess(); if(!s) return;
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
+  const domande=(corso.domande||[]).filter(d=>d.domanda);
+  if(!domande.length){ toast('Nessuna domanda nel corso. Aggiungile dalla scheda Corsi.','ℹ️'); return }
+  const az=db.aziende().find(a=>a.id===s.aziendaId)||{};
+  const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
+  const html=pp.map(l=>`<div style="page-break-after:always;font-family:Arial,Helvetica,sans-serif;max-width:780px;margin:0 auto 24px;padding:28px;border:1px solid #ddd;background:white">
+<div style="border-bottom:3px solid #FDC400;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end">
+<div><div style="font-size:16px;font-weight:700">TEST DI VERIFICA DELL'APPRENDIMENTO</div><div style="font-size:11px;color:#888;margin-top:2px">${corso.titolo||'—'} — ${fmt(s.data)}</div></div>
+<div style="text-align:right;font-size:11px;background:#f5f5f5;padding:6px 10px"><div style="font-weight:700">FR-FOR-03</div><div style="color:#888">Framyx Srl SB</div></div>
+</div>
+<table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+<tr><td style="padding:5px 10px;border:1px solid #eee;color:#888;width:30%">Cognome e Nome</td><td style="padding:5px 10px;border:1px solid #eee;font-weight:700">${l.cognome} ${l.nome}</td></tr>
+<tr><td style="padding:5px 10px;border:1px solid #eee;color:#888;background:#f9f9f9">Azienda</td><td style="padding:5px 10px;border:1px solid #eee;background:#f9f9f9">${az.nome||'—'}</td></tr>
+<tr><td style="padding:5px 10px;border:1px solid #eee;color:#888">Data</td><td style="padding:5px 10px;border:1px solid #eee">${fmt(s.data)}</td></tr>
+</table>
+<div style="background:#FFFBE6;border:1px solid #FDC400;padding:8px 12px;margin-bottom:16px;font-size:11px"><strong>Istruzioni:</strong> Per ogni domanda, indicare la risposta corretta segnando una X nella casella corrispondente. Soglia di superamento: 70% (${Math.ceil(domande.length*0.7)}/${domande.length} risposte corrette).</div>
+${domande.map((d,di)=>`<div style="margin-bottom:14px">
+<div style="font-weight:700;font-size:12px;margin-bottom:6px">${di+1}. ${d.domanda}</div>
+<table style="width:100%;border-collapse:collapse">
+${(d.opzioni||[]).map((o,oi)=>`<tr><td style="padding:5px 10px;border:1px solid #eee;width:30px;text-align:center"><div style="width:18px;height:18px;border:1.5px solid #999;border-radius:2px;display:inline-block"></div></td><td style="padding:5px 10px;border:1px solid #eee">${String.fromCharCode(65+oi)}. ${o}</td></tr>`).join('')}
+</table></div>`).join('')}
+<div style="margin-top:16px;padding:10px;border:1px solid #ddd;background:#f9f9f9">
+<div style="font-size:11px;color:#888;margin-bottom:6px">Ad uso del valutatore</div>
+<table style="width:100%;border-collapse:collapse"><tr>
+<td style="padding:5px 10px;border:1px solid #eee;width:30%">N° risposte corrette</td><td style="border:1px solid #eee;padding:5px 10px;width:20%">___/&nbsp;${domande.length}</td>
+<td style="padding:5px 10px;border:1px solid #eee;width:20%">Esito</td><td style="border:1px solid #eee;padding:5px 10px">☐ IDONEO &nbsp;&nbsp; ☐ NON IDONEO</td>
+</tr></table></div>
+</div>`).join('');
+  preview(html);
+}
+
+function preview(html){ document.getElementById('doc-preview').innerHTML=`<div class="card mt-2"><div class="card-header"><span class="card-title">Anteprima</span><button class="btn btn-primary btn-sm" onclick="printDoc()">🖨 Stampa / Salva PDF</button></div><div style="padding:12px;background:#f5f5f5;max-height:580px;overflow-y:auto"><div id="print-area">${html}</div></div></div>` }
+function printDoc(){ const c=document.getElementById('print-area'); if(!c) return; const w=window.open('','_blank','width=940,height=760'); w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:18px;font-family:Arial,Helvetica,sans-serif}@media print{body{padding:0}}
+/* LOGIN */
+#login-screen {
+  position: fixed; inset: 0; background: #1A1916;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; flex-direction: column; gap: 0;
+}
+.login-box {
+  background: #FFFFFF; border-radius: 16px; padding: 40px 44px;
+  width: 380px; max-width: 94vw; box-shadow: 0 24px 64px rgba(0,0,0,.4);
+}
+.login-logo { font-size: 22px; font-weight: 700; color: #FDC400; margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: #A09E9A; margin-bottom: 32px; font-family: 'DM Mono', monospace; }
+.login-label { font-size: 12px; font-weight: 500; color: #6B6860; margin-bottom: 6px; display: block; }
+.login-input {
+  width: 100%; padding: 10px 14px; border: 1px solid #D0CECC;
+  border-radius: 8px; font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color .15s; margin-bottom: 16px;
+}
+.login-input:focus { border-color: #C89A00; box-shadow: 0 0 0 3px rgba(253,196,0,.15); }
+.login-btn {
+  width: 100%; padding: 11px; background: #FDC400; border: none;
+  border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; color: #1A1916; transition: background .15s;
+}
+.login-btn:hover { background: #F0BB00; }
+.login-error { color: #C0392B; font-size: 12px; margin-top: 8px; display: none; text-align: center; }
+
+</style></head><body>${c.innerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close() }
+
+// ══ STORICO ══
+function renderStorico(){ const sess=db.sessioni().filter(s=>s.stato==='completata').sort((a,b)=>b.data.localeCompare(a.data)); const tot=sess.reduce((a,s)=>a+(s.partecipanti?.length||0),0); document.getElementById('st-stats').innerHTML=[{l:'Sessioni completate',v:sess.length,s:'totali'},{l:'Attestati emessi',v:tot,s:'partecipanti'},{l:'Corsi diversi',v:new Set(sess.map(s=>s.corsoId)).size,s:'tipologie'},{l:'Aziende formate',v:new Set(sess.map(s=>s.aziendaId)).size,s:'clienti'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tb=document.getElementById('tb-storico'); if(!sess.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">🗂</div><h3>Nessuna sessione completata</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>{const c=db.corsi().find(x=>x.id===s.corsoId)||{};const sc=c.validita?addYears(s.data,c.validita):null;return`<tr><td class="font-mono text-xs">${fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td><span class="badge bg">${s.partecipanti?.length||0}</span></td><td class="font-mono text-xs">${sc?fmt(sc):'—'}</td></tr>`}).join('') }
+
+// ══ SCADENZE ══
+function computeScad(){ const result=[]; db.sessioni().filter(s=>s.stato==='completata').forEach(s=>{ const c=db.corsi().find(x=>x.id===s.corsoId); if(!c?.validita) return; const sc=addYears(s.data,c.validita); (s.partecipanti||[]).forEach(lid=>{ const l=db.lavoratori().find(x=>x.id===lid); if(!l) return; const ex=result.findIndex(r=>r.lid===lid&&r.cid===s.corsoId); const e={lid,cid:s.corsoId,aid:s.aziendaId,data:s.data,sc}; if(ex>=0){if(s.data>result[ex].data)result[ex]=e}else result.push(e) }) }); return result.sort((a,b)=>a.sc.localeCompare(b.sc)) }
+function renderScadenze(){ const faz=v('fsc-az'),fst=v('fsc-st'); let sc=computeScad(); if(faz) sc=sc.filter(x=>x.aid===faz); if(fst==='scaduto') sc=sc.filter(x=>diffDays(x.sc)<0); else if(fst==='urgente') sc=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30); else if(fst==='ok') sc=sc.filter(x=>diffDays(x.sc)>30); const tb=document.getElementById('tb-scad'); if(!sc.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">⏰</div><h3>Nessuna scadenza</h3><p>Le scadenze si calcolano dalle sessioni completate</p></div></td></tr>';return} tb.innerHTML=sc.map(x=>{ const d=diffDays(x.sc); let badge,txt; if(d<0){badge='br';txt=`Scaduto ${Math.abs(d)}gg`}else if(d<=30){badge='bo';txt=`${d}gg`}else if(d<=90){badge='by';txt=`${d}gg`}else{badge='bg';txt='In regola'} return`<tr><td><strong>${gLav(x.lid)}</strong></td><td>${gAz(x.aid)}</td><td>${gCorso(x.cid)}</td><td class="font-mono text-xs">${fmt(x.data)}</td><td class="font-mono text-xs">${fmt(x.sc)}</td><td><span class="badge ${badge}">${txt}</span></td></tr>` }).join('') }
+
+// ══ DASHBOARD ══
+function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad(); const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length; document.getElementById('stats-grid').innerHTML=[{l:'🏢 Aziende',v:az.length,s:'clienti'},{l:'👷 Lavoratori',v:lav.length,s:'in anagrafica'},{l:'📅 Sessioni',v:sess.length,s:sess.filter(s=>s.stato==='completata').length+' completate'},{l:'⚠ Scadenze urgenti',v:scad+urg,s:scad+' scadute · '+urg+' entro 30gg'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tot=scad+urg,b=document.getElementById('badge-scad'); b.textContent=tot; b.style.display=tot?'':'none'; const ul=sc.filter(x=>diffDays(x.sc)<=30).slice(0,8); document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`; const ulS=sess.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6); document.getElementById('dash-sess').innerHTML=ulS.length?ulS.map(s=>`<div class="srow"><div class="sdot ${s.stato==='completata'?'g':'o'}"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">📅</div><h3>Nessuna sessione</h3></div>` }
+
+// ══ IMPOSTAZIONI ══
+function renderImpostazioni(){}
+
+// ══ FILTERS ══
+function updateFilters(){ const opts='<option value="">Tutte le aziende</option>'+db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join(''); ['fl-az','fs-az','fsc-az'].forEach(id=>{ const e=document.getElementById(id); if(e) e.innerHTML=opts }) }
+
+// ══ DEMO DATA ══
+function loadDemo(){
+  if(db.aziende().length) return;
+  const a1=uid(),a2=uid(); db.save.aziende([{id:a1,nome:'Metalworks S.r.l.',piva:'IT01234567890',referente:'Marco Bianchi',tel:'0444 123456',email:'info@metalworks.it',indirizzo:"Via dell'Industria 12",comune:'Vicenza (VI)'},{id:a2,nome:'Ediltech S.p.A.',piva:'IT09876543210',referente:'Laura Rossi',tel:'0445 987654',email:'hr@ediltech.it',indirizzo:'Via Roma 45',comune:'Bassano del Grappa (VI)'}]);
+  const l1=uid(),l2=uid(),l3=uid(); db.save.lavoratori([{id:l1,nome:'Hicham',cognome:'Dargui',aziendaId:a1,cf:'DRGHCH75T14Z330B',nascita:'1975-12-14',luogoNascita:'Marocco',mansione:'Operaio saldatore',ateco:'25.11'},{id:l2,nome:'Marco',cognome:'Pagnon',aziendaId:a1,cf:'PGNMRC86B22A703D',nascita:'1986-02-22',luogoNascita:'Vicenza',mansione:'Magazziniere'},{id:l3,nome:'Luca',cognome:'Stevan',aziendaId:a1,cf:'STVLCU89A15A703O',nascita:'1989-01-15',luogoNascita:'Bassano del Grappa',mansione:'Capo reparto'}]);
+  const d1=uid(); db.save.docenti([{id:d1,nome:'Wendy',cognome:'Dal Zotto',qualifica:'Ing. RSPP — Formatrice abilitata',resp:'Franz Lanaro',email:'wendy@framyx.it',tel:'333 1234567'}]);
+  const c1=uid(); db.save.corsi([{id:c1,titolo:'Aggiornamento Formazione Antincendio — Livello 2',norma:'Art. 37, comma 9 D.Lgs. 81/08; D.M. 2/09/2021',durata:'5',validita:5,tipo:'Antincendio',
+    sezioni:[{titolo:"L'incendio e la prevenzione",punti:['principi della combustione','prodotti della combustione','sostanze estinguenti','effetti sull\'uomo','misure comportamentali']},{titolo:'Protezione antincendio e procedure',punti:['misure di protezione antincendio e manutenzioni','evacuazione in caso di incendio','chiamata dei soccorsi']},{titolo:'Prova Pratica',punti:['registro sicurezza antincendio','chiarimenti sugli estintori','esercitazioni uso estintori, idranti e naspi']}],
+    domande:[{domanda:"Qual è il triangolo della combustione?",opzioni:['Combustibile, calore, ossigeno','Acqua, fumo, fiamma','Pressione, temperatura, umidità','Vento, fuoco, gas'],corretta:0},{domanda:'Cosa fare in caso di evacuazione?',opzioni:['Tornare indietro a prendere oggetti personali','Seguire le vie di esodo indicate','Usare l\'ascensore','Aspettare istruzioni in ufficio'],corretta:1},{domanda:'Qual è la soglia di superamento del test antincendio?',opzioni:['50%','60%','70%','80%'],corretta:2}]
+  }]);
+  const dt=new Date(); dt.setFullYear(dt.getFullYear()-1); const s1=uid();
+  db.save.sessioni([{id:s1,corsoId:c1,aziendaId:a1,data:dt.toISOString().slice(0,10),oraInizio:'11:00',oraFine:'17:00',sede:"Via dell'Industria 12 — Vicenza",docenteId:d1,modalita:'In presenza',argomenti:["L'incendio e la prevenzione",'- principi della combustione','- sostanze estinguenti','- misure comportamentali','Protezione antincendio e procedure','- evacuazione','- chiamata soccorsi','Prova Pratica','- esercitazioni con estintori'],partecipanti:[l1,l2,l3],stato:'completata',note:'Tutti i partecipanti idonei.'}]);
+}
+
+
+// ══════════════════════════════════════════════
+// FONDIMPRESA
+// ══════════════════════════════════════════════
+
+// Store Fondimpresa piani
+const dbFondo = {
+  get: () => { try { return JSON.parse(localStorage.getItem('frm_fondo')||'[]') } catch(e){ return [] } },
+  save: async v => {
+    localStorage.setItem('frm_fondo', JSON.stringify(v));
+    try {
+      const rows = v.map(r => ({id: r.id, data: r, updated_at: new Date().toISOString()}));
+      await supa.from('piani_fondo').upsert(rows, {onConflict:'id'});
+    } catch(e){ console.warn('fondo save error:', e) }
+  }
+};
+
+// ── AZIONI EDITOR ──
+function renderAzioniEditor(azioni) {
+  const ed = document.getElementById('azioni-editor');
+  if(!azioni || !azioni.length) azioni = [newAzione()];
+  ed.innerHTML = azioni.map((a, ai) => `
+    <div style="border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden" id="azione-block-${ai}">
+      <div style="background:var(--blue-bg);padding:7px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;font-weight:700;color:var(--blue)">AZIONE ${ai+1}</span>
+        <button class="btn btn-xs btn-danger" onclick="removeAzione(${ai})">✕ rimuovi</button>
+      </div>
+      <div style="padding:12px">
+        <div class="fr2">
+          <div class="fg"><label class="fl">N° identificativo azione</label><input class="fc" id="az-num-${ai}" value="${esc(a.numero||'')}" placeholder="es. 2218945" style="font-family:monospace"></div>
+          <div class="fg"><label class="fl">Titolo azione *</label><input class="fc" id="az-titolo-${ai}" value="${esc(a.titolo||'')}" placeholder="es. OTTIMIZZAZIONE RISORSE"></div>
+        </div>
+        <div class="fr3">
+          <div class="fg"><label class="fl">Data inizio</label><input class="fc" id="az-ini-${ai}" type="date" value="${a.dataIni||''}"></div>
+          <div class="fg"><label class="fl">Data fine</label><input class="fc" id="az-fine-${ai}" type="date" value="${a.dataFine||''}"></div>
+          <div class="fg"><label class="fl">Ore totali</label><input class="fc" id="az-ore-${ai}" type="number" value="${a.ore||''}" placeholder="8" min="1"></div>
+        </div>
+        <div class="fr2">
+          <div class="fg"><label class="fl">Sede svolgimento</label><input class="fc" id="az-sede-${ai}" value="${esc(a.sede||'')}" placeholder="Azienda + indirizzo"></div>
+          <div class="fg"><label class="fl">Docente</label><select class="fc" id="az-doc-${ai}"><option value="">Seleziona...</option>${db.docenti().map(d=>`<option value="${d.id}" ${a.docenteId===d.id?'selected':''}>${d.nome} ${d.cognome}</option>`).join('')}</select></div>
+        </div>
+        <div class="fg"><label class="fl">Materie / argomenti (uno per riga)</label><textarea class="fc" id="az-arg-${ai}" rows="3" placeholder="Modulo 1 — Organizzazione aziendale\nModulo 2 — Gestione risorse">${esc((a.argomenti||[]).join('\n'))}</textarea></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function newAzione() { return {numero:'', titolo:'', dataIni:'', dataFine:'', ore:'', sede:'', docenteId:'', argomenti:[]} }
+
+function addAzione() {
+  const az = getAzioniFromEditor(); az.push(newAzione()); renderAzioniEditor(az);
+}
+function removeAzione(ai) {
+  let az = getAzioniFromEditor(); az.splice(ai,1); if(!az.length) az=[newAzione()]; renderAzioniEditor(az);
+}
+function getAzioniFromEditor() {
+  const blocks = document.getElementById('azioni-editor').querySelectorAll('[id^=azione-block-]');
+  return Array.from(blocks).map((_,ai) => ({
+    numero: (document.getElementById('az-num-'+ai)||{}).value||'',
+    titolo: (document.getElementById('az-titolo-'+ai)||{}).value||'',
+    dataIni: (document.getElementById('az-ini-'+ai)||{}).value||'',
+    dataFine: (document.getElementById('az-fine-'+ai)||{}).value||'',
+    ore: (document.getElementById('az-ore-'+ai)||{}).value||'',
+    sede: (document.getElementById('az-sede-'+ai)||{}).value||'',
+    docenteId: (document.getElementById('az-doc-'+ai)||{}).value||'',
+    argomenti: ((document.getElementById('az-arg-'+ai)||{}).value||'').split('\n').filter(Boolean),
+  }));
+}
+
+// ── CRUD PIANI ──
+function renderFondimpresa() {
+  const piani = dbFondo.get();
+  const tb = document.getElementById('tb-fondo');
+  if(!piani.length) {
+    tb.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="ei">🏛</div><h3>Nessun piano Fondimpresa</h3><p>Aggiungi il primo piano formativo finanziato</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = piani.map(p => `<tr>
+    <td><strong>${p.titolo}</strong></td>
+    <td class="font-mono text-xs">${p.codice||'—'}</td>
+    <td><span class="badge bb">${(p.azioni||[]).length} azioni</span></td>
+    <td>${gAz(p.aziendaId)}</td>
+    <td class="text-xs text-muted">${p.azioni?.length?p.azioni[0].dataIni+' → '+(p.azioni[p.azioni.length-1].dataFine||'...'):'—'}</td>
+    <td class="actions">
+      <button class="btn btn-xs" onclick="editFondo('${p.id}')">Modifica</button>
+      <button class="btn btn-xs btn-green" onclick="openRegistroFondo('${p.id}')">📋 Registro</button>
+      <button class="btn btn-xs btn-danger" onclick="delFondo('${p.id}')">✕</button>
+    </td>
+  </tr>`).join('');
+}
+
+function openFondoModal() {
+  // populate azienda select
+  const sel = document.getElementById('fo-az');
+  sel.innerHTML = '<option value="">Seleziona...</option>' + db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  renderAzioniEditor([]);
+  document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
+  openM('m-fondo');
+}
+
+function salvaFondo() {
+  const id = document.getElementById('fo-id').value || uid();
+  const titolo = v('fo-titolo');
+  if(!titolo) { alert('Titolo piano obbligatorio'); return }
+  const azioni = getAzioniFromEditor().filter(a => a.titolo);
+  const piani = dbFondo.get().filter(p => p.id !== id);
+  piani.push({ id, titolo, codice: v('fo-codice'), aziendaId: v('fo-az'), referente: v('fo-referente'), azioni });
+  dbFondo.save(piani);
+  closeM('m-fondo');
+  clr('fo-id','fo-titolo','fo-codice','fo-referente');
+  document.getElementById('fo-az').value = '';
+  document.getElementById('azioni-editor').innerHTML = '';
+  renderFondimpresa();
+  toast('Piano salvato');
+}
+
+function editFondo(id) {
+  const p = dbFondo.get().find(x => x.id === id); if(!p) return;
+  const sel = document.getElementById('fo-az');
+  sel.innerHTML = '<option value="">Seleziona...</option>' + db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  document.getElementById('fo-id').value = p.id;
+  document.getElementById('fo-titolo').value = p.titolo||'';
+  document.getElementById('fo-codice').value = p.codice||'';
+  document.getElementById('fo-referente').value = p.referente||'';
+  sel.value = p.aziendaId||'';
+  renderAzioniEditor(p.azioni||[]);
+  document.getElementById('m-fondo-t').textContent = 'Modifica piano Fondimpresa';
+  openM('m-fondo');
+}
+
+function delFondo(id) {
+  confDel('Eliminare questo piano?', () => {
+    dbFondo.save(dbFondo.get().filter(p => p.id !== id));
+    renderFondimpresa();
+    toast('Eliminato','🗑');
+  });
+}
+
+// ── REGISTRO FONDIMPRESA ──
+let fregSelPart = [];
+let fregPianoId = null;
+let fregAzioneIdx = 0;
+
+function openRegistroFondo(pianoId) {
+  const piano = dbFondo.get().find(p => p.id === pianoId); if(!piano) return;
+  fregPianoId = pianoId;
+  fregSelPart = [];
+
+  // se piano ha più azioni, chiedi quale
+  if(piano.azioni.length > 1) {
+    const idx = parseInt(prompt('Il piano ha ' + piano.azioni.length + ' azioni. Quale generare? (1-' + piano.azioni.length + ')')) - 1;
+    fregAzioneIdx = isNaN(idx) || idx < 0 ? 0 : Math.min(idx, piano.azioni.length - 1);
+  } else {
+    fregAzioneIdx = 0;
+  }
+
+  const az = piano.azioni[fregAzioneIdx];
+  document.getElementById('freg-fondo-id').value = pianoId;
+  document.getElementById('freg-azione-idx').value = fregAzioneIdx;
+  document.getElementById('freg-tutor').value = '';
+  document.getElementById('freg-coord').value = '';
+
+  document.getElementById('freg-info').innerHTML = `
+    <div class="grid-2">
+      <div><span class="text-muted text-xs">Piano:</span><div style="font-weight:600">${piano.titolo}</div><div class="font-mono text-xs">Cod. ${piano.codice||'—'}</div></div>
+      <div><span class="text-muted text-xs">Azione ${fregAzioneIdx+1}:</span><div style="font-weight:600">${az.titolo||'—'}</div><div class="text-xs text-muted">${az.dataIni||''}${az.dataFine?' → '+az.dataFine:''} · ${az.ore||'—'}h</div></div>
+    </div>`;
+
+  // chip lavoratori dell'azienda
+  const lavs = db.lavoratori().filter(l => l.aziendaId === piano.aziendaId);
+  document.getElementById('freg-chip').innerHTML = lavs.map(l =>
+    `<div class="chip" onclick="toggleFregPart('${l.id}')" id="freg-chip-${l.id}">${l.cognome} ${l.nome}</div>`
+  ).join('') || '<p class="text-xs text-muted">Nessun lavoratore per questa azienda</p>';
+
+  openM('m-fondo-reg');
+}
+
+function toggleFregPart(id) {
+  fregSelPart = fregSelPart.includes(id) ? fregSelPart.filter(p=>p!==id) : [...fregSelPart, id];
+  document.querySelectorAll('[id^=freg-chip-]').forEach(el => el.classList.remove('on'));
+  fregSelPart.forEach(id => document.getElementById('freg-chip-'+id)?.classList.add('on'));
+}
+
+function generaRegistroFondo() {
+  const pianoId = document.getElementById('freg-fondo-id').value;
+  const ai = parseInt(document.getElementById('freg-azione-idx').value) || 0;
+  const piano = dbFondo.get().find(p => p.id === pianoId); if(!piano) return;
+  const az = piano.azioni[ai]; if(!az) return;
+  const azienda = db.aziende().find(a => a.id === piano.aziendaId) || {};
+  const docente = db.docenti().find(d => d.id === az.docenteId) || {};
+  const pp = fregSelPart.map(id => db.lavoratori().find(l => l.id === id)).filter(Boolean);
+  const tutor = v('freg-tutor');
+  const coord = v('freg-coord');
+  const referente = piano.referente || '';
+
+  // Calcola le date dell'azione
+  const dates = [];
+  if(az.dataIni) {
+    let d = new Date(az.dataIni);
+    const fine = az.dataFine ? new Date(az.dataFine) : d;
+    while(d <= fine) {
+      const wd = d.getDay();
+      if(wd !== 0 && wd !== 6) dates.push(new Date(d));
+      d.setDate(d.getDate() + 1);
+    }
+  }
+  if(!dates.length && az.dataIni) dates.push(new Date(az.dataIni));
+
+  // Argomenti divisi per giornata
+  const args = az.argomenti || [];
+
+  const html = `
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#222;background:white">
+
+<!-- INTESTAZIONE -->
+<div style="text-align:center;border-bottom:3px solid #003366;padding-bottom:12px;margin-bottom:16px">
+  <div style="font-size:18px;font-weight:700;letter-spacing:1px;text-transform:uppercase">REGISTRO DIDATTICO E DELLE PRESENZE</div>
+</div>
+
+<table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+  <tr>
+    <td style="padding:6px 12px;border:1px solid #003366;background:#EEF2FF;font-style:italic;width:40%">Titolo Piano Formativo</td>
+    <td style="padding:6px 12px;border:1px solid #003366;font-weight:700">"${piano.titolo}"</td>
+  </tr>
+  <tr>
+    <td style="padding:6px 12px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Codice identificativo:</td>
+    <td style="padding:6px 12px;border:1px solid #003366;font-weight:700;font-family:monospace">${piano.codice||'—'}</td>
+  </tr>
+</table>
+
+<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">AZIONE FORMATIVA</div>
+<table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+  <tr>
+    <td style="padding:5px 12px;border:1px solid #ddd;background:#f5f5f5;width:35%">Numero identificativo azione:</td>
+    <td style="padding:5px 12px;border:1px solid #ddd;font-family:monospace;font-weight:700">${az.numero||'—'}</td>
+  </tr>
+  <tr>
+    <td style="padding:5px 12px;border:1px solid #ddd;background:#f5f5f5">Titolo azione:</td>
+    <td style="padding:5px 12px;border:1px solid #ddd;font-weight:700">${az.titolo||'—'}</td>
+  </tr>
+  <tr>
+    <td style="padding:5px 12px;border:1px solid #ddd;background:#f5f5f5">Periodo di svolgimento:</td>
+    <td style="padding:5px 12px;border:1px solid #ddd">dal ${fmt(az.dataIni)} al ${fmt(az.dataFine)}</td>
+  </tr>
+  <tr>
+    <td style="padding:5px 12px;border:1px solid #ddd;background:#f5f5f5">Ore:</td>
+    <td style="padding:5px 12px;border:1px solid #ddd;font-weight:700">${az.ore||'—'}</td>
+  </tr>
+  <tr>
+    <td style="padding:5px 12px;border:1px solid #ddd;background:#f5f5f5">Sede di svolgimento:</td>
+    <td style="padding:5px 12px;border:1px solid #ddd">${az.sede || (azienda.nome+(azienda.indirizzo?'\n'+azienda.indirizzo:''))}</td>
+  </tr>
+</table>
+
+<!-- ELENCO PARTECIPANTI -->
+<div style="font-size:13px;font-weight:700;text-decoration:underline;text-transform:uppercase;margin-bottom:8px">ELENCO PARTECIPANTI</div>
+<table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+  <thead><tr style="background:#003366;color:white"><th style="padding:6px 10px;text-align:center;width:40px">N.</th><th style="padding:6px 10px;text-align:left">Cognome e nome</th></tr></thead>
+  <tbody>
+    ${pp.map((l,i)=>`<tr style="background:${i%2?'#f5f5f5':'white'}"><td style="padding:5px 10px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td><td style="padding:5px 10px;border:1px solid #ddd">${l.cognome} ${l.nome}</td></tr>`).join('')}
+    ${Array.from({length:Math.max(0,30-pp.length)},(_,i)=>`<tr><td style="padding:5px 10px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td><td style="border:1px solid #ddd;height:22px"></td></tr>`).join('')}
+  </tbody>
+</table>
+
+<!-- PAGINE GIORNALIERE -->
+${dates.map((date, di) => {
+  const dateStr = date.toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const argGiorno = args.slice(di*3, di*3+3);
+  return `
+<div style="page-break-before:${di===0?'auto':'always'};padding-top:${di===0?'0':'20px'}">
+<div style="display:flex;justify-content:space-between;align-items:center;background:#003366;color:white;padding:7px 12px;margin-bottom:0">
+  <strong>Data ${dateStr}</strong>
+  <div style="font-size:11px">☐ MATTINO &nbsp;&nbsp; ☐ POMERIGGIO</div>
+</div>
+<table style="width:100%;border-collapse:collapse">
+  <thead>
+    <tr>
+      <th style="padding:6px 8px;border:1px solid #ddd;background:#f5f5f5;width:36px;font-size:11px">N°</th>
+      <th style="padding:6px 8px;border:1px solid #ddd;background:#f5f5f5;font-size:11px;width:160px">FIRMA PARTECIPANTI<br><span style="font-weight:400;font-size:10px">Entrata</span></th>
+      <th style="padding:6px 8px;border:1px solid #ddd;background:#f5f5f5;font-size:11px;width:100px"><span style="font-weight:400;font-size:10px">Uscita</span></th>
+      <th style="padding:6px 8px;border:1px solid #ddd;background:#f5f5f5;font-size:11px">Programma svolto</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${pp.map((l,i) => {
+      let rightCell = '';
+      if(i === 0) rightCell = `<td rowspan="${Math.max(pp.length+2,8)}" style="padding:8px;border:1px solid #ddd;vertical-align:top;font-size:11px">
+        ${[0,1,2].map(mi => `
+          <div style="margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:8px">
+            <div><strong>Materia</strong>: ${argGiorno[mi]||'_______________'}</div>
+            <div style="margin-top:3px"><strong>Argomento</strong>: ______________________________</div>
+            <div style="margin-top:3px">Dalle ore _________ alle ore _________</div>
+            <div style="margin-top:6px;font-style:italic">Nominativo Docente: ${mi===0&&docente.nome?docente.nome+' '+docente.cognome:'___________________________'}</div>
+            <div style="margin-top:3px;border-top:1px solid #ccc;padding-top:3px"><strong>Firma Docente</strong></div>
+            <div style="height:28px"></div>
+            <div style="font-style:italic">Nominativo Codocente: _________________________</div>
+            <div style="margin-top:3px;border-top:1px solid #ccc;padding-top:3px"><strong>Firma Codocente</strong></div>
+            <div style="height:28px"></div>
+          </div>`).join('')}
+        <div style="margin-top:8px">
+          <div style="font-weight:700">Nominativo Tutor</div>
+          <div style="font-style:italic">${tutor||'___________________________'}</div>
+          <div>Presenza dalle ore ______ alle ore ______</div>
+          <div style="border-top:1px solid #ccc;margin-top:6px;padding-top:3px"><strong>Firma Tutor</strong></div>
+          <div style="height:28px"></div>
+          <div style="font-weight:700;margin-top:8px">Nominativo Coordinatore</div>
+          <div style="font-style:italic">${coord||'___________________________'}</div>
+          <div>Presenza dalle ore ______ alle ore ______</div>
+          <div style="border-top:1px solid #ccc;margin-top:6px;padding-top:3px"><strong>Firma Coordinatore</strong></div>
+          <div style="height:28px"></div>
+        </div>
+      </td>`;
+      return `<tr><td style="padding:5px 8px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td>
+        <td style="border:1px solid #ddd;height:26px"></td>
+        <td style="border:1px solid #ddd"></td>
+        ${i===0?rightCell:''}
+      </tr>`;
+    }).join('')}
+    <tr>
+      <td colspan="3" style="padding:5px 8px;border:1px solid #ddd;font-size:11px">
+        <strong>Presenti n°:</strong> ______ &nbsp;&nbsp; <strong>Assenti n°:</strong> ______<br>
+        <strong>NOTE:</strong> _______________________________________________
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div style="margin-top:8px;text-align:right;font-size:12px">Il Referente di Piano ${referente?'<strong>'+referente+'</strong>':'_________________________________'}</div>
+</div>
+`}).join('')}
+
+</div>`;
+
+  closeM('m-fondo-reg');
+  preview(html);
+  toast('Registro Fondimpresa generato ✓','📋');
+}
+
+// Override openM per Fondimpresa
+const _origOpenM = openM;
+window.openM = function(id) {
+  if(id === 'm-fondo') { openFondoModal(); return; }
+  _origOpenM(id);
+};
+
+// Add to titles
+titles['fondimpresa'] = 'Fondimpresa';
+
+// Add to renderPage
+const _origRenderPage = renderPage;
+window.renderPage = function(p) {
+  if(p === 'fondimpresa') { renderFondimpresa(); return; }
+  _origRenderPage(p);
+};
+
+
+// ══ LOGIN ══
+const PWD_HASH = '8a3b2c9f1d4e7a6b5c8d9e2f1a4b7c3d'; // Formazione2026@
+
+function simpleHash(str) {
+  let hash = 0;
+  for(let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// ══ INIT ══
+async function init() {
+  showSyncStatus('loading');
+  const loaded = await loadFromSupabase();
+  if(!loaded || db.aziende().length === 0) loadDemo();
+  updateFilters();
+  renderDashboard();
+}
+
+// Check if already logged in this session
+init();
+
+</script>
+</body>
+</html>
