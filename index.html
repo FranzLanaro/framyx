@@ -325,7 +325,7 @@ textarea.fc{min-height:68px;resize:vertical}
     <!-- ═══ AZIENDE ═══ -->
     <div class="page" id="page-aziende">
       <div class="card"><div class="card-header"><span class="card-title">Elenco aziende</span><div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" onclick="openM('m-azienda')">+ Nuova azienda</button><button class="btn btn-danger btn-sm" onclick="delSelAz()" id="btn-del-sel-az" style="display:none">🗑 Elimina selezionate</button><button class="btn btn-danger btn-sm" onclick="delAllAz()">🗑 Elimina tutte</button></div></div>
-      <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-az-all" onchange="toggleAllAz(this)"></th><th>Ragione sociale</th><th>P.IVA</th><th>Referente</th><th>Sede</th><th>Lavoratori</th><th></th></tr></thead><tbody id="tb-aziende"></tbody></table></div>
+      <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-az-all" onchange="toggleAllAz(this)"></th><th>Ragione sociale</th><th>P.IVA</th><th>Referente</th><th>Via / Indirizzo</th><th>Città</th><th>Lavoratori</th><th></th></tr></thead><tbody id="tb-aziende"></tbody></table></div>
     </div>
 
     <!-- ═══ LAVORATORI ═══ -->
@@ -374,11 +374,27 @@ textarea.fc{min-height:68px;resize:vertical}
           <div class="card" style="border-top:3px solid var(--blue)"><div class="card-header"><span class="card-title">📝 Test verifica</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Questionario dal corso — uno per partecipante.</p><button class="btn btn-blue btn-sm" onclick="generaTest()">Genera test</button></div></div>
         </div>
         <div class="card mt-2" style="border-top:3px solid var(--orange)"><div class="card-header"><span class="card-title">📊 Verbale sessione</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Verbale con argomenti, presenti e nota allegato firme.</p><button class="btn btn-orange btn-sm" onclick="generaVerbale()">Genera verbale</button></div></div>
-        <div class="card mt-2" style="border-top:3px solid #7C3AED"><div class="card-header"><span class="card-title">✉️ Lettera di incarico docente</span></div><div style="padding:14px">
-            <p class="text-sm text-muted" style="margin-bottom:10px">Lettera formale di incarico al docente con dettagli corso, azienda, orari e sede.</p>
+        <div class="card mt-2" style="border-top:3px solid #7C3AED"><div class="card-header"><span class="card-title">✉️ Lettere di incarico docente</span></div><div style="padding:14px">
+            <p class="text-sm text-muted" style="margin-bottom:10px">Genera lettere formali di incarico per formazione o altre attività.</p>
+            <div class="fr2" style="margin-bottom:8px">
+              <div class="fg"><label class="fl" style="font-size:11px">Tipo lettera</label>
+                <select class="fc" id="lett-tipo" onchange="onLettTipoChange()">
+                  <option value="formazione">📚 Incarico formazione (corso)</option>
+                  <option value="consulenza">💼 Incarico consulenza</option>
+                  <option value="sopralluogo">🔍 Incarico sopralluogo / audit</option>
+                  <option value="rspp">🦺 Incarico RSPP esterno</option>
+                  <option value="custom">✏️ Incarico personalizzato</option>
+                </select>
+              </div>
+              <div class="fg"><label class="fl" style="font-size:11px">Oggetto personalizzato</label><input class="fc" id="lett-oggetto" placeholder="es. Consulenza sicurezza sul lavoro" style="display:none"></div>
+            </div>
             <div class="fr2" style="margin-bottom:8px">
               <div class="fg"><label class="fl" style="font-size:11px">Compenso (opzionale)</label><input class="fc" id="lett-compenso" placeholder="es. € 300,00 + IVA"></div>
               <div class="fg"><label class="fl" style="font-size:11px">Rif. contratto / ordine</label><input class="fc" id="lett-rif" placeholder="es. RIF-2025-001"></div>
+            </div>
+            <div class="fg" style="margin-bottom:8px" id="lett-desc-box">
+              <label class="fl" style="font-size:11px">Descrizione attività (opzionale)</label>
+              <textarea class="fc" id="lett-desc" rows="2" placeholder="es. Periodo: gennaio-dicembre 2025 — Attività: sopralluogo mensile, redazione DVR..." style="resize:vertical"></textarea>
             </div>
             <button class="btn btn-sm" style="background:#7C3AED;color:white" onclick="generaLettIncarico()">✉️ Genera lettera incarico</button>
           </div></div>
@@ -424,7 +440,10 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="card">
           <div class="card-header"><span class="card-title">📥 Importa clienti da Excel/CSV</span></div>
           <div style="padding:16px">
-            <p class="text-sm text-muted" style="margin-bottom:12px">Il file deve avere colonne: <strong>Ragione Sociale, P.IVA, Referente, Tel, Email, Indirizzo, Comune</strong> (intestazione riga 1).</p>
+            <p class="text-sm text-muted" style="margin-bottom:8px">Colonne: <strong>Ragione Sociale, P.IVA, Referente, Tel, Email, Indirizzo, Comune</strong>.</p>
+            <div style="margin-bottom:10px">
+              <button class="btn btn-xs btn-primary" onclick="scaricaTemplateAziende()">⬇️ Scarica template CSV</button>
+            </div>
             <div class="import-box" id="imp-az-box" onclick="document.getElementById('imp-az-file').click()" ondragover="e=>{e.preventDefault();this.classList.add('drag')}" ondragleave="this.classList.remove('drag')" ondrop="dropFile(event,'az')">
               <div style="font-size:28px;margin-bottom:8px">📊</div>
               <div style="font-weight:600;margin-bottom:4px">Clicca o trascina il file Excel/CSV</div>
@@ -437,7 +456,10 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="card">
           <div class="card-header"><span class="card-title">👷 Importa lavoratori da Excel/CSV</span></div>
           <div style="padding:16px">
-            <p class="text-sm text-muted" style="margin-bottom:12px">Colonne: <strong>Cognome, Nome, Codice Fiscale, Data Nascita, Azienda (nome), Mansione</strong>.</p>
+            <p class="text-sm text-muted" style="margin-bottom:8px">Colonne: <strong>Cognome, Nome, Codice Fiscale, Data Nascita, Azienda, Mansione</strong>.</p>
+            <div style="margin-bottom:10px">
+              <button class="btn btn-xs btn-primary" onclick="scaricaTemplateLavoratori()">⬇️ Scarica template CSV</button>
+            </div>
             <div class="import-box" onclick="document.getElementById('imp-lav-file').click()">
               <div style="font-size:28px;margin-bottom:8px">👷</div>
               <div style="font-weight:600;margin-bottom:4px">Clicca o trascina il file</div>
@@ -971,7 +993,7 @@ function importAziendeFile(f){
       const nome = get(row,'ragione') || get(row,'nome') || get(row,'azienda');
       if(!nome) return;
       if(!az.find(a=>a.nome.toLowerCase()===nome.toLowerCase())){
-        az.push({ id:uid(), nome, piva:get(row,'p.iva')||get(row,'piva')||get(row,'iva'), referente:get(row,'referente')||get(row,'contatto'), tel:get(row,'tel'), email:get(row,'email')||get(row,'mail'), indirizzo:get(row,'indirizzo')||get(row,'via'), comune:get(row,'comune')||get(row,'città')||get(row,'citta') });
+        az.push({ id:uid(), nome:normalizzaNome(nome), piva:get(row,'p.iva')||get(row,'piva')||get(row,'iva'), referente:normalizzaNome(get(row,'referente')||get(row,'contatto')), tel:get(row,'tel'), email:get(row,'email')||get(row,'mail'), indirizzo:toTitleCase(get(row,'indirizzo')||get(row,'via')), comune:toTitleCase(get(row,'comune')||get(row,'città')||get(row,'citta')) });
         added++;
       }
     });
@@ -990,19 +1012,43 @@ function importLavoratoriFile(f){
     const rows = parseCSVorXLSX(e.target.result, f.name);
     if(!rows) return;
     const header = rows[0].map(h=>(h||'').toString().toLowerCase().trim());
-    const get = (row,k) => { const i=header.findIndex(h=>h.includes(k)); return i>=0?String(row[i]||'').trim():'' };
+    // Smart header detection: exact match first, then partial
+    const getCol = (k, exactMatches, partialMatches) => {
+      let i = header.findIndex(h => exactMatches.some(e => h===e));
+      if(i<0) i = header.findIndex(h => partialMatches.some(p => h.includes(p)));
+      return i;
+    };
+    const iNome     = getCol('nome',     ['nome','name','first name','firstname'], ['nome']);
+    const iCognome  = getCol('cognome',  ['cognome','surname','last name','lastname'], ['cognome','surname']);
+    const iCF       = getCol('cf',       ['cf','c.f.','codice fiscale','tax code'], ['fiscal','codice','c.f.']);
+    const iNascita  = getCol('nascita',  ['data nascita','data di nascita','nascita','birthdate'], ['nasc','birth','nato']);
+    const iLuogo    = getCol('luogo',    ['luogo nascita','luogo di nascita','luogo'], ['luogo']);
+    const iMansione = getCol('mansione', ['mansione','ruolo','qualifica','job title'], ['mansione','ruolo','qualifica']);
+    const iAzienda  = getCol('azienda',  ['azienda','ditta','società','company','cliente'], ['aziend','societ','ditta','company','client']);
+    const iAteco    = getCol('ateco',    ['ateco','codice ateco'], ['ateco']);
+    const iEmail    = getCol('email',    ['email','mail','e-mail'], ['email','mail']);
+    const get = (row,i) => i>=0?String(row[i]||'').trim():'';
     const lav = db.lavoratori(); const az = db.aziende();
-    let added=0;
+    let added=0, skip=0;
     rows.slice(1).forEach(row => {
-      const nome = get(row,'nome'); const cognome = get(row,'cognome');
-      if(!nome&&!cognome) return;
-      const azNome = get(row,'azienda')||get(row,'ditta')||get(row,'società');
-      const azObj = az.find(a=>a.nome.toLowerCase().includes(azNome.toLowerCase())) || az[0];
-      lav.push({ id:uid(), nome, cognome, cf:(get(row,'codice')||get(row,'c.f.')||get(row,'cf')).toUpperCase(), nascita:get(row,'nascita')||get(row,'nato')||get(row,'data'), luogoNascita:get(row,'luogo')||'', aziendaId:azObj?.id||'', mansione:get(row,'mansione')||get(row,'qualifica')||'', ateco:get(row,'ateco')||'', email:get(row,'email')||'' });
+      // Handle "Nome Completo" in single column
+      let nome = get(row, iNome);
+      let cognome = get(row, iCognome);
+      // If only one of the two found and it contains a space, try to split
+      if(nome && !cognome && nome.includes(' ')){ const p=nome.trim().split(/\s+/); cognome=p[0]; nome=p.slice(1).join(' '); }
+      if(cognome && !nome && cognome.includes(' ')){ const p=cognome.trim().split(/\s+/); nome=p[p.length-1]; cognome=p.slice(0,-1).join(' '); }
+      if(!nome && !cognome){ skip++; return; }
+      const azNome = get(row, iAzienda);
+      const azObj = azNome ? az.find(a=>a.nome.toLowerCase().includes(azNome.toLowerCase())) : null;
+      const cf = get(row, iCF).toUpperCase();
+      // Skip true duplicates (same CF or same nome+cognome+azienda)
+      const dup = lav.find(l=> (cf && l.cf && l.cf===cf) || (l.nome.toLowerCase()===nome.toLowerCase() && l.cognome.toLowerCase()===cognome.toLowerCase() && l.aziendaId===(azObj?.id||'')));
+      if(dup){ skip++; return; }
+      lav.push({ id:uid(), nome:normalizzaNome(nome), cognome:normalizzaNome(cognome), aziendaId:azObj?.id||'', cf, nascita:get(row,iNascita), luogoNascita:toTitleCase(get(row,iLuogo)), mansione:toTitleCase(get(row,iMansione)), ateco:get(row,iAteco), email:get(row,iEmail) });
       added++;
     });
     db.save.lavoratori(lav);
-    document.getElementById('imp-lav-result').innerHTML = `<span style="color:var(--green);font-weight:600">✅ Importati ${added} lavoratori</span>`;
+    document.getElementById('imp-lav-result').innerHTML = `<span style="color:var(--green);font-weight:600">✅ Importati ${added} lavoratori${skip?' ('+skip+' saltati: duplicati o righe vuote)':''}</span>`;
     renderLavoratori(); renderDashboard();
     toast(`${added} lavoratori importati`,'👷');
   };
@@ -1012,18 +1058,31 @@ function importLavoratoriFile(f){
 
 function parseCSVorXLSX(data, filename){
   if(filename.endsWith('.csv')){
-    return data.split('\n').filter(r=>r.trim()).map(r=>r.split(/[,;]/).map(c=>c.replace(/^"|"$/g,'').trim()));
+    // RFC-4180 compliant parser — handles quoted fields containing commas/semicolons
+    const parseCSV = (text, sep) => {
+      const rows = []; let row = [], cell = '', inQ = false, i = 0;
+      text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+      while(i < text.length){
+        const c = text[i];
+        if(inQ){
+          if(c==='"' && text[i+1]==='"'){ cell+='"'; i+=2; continue; }
+          if(c==='"'){ inQ=false; i++; continue; }
+          cell+=c; i++; continue;
+        }
+        if(c==='"'){ inQ=true; i++; continue; }
+        if(c===sep){ row.push(cell.trim()); cell=''; i++; continue; }
+        if(c==='\n'){ row.push(cell.trim()); if(row.some(x=>x)) rows.push(row); row=[]; cell=''; i++; continue; }
+        cell+=c; i++;
+      }
+      if(cell||row.length){ row.push(cell.trim()); if(row.some(x=>x)) rows.push(row); }
+      return rows;
+    };
+    const firstLine=(data.split(/\r?\n/)[0])||'';
+    const sep=(firstLine.split(';').length>=firstLine.split(',').length)?';':',';
+    return parseCSV(data, sep);
   }
-  // Basic XLSX binary parsing — tries to extract text from XML parts
   try {
-    // For simple cases, look for shared strings and sheet data
-    const str = typeof data === 'string' ? data : '';
-    // Find all cell values — quick & dirty extraction
-    const cells = [];
-    let curRow = [];
-    const matches = str.matchAll(/<c [^>]*><v>([^<]*)<\/v><\/c>|<c [^>]*><is><t>([^<]*)<\/t><\/is><\/c>|<t>([^<]*)<\/t>/g);
-    for(const m of matches){ curRow.push(m[1]||m[2]||m[3]||'') }
-    // Not reliable for xlsx — show message
+    const str=typeof data==='string'?data:'';
     toast('Per Excel usa "Salva come CSV" e reimporta. Il CSV funziona perfettamente.','ℹ️');
     return null;
   } catch(e){ return null }
@@ -1211,12 +1270,12 @@ function getTestFromEditor(){
 function renderAziende(){
   const az=db.aziende(), lav=db.lavoratori(), tb=document.getElementById('tb-aziende');
   if(!az.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">🏢</div><h3>Nessuna azienda</h3><p>Aggiungi o importa da Excel</p></div></td></tr>';return}
-  tb.innerHTML=az.map(a=>`<tr><td><input type="checkbox" class="chk-az" value="${a.id}" onchange="updateSelAz()"></td><td><strong>${a.nome}</strong></td><td class="font-mono text-xs">${a.piva||'—'}</td><td>${a.referente||'—'}</td><td class="text-sm text-muted">${a.comune||a.indirizzo||'—'}</td><td><span class="badge bb">${lav.filter(l=>l.aziendaId===a.id).length}</span></td><td class="actions"><button class="btn btn-xs" onclick="editAzienda('${a.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delAzienda('${a.id}')">✕</button></td></tr>`).join('')
+  tb.innerHTML=az.map(a=>`<tr><td><input type="checkbox" class="chk-az" value="${a.id}" onchange="updateSelAz()"></td><td><strong>${a.nome}</strong></td><td class="font-mono text-xs">${a.piva||'—'}</td><td>${a.referente||'—'}</td><td class="text-sm text-muted">${a.indirizzo||'—'}</td><td class="text-sm text-muted">${a.comune||'—'}</td><td><span class="badge bb">${lav.filter(l=>l.aziendaId===a.id).length}</span></td><td class="actions"><button class="btn btn-xs" onclick="editAzienda('${a.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delAzienda('${a.id}')">✕</button></td></tr>`).join('')
 }
 function salvaAzienda(){
   const id=v('az-id')||uid(), nome=v('az-nome'); if(!nome){alert('Ragione sociale obbligatoria');return}
   const az=db.aziende().filter(a=>a.id!==id);
-  az.push({id,nome,piva:v('az-piva'),referente:v('az-referente'),tel:v('az-tel'),email:v('az-email'),indirizzo:v('az-indirizzo'),comune:v('az-comune'),note:v('az-note')});
+  az.push({id,nome:normalizzaNome(v('az-nome')),piva:v('az-piva'),referente:normalizzaNome(v('az-referente')),tel:v('az-tel'),email:v('az-email'),indirizzo:toTitleCase(v('az-indirizzo')),comune:toTitleCase(v('az-comune')),note:v('az-note')});
   db.save.aziende(az); closeM('m-azienda'); clr('az-id','az-nome','az-piva','az-referente','az-tel','az-email','az-indirizzo','az-comune','az-note'); document.getElementById('m-azienda-t').textContent='Nuova azienda';
   renderAziende(); updateFilters(); renderDashboard(); toast('Azienda salvata');
 }
@@ -1234,7 +1293,7 @@ function renderLavoratori(){
   if(!lav.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">👷</div><h3>Nessun lavoratore</h3></div></td></tr>';return}
   tb.innerHTML=lav.map(l=>`<tr><td><input type="checkbox" class="chk-lav" value="${l.id}" onchange="updateSelLav()"></td><td><strong>${l.cognome}</strong></td><td>${l.nome}</td><td>${gAz(l.aziendaId)}</td><td class="font-mono text-xs">${l.cf||'—'}</td><td class="text-sm">${l.mansione||'—'}</td><td class="actions"><button class="btn btn-xs" onclick="editLav('${l.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delLav('${l.id}')">✕</button></td></tr>`).join('')
 }
-function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); lav.push({id,nome,cognome,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:v('lav-luogo'),mansione:v('lav-mansione'),ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato') }
+function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); const _nome=normalizzaNome(v('lav-nome')),_cog=normalizzaNome(v('lav-cognome')),_luogo=normalizzaNome(v('lav-luogo')),_mans=normalizzaNome(v('lav-mansione')); lav.push({id,nome:_nome,cognome:_cog,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:_luogo,mansione:_mans,ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato') }
 function editLav(id){ const l=db.lavoratori().find(x=>x.id===id); if(!l) return; popLavAz(); sv({'lav':{id:l.id,nome:l.nome,cognome:l.cognome,cf:l.cf||'',nascita:l.nascita||'',luogo:l.luogoNascita||'',mansione:l.mansione||'',ateco:l.ateco||'',email:l.email||''}}); document.getElementById('lav-az').value=l.aziendaId; document.getElementById('m-lav-t').textContent='Modifica lavoratore'; openM('m-lavoratore') }
 function delLav(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('lavoratori',_id); db.save.lavoratori(db.lavoratori().filter(l=>l.id!==id)); renderLavoratori(); toast('Eliminato','🗑') }) }
 function delAllLav(){ const lav=db.lavoratori(); if(!lav.length){toast('Nessun lavoratore da eliminare','ℹ️');return} confDel(`Eliminare tutti i ${lav.length} lavoratori?`, async ()=>{ await Promise.all(lav.map(l=>supaDelete('lavoratori',l.id))); db.save.lavoratori([]); renderLavoratori(); toast(`${lav.length} lavoratori eliminati`,'🗑') }) }
@@ -1305,8 +1364,8 @@ function importStoricoFile(f){
     if(!rows||rows.length<2){ document.getElementById('imp-stor-result').innerHTML=`<span style="color:var(--red)">❌ File vuoto o non leggibile. Usa formato CSV.</span>`; return; }
     const hdr=rows[0].map(h=>(h||'').toString().toLowerCase().trim());
     const ci={
-      cognome:  hdr.findIndex(h=>h.includes('cognome')||h==='surname'||h==='last'),
-      nome:     hdr.findIndex(h=>h==='nome'||h==='name'||h==='first'||h.includes('nome')),
+      cognome:  hdr.findIndex(h=>h==='cognome'||h==='surname'||h==='last name'||h==='lastname'||h.includes('cognome')),
+      nome:     hdr.findIndex(h=>h==='nome'||h==='name'||h==='first'||h==='first name'||h==='firstname'),
       cf:       hdr.findIndex(h=>h.includes('fiscal')||h.includes('codice')||h==='cf'),
       nascita:  hdr.findIndex(h=>h.includes('nasc')||h.includes('birth')||h.includes('nato')),
       mansione: hdr.findIndex(h=>h.includes('mansione')||h.includes('ruolo')||h.includes('qualifica')||h.includes('posizione')),
@@ -1352,8 +1411,8 @@ function importStoricoFile(f){
 
     Object.values(sessMap).forEach(sg=>{
       // --- Azienda ---
-      let az=aziende.find(a=>a.nome.toLowerCase()===sg.azNome.toLowerCase());
-      if(!az&&sg.azNome){ az={id:uid(),nome:sg.azNome,piva:'',referente:'',tel:'',email:'',indirizzo:'',comune:'',note:''}; aziende.push(az); cntAz++; }
+      let az=sg.azNome?aziende.find(a=>a.nome.toLowerCase()===sg.azNome.toLowerCase()):null;
+      if(!az&&sg.azNome){ az={id:uid(),nome:normalizzaNome(sg.azNome),piva:'',referente:'',tel:'',email:'',indirizzo:'',comune:'',note:''}; aziende.push(az); cntAz++; }
       const azId=az?az.id:'';
 
       // --- Corso ---
@@ -1371,8 +1430,8 @@ function importStoricoFile(f){
       // --- Lavoratori ---
       sg.lavoratori.forEach(lRaw=>{
         if(!lRaw.cognome) return;
-        let lav=lavoratori.find(l=>l.cognome.toLowerCase()===lRaw.cognome.toLowerCase()&&((!lRaw.nome)||l.nome.toLowerCase()===lRaw.nome.toLowerCase()));
-        if(!lav){ lav={id:uid(),nome:lRaw.nome,cognome:lRaw.cognome,aziendaId:azId,cf:lRaw.cf,nascita:lRaw.nascita,luogoNascita:'',mansione:lRaw.mansione,ateco:'',email:''}; lavoratori.push(lav); cntLav++; }
+        let lav=lavoratori.find(l=>(lRaw.cf&&l.cf&&l.cf===lRaw.cf)||(l.cognome.toLowerCase()===lRaw.cognome.toLowerCase()&&((!lRaw.nome)||l.nome.toLowerCase()===lRaw.nome.toLowerCase())));
+        if(!lav){ lav={id:uid(),nome:normalizzaNome(lRaw.nome),cognome:normalizzaNome(lRaw.cognome),aziendaId:azId,cf:lRaw.cf,nascita:lRaw.nascita,luogoNascita:'',mansione:toTitleCase(lRaw.mansione),ateco:'',email:''}; lavoratori.push(lav); cntLav++; }
         if(!sess.partecipanti.includes(lav.id)){ sess.partecipanti.push(lav.id); cntPart++; }
       });
     });
@@ -1384,6 +1443,25 @@ function importStoricoFile(f){
     toast('Storico importato ✅','📅');
   };
   if(f.name.endsWith('.csv')) reader.readAsText(f,'UTF-8'); else reader.readAsBinaryString(f);
+}
+
+function scaricaTemplateAziende(){
+  const csv='Ragione Sociale;P.IVA;Referente;Tel;Email;Indirizzo;Comune\n'+
+    'Acme Srl;01234567890;Mario Rossi;0444 123456;info@acme.it;Via Roma, 10;Vicenza (VI)\n'+
+    'Beta Spa;09876543210;Luca Bianchi;0445 987654;hr@beta.it;Via Industria, 5;Bassano del Grappa (VI)\n'+
+    'Gamma Snc;;Anna Verdi;;info@gamma.it;Via Venezia, 22;Padova (PD)\n';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='template_clienti.csv'; a.click();
+}
+
+function scaricaTemplateLavoratori(){
+  const csv='Cognome;Nome;Codice Fiscale;Data Nascita;Azienda;Mansione;Email\n'+
+    'Rossi;Mario;RSSMRA80A01H501U;1980-01-01;Acme Srl;Operaio saldatore;mario.rossi@acme.it\n'+
+    'Bianchi;Luca;BNCLCU85B22L840D;1985-02-22;Acme Srl;Magazziniere;\n'+
+    'Verdi;Anna;;1990-03-15;Beta Spa;Impiegata amministrativa;\n'+
+    'Ferrari;Giuseppe;;;Gamma Snc;Capo reparto;\n';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='template_lavoratori.csv'; a.click();
 }
 
 function scaricaTemplateCorsi(){
@@ -1820,6 +1898,27 @@ function renderCalendario(){
 }
 
 // ══ LETTERA INCARICO ══
+// ══ TITLE CASE ══
+function toTitleCase(str){
+  if(!str) return '';
+  // Words that stay lowercase in Italian
+  const lower = new Set(['di','de','del','della','degli','dei','dello','e','o','a','in','su','per','con','tra','fra','da','il','la','lo','le','gli','i','un','una','uno','srl','spa','snc','sas','ss','sa','bv']);
+  return str.toLowerCase().replace(/\w+/g, (w,i) => {
+    if(i===0) return w.charAt(0).toUpperCase()+w.slice(1);
+    return lower.has(w) ? w : w.charAt(0).toUpperCase()+w.slice(1);
+  });
+}
+function normalizzaNome(str){ return toTitleCase(str.trim()); }
+
+// ══ LETTERA INCARICO ══
+function onLettTipoChange(){
+  const tipo = document.getElementById('lett-tipo').value;
+  const oggettoEl = document.getElementById('lett-oggetto');
+  const descBox = document.getElementById('lett-desc-box');
+  oggettoEl.style.display = tipo==='custom' ? '' : 'none';
+  descBox.style.display = tipo==='formazione' ? 'none' : '';
+}
+
 function generaLettIncarico(){
   const s=gSess(); if(!s) return;
   const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
@@ -1830,13 +1929,74 @@ function generaLettIncarico(){
   const citta=s.cittaAttestato||cfg.cittaDefault||az.comune||'_______________';
   const compenso=document.getElementById('lett-compenso')?.value||'';
   const rif=document.getElementById('lett-rif')?.value||'';
+  const tipo=document.getElementById('lett-tipo')?.value||'formazione';
+  const oggettoCustom=document.getElementById('lett-oggetto')?.value||'';
+  const desc=document.getElementById('lett-desc')?.value||'';
 
   if(!doc.nome){ toast('Seleziona un docente per la sessione prima di generare la lettera','⚠️'); return; }
 
+  // Oggetto e testo in base al tipo
+  const tipiConfig = {
+    formazione: {
+      oggetto: 'Lettera di incarico — '+( corso.titolo||'Corso di formazione'),
+      ruolo: 'docente/formatore',
+      corpo: `con la presente La invitiamo a svolgere, in qualità di <strong>docente/formatore</strong>, il corso di formazione di seguito specificato, commissionato da <strong>${az.nome||'—'}</strong>.`
+    },
+    consulenza: {
+      oggetto: 'Lettera di incarico — Consulenza in materia di sicurezza sul lavoro',
+      ruolo: 'consulente',
+      corpo: `con la presente Le conferiamo incarico di <strong>consulenza</strong> in materia di sicurezza sul lavoro per conto di <strong>${az.nome||'—'}</strong>, secondo le modalità di seguito specificate.`
+    },
+    sopralluogo: {
+      oggetto: 'Lettera di incarico — Sopralluogo / Audit',
+      ruolo: 'tecnico incaricato',
+      corpo: `con la presente Le affidiamo l'incarico di effettuare <strong>sopralluogo / audit</strong> presso la sede di <strong>${az.nome||'—'}</strong>, secondo le modalità di seguito indicate.`
+    },
+    rspp: {
+      oggetto: 'Lettera di nomina — Responsabile del Servizio di Prevenzione e Protezione (RSPP)',
+      ruolo: 'RSPP esterno',
+      corpo: `con la presente La nominiamo <strong>Responsabile del Servizio di Prevenzione e Protezione (RSPP)</strong> ai sensi dell'art. 17 e 31 del D.Lgs. 81/08, per la realtà aziendale di <strong>${az.nome||'—'}</strong>.`
+    },
+    medico: {
+      oggetto: 'Lettera di nomina — Medico Competente',
+      ruolo: 'Medico Competente',
+      corpo: `con la presente La nominiamo <strong>Medico Competente</strong> ai sensi dell'art. 39 del D.Lgs. 81/08, per la sorveglianza sanitaria dei lavoratori di <strong>${az.nome||'—'}</strong>.`
+    },
+    custom: {
+      oggetto: oggettoCustom||'Lettera di incarico',
+      ruolo: 'incaricato',
+      corpo: `con la presente Le affidiamo l'incarico di seguito specificato per conto di <strong>${az.nome||'—'}</strong>.`
+    }
+  };
+  const tc = tipiConfig[tipo]||tipiConfig.formazione;
+
+  // Table rows depend on tipo
   const giornateHtml = (s.giornate&&s.giornate.length
     ? s.giornate.map((g,i)=>`<tr><td style="padding:4px 10px;border:1px solid #eee">${i+1}ª giornata</td><td style="padding:4px 10px;border:1px solid #eee"><strong>${fmt(g.data)}</strong></td><td style="padding:4px 10px;border:1px solid #eee">${g.ini||'—'} – ${g.fine||'—'}</td></tr>`).join('')
     : `<tr><td style="padding:4px 10px;border:1px solid #eee">1ª giornata</td><td style="padding:4px 10px;border:1px solid #eee"><strong>${fmt(s.data)}</strong></td><td style="padding:4px 10px;border:1px solid #eee">${s.oraInizio||'—'} – ${s.oraFine||'—'}</td></tr>`
   );
+
+  const dettagliHtml = tipo==='formazione' ? `
+  <table style="width:100%;border-collapse:collapse;margin:18px 0">
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700;width:35%">Corso</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.titolo||'—'}</td></tr>
+    ${corso.norma?`<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Riferimento normativo</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.norma}</td></tr>`:''}
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Committente</td><td style="padding:6px 10px;border:1px solid #ddd">${az.nome||'—'}${az.indirizzo?' — '+az.indirizzo:''}</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Sede svolgimento</td><td style="padding:6px 10px;border:1px solid #ddd">${s.sede||az.indirizzo||'—'}</td></tr>
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Modalità</td><td style="padding:6px 10px;border:1px solid #ddd">${s.modalita||'In presenza'}</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Durata totale</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.durata||'—'} ore</td></tr>
+    ${compenso?`<tr style="background:#FFFDE7"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Compenso</td><td style="padding:6px 10px;border:1px solid #ddd"><strong>${compenso}</strong></td></tr>`:''}
+  </table>
+  <div style="margin:16px 0 8px;font-weight:700">Calendario giornate:</div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+    <thead><tr style="background:#484F54;color:white"><th style="padding:5px 10px;font-size:11px">Giornata</th><th style="padding:5px 10px;font-size:11px">Data</th><th style="padding:5px 10px;font-size:11px">Orario</th></tr></thead>
+    <tbody>${giornateHtml}</tbody>
+  </table>` : `
+  <table style="width:100%;border-collapse:collapse;margin:18px 0">
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700;width:35%">Committente</td><td style="padding:6px 10px;border:1px solid #ddd">${az.nome||'—'}${az.indirizzo?' — '+az.indirizzo:''}</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Sede</td><td style="padding:6px 10px;border:1px solid #ddd">${s.sede||az.indirizzo||az.comune||'—'}</td></tr>
+    ${desc?`<tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Descrizione attività</td><td style="padding:6px 10px;border:1px solid #ddd">${desc.split('\n').join('<br>')}</td></tr>`:''}
+    ${compenso?`<tr style="background:#FFFDE7"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Compenso</td><td style="padding:6px 10px;border:1px solid #ddd"><strong>${compenso}</strong></td></tr>`:''}
+  </table>`;
 
   const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:48px 52px;background:white;font-size:12px;color:#222;line-height:1.7">
   <div style="border-bottom:3px solid #FDC400;padding-bottom:14px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end">
@@ -1849,41 +2009,19 @@ function generaLettIncarico(){
       <div>${citta}, ${fmt(new Date().toISOString().slice(0,10))}</div>
     </div>
   </div>
-
   <div style="margin-bottom:24px">
     <div style="font-weight:700">Spett.le</div>
     <div style="font-size:13px;font-weight:700;margin-top:4px">${doc.nome} ${doc.cognome}</div>
     ${doc.qualifica?`<div style="color:#666">${doc.qualifica}</div>`:''}
     ${doc.email?`<div style="color:#666">${doc.email}</div>`:''}
   </div>
-
-  <div style="font-weight:700;font-size:13px;margin-bottom:16px;text-decoration:underline">
-    OGGETTO: Lettera di incarico — ${corso.titolo||'Corso di formazione'}
-  </div>
-
+  <div style="font-weight:700;font-size:13px;margin-bottom:16px;text-decoration:underline">OGGETTO: ${tc.oggetto}</div>
   <p>Gentile ${doc.nome} ${doc.cognome},</p>
-  <p>con la presente La invitiamo a svolgere, in qualità di <strong>docente/formatore</strong>, il corso di formazione di seguito specificato, commissionato da <strong>${az.nome||'—'}</strong>.</p>
-
-  <table style="width:100%;border-collapse:collapse;margin:18px 0">
-    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700;width:35%">Corso</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.titolo||'—'}</td></tr>
-    ${corso.norma?`<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Riferimento normativo</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.norma}</td></tr>`:''}
-    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Committente</td><td style="padding:6px 10px;border:1px solid #ddd">${az.nome||'—'}${az.indirizzo?' — '+az.indirizzo:''}</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Sede svolgimento</td><td style="padding:6px 10px;border:1px solid #ddd">${s.sede||az.indirizzo||'—'}</td></tr>
-    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Modalità</td><td style="padding:6px 10px;border:1px solid #ddd">${s.modalita||'In presenza'}</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Durata totale</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.durata||'—'} ore</td></tr>
-    ${compenso?`<tr style="background:#FFFDE7"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Compenso</td><td style="padding:6px 10px;border:1px solid #ddd"><strong>${compenso}</strong></td></tr>`:''}
-  </table>
-
-  <div style="margin:16px 0 8px;font-weight:700">Calendario giornate:</div>
-  <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
-    <thead><tr style="background:#484F54;color:white"><th style="padding:5px 10px;font-size:11px">Giornata</th><th style="padding:5px 10px;font-size:11px">Data</th><th style="padding:5px 10px;font-size:11px">Orario</th></tr></thead>
-    <tbody>${giornateHtml}</tbody>
-  </table>
-
-  <p>La preghiamo di confermare la disponibilità rispondendo alla presente oppure contattando l'ufficio formazione.</p>
+  <p>${tc.corpo}</p>
+  ${dettagliHtml}
+  <p>La preghiamo di confermare l'accettazione del presente incarico apponendo la Sua firma in calce e restituendo copia della presente.</p>
   <p>La ringraziamo per la collaborazione e restiamo a disposizione per qualsiasi chiarimento.</p>
   <p>Cordiali saluti,</p>
-
   <div style="margin-top:32px;display:flex;justify-content:space-between">
     <div style="text-align:center;width:44%">
       <div style="font-size:11px;color:#888;margin-bottom:4px">Il Responsabile del Progetto Formativo</div>
@@ -1892,7 +2030,7 @@ function generaLettIncarico(){
       <div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma</div>
     </div>
     <div style="text-align:center;width:44%">
-      <div style="font-size:11px;color:#888;margin-bottom:4px">Per accettazione — Il Docente</div>
+      <div style="font-size:11px;color:#888;margin-bottom:4px">Per accettazione — ${tc.ruolo.charAt(0).toUpperCase()+tc.ruolo.slice(1)}</div>
       <div style="font-weight:700;margin-bottom:6px">${doc.nome} ${doc.cognome}</div>
       <div style="height:44px"></div>
       <div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma e data</div>
