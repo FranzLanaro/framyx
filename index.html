@@ -306,12 +306,26 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti</span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte</button></div><div id="dash-scad"></div></div>
         <div class="card"><div class="card-header"><span class="card-title">📅 Sessioni recenti</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
       </div>
+      <div class="card mt-2">
+        <div class="card-header">
+          <span class="card-title">📆 Calendario corsi</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-xs" onclick="calPrev()">‹</button>
+            <span id="cal-title" style="font-weight:600;font-size:13px;min-width:140px;text-align:center"></span>
+            <button class="btn btn-xs" onclick="calNext()">›</button>
+            <button class="btn btn-xs" onclick="calToday()">Oggi</button>
+          </div>
+        </div>
+        <div style="padding:12px">
+          <div id="cal-grid"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ AZIENDE ═══ -->
     <div class="page" id="page-aziende">
-      <div class="card"><div class="card-header"><span class="card-title">Elenco aziende</span><button class="btn btn-primary btn-sm" onclick="openM('m-azienda')">+ Nuova azienda</button></div>
-      <table class="tbl"><thead><tr><th>Ragione sociale</th><th>P.IVA</th><th>Referente</th><th>Sede</th><th>Lavoratori</th><th></th></tr></thead><tbody id="tb-aziende"></tbody></table></div>
+      <div class="card"><div class="card-header"><span class="card-title">Elenco aziende</span><div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" onclick="openM('m-azienda')">+ Nuova azienda</button><button class="btn btn-danger btn-sm" onclick="delSelAz()" id="btn-del-sel-az" style="display:none">🗑 Elimina selezionate</button><button class="btn btn-danger btn-sm" onclick="delAllAz()">🗑 Elimina tutte</button></div></div>
+      <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-az-all" onchange="toggleAllAz(this)"></th><th>Ragione sociale</th><th>P.IVA</th><th>Referente</th><th>Sede</th><th>Lavoratori</th><th></th></tr></thead><tbody id="tb-aziende"></tbody></table></div>
     </div>
 
     <!-- ═══ LAVORATORI ═══ -->
@@ -320,8 +334,8 @@ textarea.fc{min-height:68px;resize:vertical}
         <select class="fc" id="fl-az" onchange="renderLavoratori()"><option value="">Tutte le aziende</option></select>
         <input class="fc" id="fl-q" placeholder="Cerca nome / CF..." oninput="renderLavoratori()" style="max-width:200px">
       </div>
-      <div class="card"><div class="card-header"><span class="card-title">Lavoratori</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="openM('m-lavoratore')">+ Nuovo</button><button class="btn btn-danger btn-sm" onclick="delAllLav()">🗑 Elimina tutti</button></div></div>
-      <table class="tbl"><thead><tr><th>Cognome</th><th>Nome</th><th>Azienda</th><th>C.F.</th><th>Mansione</th><th></th></tr></thead><tbody id="tb-lav"></tbody></table></div>
+      <div class="card"><div class="card-header"><span class="card-title">Lavoratori</span><div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" onclick="openM('m-lavoratore')">+ Nuovo</button><button class="btn btn-danger btn-sm" onclick="delSelLav()" id="btn-del-sel-lav" style="display:none">🗑 Elimina selezionati</button><button class="btn btn-danger btn-sm" onclick="delAllLav()">🗑 Elimina tutti</button></div></div>
+      <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-lav-all" onchange="toggleAllLav(this)"></th><th>Cognome</th><th>Nome</th><th>Azienda</th><th>C.F.</th><th>Mansione</th><th></th></tr></thead><tbody id="tb-lav"></tbody></table></div>
     </div>
 
     <!-- ═══ DOCENTI ═══ -->
@@ -360,6 +374,14 @@ textarea.fc{min-height:68px;resize:vertical}
           <div class="card" style="border-top:3px solid var(--blue)"><div class="card-header"><span class="card-title">📝 Test verifica</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Questionario dal corso — uno per partecipante.</p><button class="btn btn-blue btn-sm" onclick="generaTest()">Genera test</button></div></div>
         </div>
         <div class="card mt-2" style="border-top:3px solid var(--orange)"><div class="card-header"><span class="card-title">📊 Verbale sessione</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Verbale con argomenti, presenti e nota allegato firme.</p><button class="btn btn-orange btn-sm" onclick="generaVerbale()">Genera verbale</button></div></div>
+        <div class="card mt-2" style="border-top:3px solid #7C3AED"><div class="card-header"><span class="card-title">✉️ Lettera di incarico docente</span></div><div style="padding:14px">
+            <p class="text-sm text-muted" style="margin-bottom:10px">Lettera formale di incarico al docente con dettagli corso, azienda, orari e sede.</p>
+            <div class="fr2" style="margin-bottom:8px">
+              <div class="fg"><label class="fl" style="font-size:11px">Compenso (opzionale)</label><input class="fc" id="lett-compenso" placeholder="es. € 300,00 + IVA"></div>
+              <div class="fg"><label class="fl" style="font-size:11px">Rif. contratto / ordine</label><input class="fc" id="lett-rif" placeholder="es. RIF-2025-001"></div>
+            </div>
+            <button class="btn btn-sm" style="background:#7C3AED;color:white" onclick="generaLettIncarico()">✉️ Genera lettera incarico</button>
+          </div></div>
       </div>
       <div id="doc-preview" style="margin-top:18px"></div>
     </div>
@@ -388,7 +410,8 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="page" id="page-scadenze">
       <div class="fbar">
         <select class="fc" id="fsc-az" onchange="renderScadenze()"><option value="">Tutte le aziende</option></select>
-        <select class="fc" id="fsc-st" onchange="renderScadenze()"><option value="">Tutti</option><option value="scaduto">Scaduti</option><option value="urgente">Urgenti ≤30gg</option><option value="ok">In regola</option></select>
+        <select class="fc" id="fsc-st" onchange="renderScadenze()"><option value="">Tutti</option><option value="scaduto">Scaduti</option><option value="gg30">🔴 Entro 30 giorni</option><option value="gg60">🟠 Entro 60 giorni</option><option value="gg90">🟡 Entro 90 giorni</option><option value="ok">✅ In regola</option></select>
+        <button class="btn btn-sm" onclick="exportScadCSV()">⬇️ Esporta CSV</button>
       </div>
       <div class="card"><div class="card-header"><span class="card-title">Scadenze per lavoratore</span></div>
       <table class="tbl"><thead><tr><th>Lavoratore</th><th>Azienda</th><th>Corso</th><th>Ultima sessione</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody id="tb-scad"></tbody></table></div>
@@ -488,6 +511,40 @@ textarea.fc{min-height:68px;resize:vertical}
           </div>
           <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:var(--r);font-size:12px;color:var(--text2)">
             <strong>Come funziona:</strong> ogni modifica viene salvata automaticamente su Supabase. Apri l'app da qualsiasi Mac o dispositivo e i dati sono sempre aggiornati. Il backup JSON è un'ulteriore sicurezza.
+          </div>
+        </div>
+      </div>
+      <div class="card mt-2">
+        <div class="card-header"><span class="card-title">🎨 Personalizzazione attestati</span></div>
+        <div style="padding:18px">
+          <div class="fr2">
+            <div class="fg">
+              <label class="fl">Logo azienda (appare sull'attestato)</label>
+              <div id="logo-preview" style="min-height:60px;border:1px dashed #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;margin-bottom:6px;overflow:hidden" onclick="document.getElementById('logo-file').click()">
+                <span id="logo-placeholder" style="font-size:12px;color:#aaa">Clicca per caricare logo (PNG/JPG)</span>
+                <img id="logo-img" style="max-height:58px;max-width:100%;display:none">
+              </div>
+              <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="loadLogo(this)">
+              <button class="btn btn-xs" onclick="clearLogo()">✕ Rimuovi logo</button>
+            </div>
+            <div class="fg">
+              <label class="fl">Nome azienda sull'attestato</label>
+              <input class="fc" id="att-azienda-nome" placeholder="es. Framyx Srl — Società Benefit" style="margin-bottom:8px">
+              <label class="fl">📍 Città default attestati</label>
+              <input class="fc" id="att-citta-default" placeholder="es. Vicenza" style="margin-bottom:8px">
+              <label class="fl">Testo intestazione attestato</label>
+              <input class="fc" id="att-intestazione" placeholder="es. ATTESTATO DI PARTECIPAZIONE">
+              <label class="fl" style="margin-top:8px">Sottotitolo intestazione</label>
+              <input class="fc" id="att-sottotitolo" placeholder="es. CON VERIFICA DELL'APPRENDIMENTO">
+            </div>
+          </div>
+          <div class="fg" style="margin-top:10px">
+            <label class="fl">Testo libero in fondo all'attestato</label>
+            <textarea class="fc" id="att-footer" rows="3" placeholder="es. Il presente attestato è rilasciato ai sensi dell'art. 37 D.Lgs. 81/08..." style="resize:vertical"></textarea>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="salvaImpostazioni()">💾 Salva impostazioni</button>
+            <button class="btn btn-xs" onclick="resetImpostazioni()">↩ Ripristina default</button>
           </div>
         </div>
       </div>
@@ -650,14 +707,22 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="fg"><label class="fl">Corso *</label><select class="fc" id="ss-corso" onchange="onCorsoChange()"><option value="">Seleziona...</option></select></div>
         <div class="fg"><label class="fl">Azienda *</label><select class="fc" id="ss-az" onchange="onAzChange()"><option value="">Seleziona...</option></select></div>
       </div>
-      <div class="fr3">
-        <div class="fg"><label class="fl">Data *</label><input class="fc" id="ss-data" type="date"></div>
-        <div class="fg"><label class="fl">Ora inizio</label><input class="fc" id="ss-ini" type="time" value="09:00"></div>
-        <div class="fg"><label class="fl">Ora fine</label><input class="fc" id="ss-fine" type="time" value="17:00"></div>
+      <div class="fg">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label class="fl" style="margin:0">📅 Giornate del corso *</label>
+          <button class="btn btn-xs btn-primary" onclick="addGiornata()">+ Aggiungi giornata</button>
+        </div>
+        <div id="ss-giornate-list" style="border:1px solid var(--border);border-radius:var(--r);padding:8px;background:var(--surface2);min-height:44px"></div>
+        <input type="hidden" id="ss-data">
+        <input type="hidden" id="ss-ini">
+        <input type="hidden" id="ss-fine">
       </div>
       <div class="fr2">
         <div class="fg"><label class="fl">Sede</label><input class="fc" id="ss-sede"></div>
         <div class="fg"><label class="fl">Docente</label><select class="fc" id="ss-doc"><option value="">Seleziona...</option></select></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">📍 Città attestato</label><input class="fc" id="ss-citta" placeholder="es. Vicenza — lascia vuoto per usare comune azienda"></div>
       </div>
       <div class="fg"><label class="fl">Modalità</label><select class="fc" id="ss-mod"><option>In presenza</option><option>Videoconferenza sincrona</option><option>E-learning</option><option>Mista</option></select></div>
 
@@ -679,6 +744,15 @@ textarea.fc{min-height:68px;resize:vertical}
       <div class="fr2">
         <div class="fg"><label class="fl">Stato</label><select class="fc" id="ss-stato"><option value="pianificata">Pianificata</option><option value="completata">Completata</option></select></div>
         <div class="fg"><label class="fl">Note</label><input class="fc" id="ss-note"></div>
+      </div>
+      <div class="fg" style="margin-top:4px">
+        <label class="fl">🏷️ Intestazione attestato (nome su attestato)</label>
+        <select class="fc" id="ss-intestazione-tipo" onchange="onIntestazioneChange()" style="margin-bottom:6px">
+          <option value="framyx">Framyx Srl (default)</option>
+          <option value="cliente">Azienda cliente (nome automatico)</option>
+          <option value="custom">Personalizzato</option>
+        </select>
+        <input class="fc" id="ss-intestazione-custom" placeholder="es. AGB Spa — Ente formatore" style="display:none">
       </div>
     </div>
     <div class="mf"><button class="btn" onclick="closeM('m-sessione')">Annulla</button><button class="btn btn-primary" onclick="salvaSessione()">Salva sessione</button></div>
@@ -1136,8 +1210,8 @@ function getTestFromEditor(){
 // ══ AZIENDE ══
 function renderAziende(){
   const az=db.aziende(), lav=db.lavoratori(), tb=document.getElementById('tb-aziende');
-  if(!az.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">🏢</div><h3>Nessuna azienda</h3><p>Aggiungi o importa da Excel</p></div></td></tr>';return}
-  tb.innerHTML=az.map(a=>`<tr><td><strong>${a.nome}</strong></td><td class="font-mono text-xs">${a.piva||'—'}</td><td>${a.referente||'—'}</td><td class="text-sm text-muted">${a.comune||a.indirizzo||'—'}</td><td><span class="badge bb">${lav.filter(l=>l.aziendaId===a.id).length}</span></td><td class="actions"><button class="btn btn-xs" onclick="editAzienda('${a.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delAzienda('${a.id}')">✕</button></td></tr>`).join('')
+  if(!az.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">🏢</div><h3>Nessuna azienda</h3><p>Aggiungi o importa da Excel</p></div></td></tr>';return}
+  tb.innerHTML=az.map(a=>`<tr><td><input type="checkbox" class="chk-az" value="${a.id}" onchange="updateSelAz()"></td><td><strong>${a.nome}</strong></td><td class="font-mono text-xs">${a.piva||'—'}</td><td>${a.referente||'—'}</td><td class="text-sm text-muted">${a.comune||a.indirizzo||'—'}</td><td><span class="badge bb">${lav.filter(l=>l.aziendaId===a.id).length}</span></td><td class="actions"><button class="btn btn-xs" onclick="editAzienda('${a.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delAzienda('${a.id}')">✕</button></td></tr>`).join('')
 }
 function salvaAzienda(){
   const id=v('az-id')||uid(), nome=v('az-nome'); if(!nome){alert('Ragione sociale obbligatoria');return}
@@ -1158,12 +1232,19 @@ function renderLavoratori(){
   if(q) lav=lav.filter(l=>(l.nome+' '+l.cognome+' '+(l.cf||'')).toLowerCase().includes(q));
   const tb=document.getElementById('tb-lav');
   if(!lav.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">👷</div><h3>Nessun lavoratore</h3></div></td></tr>';return}
-  tb.innerHTML=lav.map(l=>`<tr><td><strong>${l.cognome}</strong></td><td>${l.nome}</td><td>${gAz(l.aziendaId)}</td><td class="font-mono text-xs">${l.cf||'—'}</td><td class="text-sm">${l.mansione||'—'}</td><td class="actions"><button class="btn btn-xs" onclick="editLav('${l.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delLav('${l.id}')">✕</button></td></tr>`).join('')
+  tb.innerHTML=lav.map(l=>`<tr><td><input type="checkbox" class="chk-lav" value="${l.id}" onchange="updateSelLav()"></td><td><strong>${l.cognome}</strong></td><td>${l.nome}</td><td>${gAz(l.aziendaId)}</td><td class="font-mono text-xs">${l.cf||'—'}</td><td class="text-sm">${l.mansione||'—'}</td><td class="actions"><button class="btn btn-xs" onclick="editLav('${l.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delLav('${l.id}')">✕</button></td></tr>`).join('')
 }
 function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); lav.push({id,nome,cognome,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:v('lav-luogo'),mansione:v('lav-mansione'),ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato') }
 function editLav(id){ const l=db.lavoratori().find(x=>x.id===id); if(!l) return; popLavAz(); sv({'lav':{id:l.id,nome:l.nome,cognome:l.cognome,cf:l.cf||'',nascita:l.nascita||'',luogo:l.luogoNascita||'',mansione:l.mansione||'',ateco:l.ateco||'',email:l.email||''}}); document.getElementById('lav-az').value=l.aziendaId; document.getElementById('m-lav-t').textContent='Modifica lavoratore'; openM('m-lavoratore') }
 function delLav(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('lavoratori',_id); db.save.lavoratori(db.lavoratori().filter(l=>l.id!==id)); renderLavoratori(); toast('Eliminato','🗑') }) }
 function delAllLav(){ const lav=db.lavoratori(); if(!lav.length){toast('Nessun lavoratore da eliminare','ℹ️');return} confDel(`Eliminare tutti i ${lav.length} lavoratori?`, async ()=>{ await Promise.all(lav.map(l=>supaDelete('lavoratori',l.id))); db.save.lavoratori([]); renderLavoratori(); toast(`${lav.length} lavoratori eliminati`,'🗑') }) }
+function updateSelLav(){ const sel=document.querySelectorAll('.chk-lav:checked'); const btn=document.getElementById('btn-del-sel-lav'); if(btn) btn.style.display=sel.length?'':'none'; const all=document.getElementById('chk-lav-all'); if(all) all.indeterminate=sel.length>0&&sel.length<document.querySelectorAll('.chk-lav').length; }
+function toggleAllLav(chk){ document.querySelectorAll('.chk-lav').forEach(c=>c.checked=chk.checked); updateSelLav(); }
+function delSelLav(){ const ids=[...document.querySelectorAll('.chk-lav:checked')].map(c=>c.value); if(!ids.length) return; confDel('Eliminare '+ids.length+' lavoratori selezionati?', async ()=>{ await Promise.all(ids.map(id=>supaDelete('lavoratori',id))); db.save.lavoratori(db.lavoratori().filter(l=>!ids.includes(l.id))); renderLavoratori(); toast(ids.length+' lavoratori eliminati','🗑') }) }
+function updateSelAz(){ const sel=document.querySelectorAll('.chk-az:checked'); const btn=document.getElementById('btn-del-sel-az'); if(btn) btn.style.display=sel.length?'':'none'; const all=document.getElementById('chk-az-all'); if(all) all.indeterminate=sel.length>0&&sel.length<document.querySelectorAll('.chk-az').length; }
+function toggleAllAz(chk){ document.querySelectorAll('.chk-az').forEach(c=>c.checked=chk.checked); updateSelAz(); }
+function delSelAz(){ const ids=[...document.querySelectorAll('.chk-az:checked')].map(c=>c.value); if(!ids.length) return; confDel('Eliminare '+ids.length+' aziende selezionate?', async ()=>{ await Promise.all(ids.map(id=>supaDelete('aziende',id))); db.save.aziende(db.aziende().filter(a=>!ids.includes(a.id))); renderAziende(); updateFilters(); toast(ids.length+' aziende eliminate','🗑') }) }
+function delAllAz(){ const az=db.aziende(); if(!az.length){toast('Nessuna azienda da eliminare','ℹ️');return} confDel('Eliminare tutte le '+az.length+' aziende?', async ()=>{ await Promise.all(az.map(a=>supaDelete('aziende',a.id))); db.save.aziende([]); renderAziende(); updateFilters(); toast(az.length+' aziende eliminate','🗑') }) }
 
 function importCorsi(input){ const f=input.files[0]; if(f) importCorsiFile(f); input.value=''; }
 function importCorsiFile(f){
@@ -1357,10 +1438,47 @@ function getArgS(){ return Array.from(document.getElementById('ss-arg-list').que
 function renderChip(azId,sel){ const lav=azId?db.lavoratori().filter(l=>l.aziendaId===azId):[]; document.getElementById('chip-part').innerHTML=lav.map(l=>`<div class="chip ${sel.includes(l.id)?'on':''}" onclick="togglePart('${l.id}')">${l.cognome} ${l.nome}</div>`).join('')||'<p class="text-xs text-muted">Seleziona un\'azienda prima</p>'; document.getElementById('cnt-part').textContent=sel.length+' selezionati' }
 function togglePart(id){ selPart=selPart.includes(id)?selPart.filter(p=>p!==id):[...selPart,id]; renderChip(v('ss-az'),selPart) }
 
-function salvaSessione(){ const id=v('ss-id')||uid(),corsoId=v('ss-corso'),azId=v('ss-az'),data=v('ss-data'); if(!corsoId||!azId||!data){alert('Corso, azienda e data obbligatori');return} const sess=db.sessioni().filter(s=>s.id!==id); sess.push({id,corsoId,aziendaId:azId,data,oraInizio:v('ss-ini'),oraFine:v('ss-fine'),sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note')}); db.save.sessioni(sess); closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard(); toast('Sessione salvata') }
-function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note'); document.getElementById('ss-ini').value='09:00'; document.getElementById('ss-fine').value='17:00'; document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; document.getElementById('chip-part').innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso' }
-function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().sort((a,b)=>b.data.localeCompare(a.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
-function editSess(id){ const s=db.sessioni().find(x=>x.id===id); if(!s) return; popSessSelects(); sv({'ss':{id:s.id,corso:s.corsoId,az:s.aziendaId,data:s.data,ini:s.oraInizio||'09:00',fine:s.oraFine||'17:00',sede:s.sede||'',doc:s.docenteId||'',mod:s.modalita||'In presenza',stato:s.stato||'pianificata',note:s.note||''}}); selPart=[...(s.partecipanti||[])]; renderArgS(s.argomenti||[]); renderChip(s.aziendaId,selPart); document.getElementById('m-sess-t').textContent='Modifica sessione'; openM('m-sessione') }
+function salvaSessione(){ const id=v('ss-id')||uid(),corsoId=v('ss-corso'),azId=v('ss-az'); const giornate=getGiornate(); if(!corsoId||!azId||!giornate.length){alert('Corso, azienda e almeno una giornata obbligatori');return} const data=giornate[0].data; const sess=db.sessioni().filter(s=>s.id!==id); const intTipo=v('ss-intestazione-tipo')||'framyx'; const intCustom=v('ss-intestazione-custom')||''; const cittaAtt=v('ss-citta')||''; sess.push({id,corsoId,aziendaId:azId,data,giornate,oraInizio:giornate[0].ini,oraFine:giornate[giornate.length-1].fine,sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note'),intestazioneTipo:intTipo,intestazioneCustom:intCustom,cittaAttestato:cittaAtt}); db.save.sessioni(sess); closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard(); toast('Sessione salvata') }
+// ══ GIORNATE ══
+function renderGiornate(giornate){
+  const el=document.getElementById('ss-giornate-list');
+  if(!el) return;
+  if(!giornate||!giornate.length){ el.innerHTML='<div class="text-xs text-muted" style="padding:4px">Nessuna giornata — clicca + Aggiungi giornata</div>'; return; }
+  el.innerHTML=giornate.map((g,i)=>`<div class="arg-row" id="giornata-row-${i}" style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+    <span class="text-xs text-muted" style="width:20px;flex-shrink:0">${i+1}.</span>
+    <input class="fc" type="date" id="giornata-data-${i}" value="${g.data||''}" style="flex:2">
+    <input class="fc" type="time" id="giornata-ini-${i}" value="${g.ini||'09:00'}" style="flex:1">
+    <span class="text-xs text-muted">—</span>
+    <input class="fc" type="time" id="giornata-fine-${i}" value="${g.fine||'17:00'}" style="flex:1">
+    <button class="btn btn-xs btn-danger" onclick="removeGiornata(${i})">✕</button>
+  </div>`).join('');
+}
+function addGiornata(){
+  const gs=getGiornate();
+  gs.push({data:'',ini:'09:00',fine:'17:00'});
+  renderGiornate(gs);
+}
+function removeGiornata(i){
+  const gs=getGiornate(); gs.splice(i,1); renderGiornate(gs);
+}
+function getGiornate(){
+  const rows=document.querySelectorAll('[id^=giornata-row-]');
+  return [...rows].map((_,i)=>({
+    data:(document.getElementById('giornata-data-'+i)||{}).value||'',
+    ini:(document.getElementById('giornata-ini-'+i)||{}).value||'09:00',
+    fine:(document.getElementById('giornata-fine-'+i)||{}).value||'17:00'
+  })).filter(g=>g.data);
+}
+
+function onIntestazioneChange(){
+  const tipo=document.getElementById('ss-intestazione-tipo').value;
+  document.getElementById('ss-intestazione-custom').style.display=tipo==='custom'?'':'none';
+}
+
+function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note','ss-intestazione-custom','ss-citta'); document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; document.getElementById('ss-intestazione-tipo').value='framyx'; document.getElementById('ss-intestazione-custom').style.display='none'; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; document.getElementById('chip-part').innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso'; renderGiornate([]); }
+function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().sort((a,b)=>b.data.localeCompare(a.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
+function editSess(id){ const s=db.sessioni().find(x=>x.id===id); if(!s) return; popSessSelects(); sv({'ss':{id:s.id,corso:s.corsoId,az:s.aziendaId,data:s.data,sede:s.sede||'',doc:s.docenteId||'',mod:s.modalita||'In presenza',stato:s.stato||'pianificata',note:s.note||''}}); selPart=[...(s.partecipanti||[])]; renderArgS(s.argomenti||[]); renderChip(s.aziendaId,selPart); // restore giornate
+  const giornate=s.giornate&&s.giornate.length?s.giornate:[{data:s.data||'',ini:s.oraInizio||'09:00',fine:s.oraFine||'17:00'}]; setTimeout(()=>renderGiornate(giornate),50); document.getElementById('m-sess-t').textContent='Modifica sessione'; const intTipo=s.intestazioneTipo||'framyx'; document.getElementById('ss-intestazione-tipo').value=intTipo; const custEl=document.getElementById('ss-intestazione-custom'); custEl.value=s.intestazioneCustom||''; custEl.style.display=intTipo==='custom'?'':'none'; document.getElementById('ss-citta').value=s.cittaAttestato||''; openM('m-sessione') }
 function delSess(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('sessioni',_id); db.save.sessioni(db.sessioni().filter(s=>s.id!==id)); renderSessioni(); renderDashboard(); toast('Eliminata','🗑') }) }
 function goDoc(sid){ goTo('documenti'); setTimeout(()=>{ const s=document.getElementById('fd-sess'); if(s){ s.value=sid; onDocSessChange() } },50) }
 
@@ -1445,12 +1563,22 @@ function generaAttestati(){
   const corso=db.corsi().find(c=>c.id===s.corsoId)||{}, az=db.aziende().find(a=>a.id===s.aziendaId)||{}, doc=db.docenti().find(d=>d.id===s.docenteId)||{};
   const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
   const scad=corso.validita?addYears(s.data,corso.validita):null;
-  const luogo=az.comune||az.indirizzo||'_______________';
+  const luogo=s.cittaAttestato||(cfg.cittaDefault||'')||(az.comune||az.indirizzo||'_______________');
+  const cfg=getAttConfig();
+  // Intestazione: usa quella della sessione se impostata
+  const _intTipo=s.intestazioneTipo||'framyx';
+  const _az=db.aziende().find(a=>a.id===s.aziendaId)||{};
+  const attAzNome=_intTipo==='cliente'?(_az.nome||'Azienda cliente'):_intTipo==='custom'?(s.intestazioneCustom||cfg.aziendaNome||'Framyx Srl — Società Benefit'):(cfg.aziendaNome||'Framyx Srl — Società Benefit');
+  const attIntestazione=cfg.intestazione||'ATTESTATO DI PARTECIPAZIONE';
+  const attSottotitolo=cfg.sottotitolo||"CON VERIFICA DELL'APPRENDIMENTO";
+  const attFooter=cfg.footer||'';
+  const attLogo=cfg.logo||'';
   const html=pp.map(l=>`<div style="page-break-after:always;font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto 32px;padding:36px 40px;border:2px solid #FDC400;background:white">
 <div style="text-align:center;border-bottom:3px solid #FDC400;padding-bottom:14px;margin-bottom:18px">
-<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#484F54;margin-bottom:5px">Framyx Srl — Società Benefit</div>
-<div style="font-size:21px;font-weight:700">ATTESTATO DI PARTECIPAZIONE</div>
-<div style="font-size:12px;color:#888;margin-top:3px">CON VERIFICA DELL'APPRENDIMENTO</div>
+${attLogo?`<img src="${attLogo}" style="max-height:60px;max-width:200px;display:block;margin:0 auto 8px">`:``}
+<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#484F54;margin-bottom:5px">${attAzNome}</div>
+<div style="font-size:21px;font-weight:700">${attIntestazione}</div>
+<div style="font-size:12px;color:#888;margin-top:3px">${attSottotitolo}</div>
 </div>
 <div style="text-align:center;background:#FDC400;padding:11px 18px;margin-bottom:18px;border-radius:3px">
 <div style="font-size:13px;font-weight:700">${corso.titolo||'—'}</div>
@@ -1467,7 +1595,7 @@ ${l.mansione?`<br>Mansione: Add. ${l.mansione} della ditta <strong>${az.nome||''
 </div>
 <div style="text-align:center;font-size:12px;color:#555;margin-bottom:16px;line-height:1.8">
 ha frequentato e superato positivamente il corso di formazione di n. <strong>${corso.durata||'—'} ore</strong><br>
-per lavoratori che si è svolto ${s.data?`nei giorni <strong>${fmt(s.data)}</strong>`:''}<br>
+per lavoratori che si è svolto ${s.giornate&&s.giornate.length>1?`nei giorni <strong>${s.giornate.map(g=>fmt(g.data)).join(', ')}</strong>`:s.data?`il giorno <strong>${fmt(s.data)}</strong>`:''}<br>
 c/o la ditta <strong>${az.nome||'—'}</strong>${s.sede?` sita in ${s.sede}`:''}
 </div>
 <div style="display:flex;justify-content:space-between;margin-bottom:16px">
@@ -1478,7 +1606,8 @@ c/o la ditta <strong>${az.nome||'—'}</strong>${s.sede?` sita in ${s.sede}`:''}
 <div style="border-top:2px solid #FDC400;padding-top:10px">
 <div style="font-size:11px;font-weight:700;color:#484F54;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Contenuti del corso</div>
 ${argHTML(s.argomenti||[])}</div>
-${scad?`<div style="margin-top:10px;padding:6px 12px;background:${diffDays(scad)<90?'#FDECEA':'#EAF5EE'};border-left:3px solid ${diffDays(scad)<90?'#C0392B':'#2D7D46'};font-size:11px"><strong>Scadenza rinnovo:</strong> ${fmt(scad)}</div>`:''}
+${scad?`<div style="margin-top:10px;padding:6px 12px;background:${diffDays(scad)<0?'#FDECEA':diffDays(scad)<=60?'#FFF3E0':diffDays(scad)<=90?'#FFFDE7':'#EAF5EE'};border-left:3px solid ${diffDays(scad)<0?'#C0392B':diffDays(scad)<=30?'#C0392B':diffDays(scad)<=60?'#E67E22':diffDays(scad)<=90?'#F39C12':'#2D7D46'};font-size:11px"><strong>Scadenza rinnovo:</strong> ${fmt(scad)} — ${diffDays(scad)<0?'SCADUTO':diffDays(scad)<=30?'entro 30gg':diffDays(scad)<=60?'entro 60gg':diffDays(scad)<=90?'entro 90gg':''}</div>`:''}
+${attFooter?`<div style="margin-top:10px;padding:8px 12px;border-top:1px solid #eee;font-size:10px;color:#888;text-align:center">${attFooter}</div>`:''}
 </div>`).join('');
   preview(html||'<p>Nessun partecipante</p>');
 }
@@ -1581,13 +1710,232 @@ function renderStorico(){ const sess=db.sessioni().filter(s=>s.stato==='completa
 
 // ══ SCADENZE ══
 function computeScad(){ const result=[]; db.sessioni().filter(s=>s.stato==='completata').forEach(s=>{ const c=db.corsi().find(x=>x.id===s.corsoId); if(!c?.validita) return; const sc=addYears(s.data,c.validita); (s.partecipanti||[]).forEach(lid=>{ const l=db.lavoratori().find(x=>x.id===lid); if(!l) return; const ex=result.findIndex(r=>r.lid===lid&&r.cid===s.corsoId); const e={lid,cid:s.corsoId,aid:s.aziendaId,data:s.data,sc}; if(ex>=0){if(s.data>result[ex].data)result[ex]=e}else result.push(e) }) }); return result.sort((a,b)=>a.sc.localeCompare(b.sc)) }
-function renderScadenze(){ const faz=v('fsc-az'),fst=v('fsc-st'); let sc=computeScad(); if(faz) sc=sc.filter(x=>x.aid===faz); if(fst==='scaduto') sc=sc.filter(x=>diffDays(x.sc)<0); else if(fst==='urgente') sc=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30); else if(fst==='ok') sc=sc.filter(x=>diffDays(x.sc)>30); const tb=document.getElementById('tb-scad'); if(!sc.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">⏰</div><h3>Nessuna scadenza</h3><p>Le scadenze si calcolano dalle sessioni completate</p></div></td></tr>';return} tb.innerHTML=sc.map(x=>{ const d=diffDays(x.sc); let badge,txt; if(d<0){badge='br';txt=`Scaduto ${Math.abs(d)}gg`}else if(d<=30){badge='bo';txt=`${d}gg`}else if(d<=90){badge='by';txt=`${d}gg`}else{badge='bg';txt='In regola'} return`<tr><td><strong>${gLav(x.lid)}</strong></td><td>${gAz(x.aid)}</td><td>${gCorso(x.cid)}</td><td class="font-mono text-xs">${fmt(x.data)}</td><td class="font-mono text-xs">${fmt(x.sc)}</td><td><span class="badge ${badge}">${txt}</span></td></tr>` }).join('') }
+function renderScadenze(){ 
+  const faz=v('fsc-az'),fst=v('fsc-st'); 
+  let sc=computeScad(); 
+  if(faz) sc=sc.filter(x=>x.aid===faz); 
+  if(fst==='scaduto') sc=sc.filter(x=>diffDays(x.sc)<0);
+  else if(fst==='gg30') sc=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30);
+  else if(fst==='gg60') sc=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=60);
+  else if(fst==='gg90') sc=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=90);
+  else if(fst==='ok') sc=sc.filter(x=>diffDays(x.sc)>90);
+  const tb=document.getElementById('tb-scad'); 
+  if(!sc.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">⏰</div><h3>Nessuna scadenza trovata</h3><p>Le scadenze si calcolano dalle sessioni completate</p></div></td></tr>';return} 
+  tb.innerHTML=sc.map(x=>{ 
+    const d=diffDays(x.sc); 
+    let badge,txt,rowStyle=''; 
+    if(d<0){badge='br';txt='🔴 Scaduto '+Math.abs(d)+'gg fa';rowStyle='background:#fff5f5'}
+    else if(d<=30){badge='br';txt='🔴 '+d+'gg';rowStyle='background:#fff5f5'}
+    else if(d<=60){badge='bo';txt='🟠 '+d+'gg';rowStyle='background:#fff9f0'}
+    else if(d<=90){badge='by';txt='🟡 '+d+'gg';rowStyle='background:#fffde7'}
+    else{badge='bg';txt='✅ In regola'} 
+    return '<tr style="'+rowStyle+'"><td><strong>'+gLav(x.lid)+'</strong></td><td>'+gAz(x.aid)+'</td><td>'+gCorso(x.cid)+'</td><td class="font-mono text-xs">'+fmt(x.data)+'</td><td class="font-mono text-xs">'+fmt(x.sc)+'</td><td><span class="badge '+badge+'">'+txt+'</span></td></tr>'
+  }).join('') 
+}
+
+function exportScadCSV(){
+  const sc=computeScad();
+  const rows=[['Lavoratore','Azienda','Corso','Ultima sessione','Scadenza','Giorni rimanenti','Stato']];
+  sc.forEach(x=>{
+    const d=diffDays(x.sc);
+    const stato=d<0?'SCADUTO':d<=30?'URGENTE 30gg':d<=60?'ATTENZIONE 60gg':d<=90?'ATTENZIONE 90gg':'In regola';
+    rows.push([gLav(x.lid),gAz(x.aid),gCorso(x.cid),fmt(x.data),fmt(x.sc),d,stato]);
+  });
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='scadenze_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  toast('CSV scadenze esportato','📊');
+}
 
 // ══ DASHBOARD ══
-function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad(); const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length; document.getElementById('stats-grid').innerHTML=[{l:'🏢 Aziende',v:az.length,s:'clienti'},{l:'👷 Lavoratori',v:lav.length,s:'in anagrafica'},{l:'📅 Sessioni',v:sess.length,s:sess.filter(s=>s.stato==='completata').length+' completate'},{l:'⚠ Scadenze urgenti',v:scad+urg,s:scad+' scadute · '+urg+' entro 30gg'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tot=scad+urg,b=document.getElementById('badge-scad'); b.textContent=tot; b.style.display=tot?'':'none'; const ul=sc.filter(x=>diffDays(x.sc)<=30).slice(0,8); document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`; const ulS=sess.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6); document.getElementById('dash-sess').innerHTML=ulS.length?ulS.map(s=>`<div class="srow"><div class="sdot ${s.stato==='completata'?'g':'o'}"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">📅</div><h3>Nessuna sessione</h3></div>` }
+function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad(); const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg30=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length,urg60=sc.filter(x=>diffDays(x.sc)>30&&diffDays(x.sc)<=60).length,urg90=sc.filter(x=>diffDays(x.sc)>60&&diffDays(x.sc)<=90).length; document.getElementById('stats-grid').innerHTML=[{l:'🏢 Aziende',v:az.length,s:'clienti'},{l:'👷 Lavoratori',v:lav.length,s:'in anagrafica'},{l:'📅 Sessioni',v:sess.length,s:sess.filter(s=>s.stato==='completata').length+' completate'},{l:'⚠ Scadenze',v:scad+urg30,s:(scad?'🔴 '+scad+' scadute · ':'')+'🔴 '+urg30+' (30gg) · 🟠 '+urg60+' (60gg) · 🟡 '+urg90+' (90gg)'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tot=scad+urg30,b=document.getElementById('badge-scad'); b.textContent=tot; b.style.display=tot?'':'none'; const ul=sc.filter(x=>diffDays(x.sc)<=90).slice(0,8); document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`; const ulS=sess.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6); document.getElementById('dash-sess').innerHTML=ulS.length?ulS.map(s=>`<div class="srow"><div class="sdot ${s.stato==='completata'?'g':'o'}"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">📅</div><h3>Nessuna sessione</h3></div>`; renderCalendario(); }
 
 // ══ IMPOSTAZIONI ══
-function renderImpostazioni(){}
+
+// ══ CALENDARIO ══
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendario(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendario(); }
+function calToday(){ calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCalendario(); }
+
+function renderCalendario(){
+  const calGrid = document.getElementById('cal-grid');
+  const calTitle = document.getElementById('cal-title');
+  if(!calGrid||!calTitle) return;
+
+  const mesi=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  calTitle.textContent = mesi[calMonth]+' '+calYear;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const startOffset = (firstDay+6)%7; // Monday=0
+
+  // Collect sessions for this month
+  const sessioni = db.sessioni();
+  const sessMap = {};
+  sessioni.forEach(s=>{
+    const dates = s.giornate&&s.giornate.length ? s.giornate.map(g=>g.data) : [s.data];
+    dates.forEach(d=>{
+      if(!d) return;
+      const dd = new Date(d);
+      if(dd.getFullYear()===calYear && dd.getMonth()===calMonth){
+        const day = dd.getDate();
+        if(!sessMap[day]) sessMap[day]=[];
+        sessMap[day].push(s);
+      }
+    });
+  });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const giorni=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">';
+  giorni.forEach(g=>{ html+=`<div style="text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:4px 0">${g}</div>`; });
+  html+='</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
+
+  // Empty cells before first day
+  for(let i=0;i<startOffset;i++) html+='<div style="min-height:52px"></div>';
+
+  for(let d=1;d<=daysInMonth;d++){
+    const dt = new Date(calYear,calMonth,d); dt.setHours(0,0,0,0);
+    const isToday = dt.getTime()===today.getTime();
+    const events = sessMap[d]||[];
+    const isPast = dt < today;
+    
+    html+=`<div style="min-height:52px;border:1px solid ${isToday?'#FDC400':'var(--border)'};border-radius:6px;padding:4px;background:${isToday?'#FFFDE7':isPast&&events.length?'#f9f9f9':'white'}">`;
+    html+=`<div style="font-size:11px;font-weight:${isToday?'700':'500'};color:${isToday?'#C89A00':isPast?'var(--text2)':'var(--text)'};margin-bottom:2px">${d}</div>`;
+    
+    events.slice(0,2).forEach(s=>{
+      const color = s.stato==='completata'?'#2D7D46':'#1A56DB';
+      const bg = s.stato==='completata'?'#EAF5EE':'#EBF5FF';
+      html+=`<div style="font-size:9px;background:${bg};color:${color};padding:1px 4px;border-radius:3px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer" title="${gCorso(s.corsoId)} — ${gAz(s.aziendaId)}">${gCorso(s.corsoId).slice(0,18)}</div>`;
+    });
+    if(events.length>2) html+=`<div style="font-size:9px;color:var(--text2)">+${events.length-2} altri</div>`;
+    html+='</div>';
+  }
+  html+='</div>';
+  calGrid.innerHTML=html;
+}
+
+// ══ LETTERA INCARICO ══
+function generaLettIncarico(){
+  const s=gSess(); if(!s) return;
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
+  const az=db.aziende().find(a=>a.id===s.aziendaId)||{};
+  const doc=db.docenti().find(d=>d.id===s.docenteId)||{};
+  const cfg=getAttConfig();
+  const mittente=cfg.aziendaNome||'Framyx Srl — Società Benefit';
+  const citta=s.cittaAttestato||cfg.cittaDefault||az.comune||'_______________';
+  const compenso=document.getElementById('lett-compenso')?.value||'';
+  const rif=document.getElementById('lett-rif')?.value||'';
+
+  if(!doc.nome){ toast('Seleziona un docente per la sessione prima di generare la lettera','⚠️'); return; }
+
+  const giornateHtml = (s.giornate&&s.giornate.length
+    ? s.giornate.map((g,i)=>`<tr><td style="padding:4px 10px;border:1px solid #eee">${i+1}ª giornata</td><td style="padding:4px 10px;border:1px solid #eee"><strong>${fmt(g.data)}</strong></td><td style="padding:4px 10px;border:1px solid #eee">${g.ini||'—'} – ${g.fine||'—'}</td></tr>`).join('')
+    : `<tr><td style="padding:4px 10px;border:1px solid #eee">1ª giornata</td><td style="padding:4px 10px;border:1px solid #eee"><strong>${fmt(s.data)}</strong></td><td style="padding:4px 10px;border:1px solid #eee">${s.oraInizio||'—'} – ${s.oraFine||'—'}</td></tr>`
+  );
+
+  const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:48px 52px;background:white;font-size:12px;color:#222;line-height:1.7">
+  <div style="border-bottom:3px solid #FDC400;padding-bottom:14px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      ${cfg.logo?`<img src="${cfg.logo}" style="max-height:50px;max-width:180px;display:block;margin-bottom:8px">`:``}
+      <div style="font-size:15px;font-weight:700;color:#1A1916">${mittente}</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#888">
+      ${rif?`<div>Rif: <strong>${rif}</strong></div>`:''}
+      <div>${citta}, ${fmt(new Date().toISOString().slice(0,10))}</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:24px">
+    <div style="font-weight:700">Spett.le</div>
+    <div style="font-size:13px;font-weight:700;margin-top:4px">${doc.nome} ${doc.cognome}</div>
+    ${doc.qualifica?`<div style="color:#666">${doc.qualifica}</div>`:''}
+    ${doc.email?`<div style="color:#666">${doc.email}</div>`:''}
+  </div>
+
+  <div style="font-weight:700;font-size:13px;margin-bottom:16px;text-decoration:underline">
+    OGGETTO: Lettera di incarico — ${corso.titolo||'Corso di formazione'}
+  </div>
+
+  <p>Gentile ${doc.nome} ${doc.cognome},</p>
+  <p>con la presente La invitiamo a svolgere, in qualità di <strong>docente/formatore</strong>, il corso di formazione di seguito specificato, commissionato da <strong>${az.nome||'—'}</strong>.</p>
+
+  <table style="width:100%;border-collapse:collapse;margin:18px 0">
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700;width:35%">Corso</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.titolo||'—'}</td></tr>
+    ${corso.norma?`<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Riferimento normativo</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.norma}</td></tr>`:''}
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Committente</td><td style="padding:6px 10px;border:1px solid #ddd">${az.nome||'—'}${az.indirizzo?' — '+az.indirizzo:''}</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Sede svolgimento</td><td style="padding:6px 10px;border:1px solid #ddd">${s.sede||az.indirizzo||'—'}</td></tr>
+    <tr style="background:#f5f5f5"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Modalità</td><td style="padding:6px 10px;border:1px solid #ddd">${s.modalita||'In presenza'}</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Durata totale</td><td style="padding:6px 10px;border:1px solid #ddd">${corso.durata||'—'} ore</td></tr>
+    ${compenso?`<tr style="background:#FFFDE7"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700">Compenso</td><td style="padding:6px 10px;border:1px solid #ddd"><strong>${compenso}</strong></td></tr>`:''}
+  </table>
+
+  <div style="margin:16px 0 8px;font-weight:700">Calendario giornate:</div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+    <thead><tr style="background:#484F54;color:white"><th style="padding:5px 10px;font-size:11px">Giornata</th><th style="padding:5px 10px;font-size:11px">Data</th><th style="padding:5px 10px;font-size:11px">Orario</th></tr></thead>
+    <tbody>${giornateHtml}</tbody>
+  </table>
+
+  <p>La preghiamo di confermare la disponibilità rispondendo alla presente oppure contattando l'ufficio formazione.</p>
+  <p>La ringraziamo per la collaborazione e restiamo a disposizione per qualsiasi chiarimento.</p>
+  <p>Cordiali saluti,</p>
+
+  <div style="margin-top:32px;display:flex;justify-content:space-between">
+    <div style="text-align:center;width:44%">
+      <div style="font-size:11px;color:#888;margin-bottom:4px">Il Responsabile del Progetto Formativo</div>
+      <div style="font-weight:700;margin-bottom:6px">${doc.resp||cfg.aziendaNome||mittente}</div>
+      ${doc.firmaResp?`<img src="${doc.firmaResp}" style="max-height:44px;max-width:160px;display:block;margin:0 auto 4px">`:'<div style="height:44px"></div>'}
+      <div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma</div>
+    </div>
+    <div style="text-align:center;width:44%">
+      <div style="font-size:11px;color:#888;margin-bottom:4px">Per accettazione — Il Docente</div>
+      <div style="font-weight:700;margin-bottom:6px">${doc.nome} ${doc.cognome}</div>
+      <div style="height:44px"></div>
+      <div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma e data</div>
+    </div>
+  </div>
+</div>`;
+  preview(html);
+}
+
+function renderImpostazioni(){
+  const cfg=getAttConfig();
+  document.getElementById('att-azienda-nome').value=cfg.aziendaNome||'Framyx Srl — Società Benefit';
+  document.getElementById('att-intestazione').value=cfg.intestazione||'ATTESTATO DI PARTECIPAZIONE';
+  document.getElementById('att-sottotitolo').value=cfg.sottotitolo||"CON VERIFICA DELL'APPRENDIMENTO";
+  document.getElementById('att-footer').value=cfg.footer||'';
+  document.getElementById('att-citta-default').value=cfg.cittaDefault||'';
+  // logo
+  clearLogo();
+  if(cfg.logo){ document.getElementById('logo-img').src=cfg.logo; document.getElementById('logo-img').style.display='block'; document.getElementById('logo-placeholder').style.display='none'; }
+}
+
+function getAttConfig(){
+  try{ return JSON.parse(localStorage.getItem('frm_att_config')||'{}') }catch(e){ return {} }
+}
+function salvaImpostazioni(){
+  const cfg=getAttConfig();
+  cfg.aziendaNome=document.getElementById('att-azienda-nome').value||'Framyx Srl — Società Benefit';
+  cfg.intestazione=document.getElementById('att-intestazione').value||'ATTESTATO DI PARTECIPAZIONE';
+  cfg.sottotitolo=document.getElementById('att-sottotitolo').value||"CON VERIFICA DELL'APPRENDIMENTO";
+  cfg.footer=document.getElementById('att-footer').value||'';
+  cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
+  const logoImg=document.getElementById('logo-img');
+  if(logoImg&&logoImg.src&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
+  localStorage.setItem('frm_att_config', JSON.stringify(cfg));
+  toast('Impostazioni salvate','💾');
+}
+function resetImpostazioni(){
+  localStorage.removeItem('frm_att_config');
+  renderImpostazioni();
+  toast('Impostazioni ripristinate','↩');
+}
+function loadLogo(input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ document.getElementById('logo-img').src=e.target.result; document.getElementById('logo-img').style.display='block'; document.getElementById('logo-placeholder').style.display='none'; }; r.readAsDataURL(f); input.value=''; }
+function clearLogo(){ document.getElementById('logo-img').src=''; document.getElementById('logo-img').style.display='none'; document.getElementById('logo-placeholder').style.display='block'; const cfg=getAttConfig(); delete cfg.logo; localStorage.setItem('frm_att_config',JSON.stringify(cfg)); }
 
 // ══ FILTERS ══
 function updateFilters(){ const opts='<option value="">Tutte le aziende</option>'+db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join(''); ['fl-az','fs-az','fsc-az'].forEach(id=>{ const e=document.getElementById(id); if(e) e.innerHTML=opts }) }
