@@ -262,6 +262,7 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="nav-item" onclick="goTo('sessioni')" id="nav-sessioni"><span class="ni">📅</span>Sessioni corso</div>
     <div class="nav-item" onclick="goTo('documenti')" id="nav-documenti"><span class="ni">📄</span>Documenti</div>
     <div class="nav-item" onclick="goTo('preventivi')" id="nav-preventivi"><span class="ni">💼</span>Preventivi</div>
+    <div class="nav-item" onclick="goTo('offerte')" id="nav-offerte"><span class="ni">📋</span>Offerte<span id="badge-offerte" class="badge bb" style="display:none;margin-left:auto;font-size:10px"></span></div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Archivio</div>
@@ -305,6 +306,7 @@ textarea.fc{min-height:68px;resize:vertical}
       <div class="stats-grid" id="stats-grid"></div>
       <div class="grid-2">
         <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti</span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte</button></div><div id="dash-scad"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📋 Offerte</span><button class="btn btn-sm" onclick="goTo('offerte')">Vedi tutte</button></div><div id="dash-offerte"></div></div>
         <div class="card"><div class="card-header"><span class="card-title">📅 Sessioni recenti</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
       </div>
       <div class="card mt-2">
@@ -341,8 +343,28 @@ textarea.fc{min-height:68px;resize:vertical}
 
     <!-- ═══ DOCENTI ═══ -->
     <div class="page" id="page-docenti">
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="card" style="background:linear-gradient(135deg,#7C3AED11,#7C3AED05);border:1px solid #7C3AED33">
+          <div style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div style="font-size:32px">📁</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:#7C3AED">Fascicolo docente</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:2px">Clicca il pulsante <strong style="color:#7C3AED">📁 Fascicolo</strong> su un docente per aprire il suo fascicolo con CV, documenti firmati e generazione autocertificazioni</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,#FDC40011,#FDC40005);border:1px solid #FDC40033">
+          <div style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div style="font-size:32px">✍️</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:#C89A00">Documenti generabili</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:2px">Dal fascicolo puoi generare: <strong>Autocertificazione requisiti</strong>, <strong>Lettera incaricato privacy</strong>, <strong>Impegno riservatezza</strong> — precompilati con i dati del docente</div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="card"><div class="card-header"><span class="card-title">Docenti / Formatori</span><button class="btn btn-primary btn-sm" onclick="openM('m-docente')">+ Nuovo</button></div>
-      <table class="tbl"><thead><tr><th>Nome</th><th>Cognome</th><th>Qualifica</th><th>Resp. progetto</th><th>Email</th><th>Fascicolo</th><th></th></tr></thead><tbody id="tb-doc"></tbody></table></div>
+      <table class="tbl"><thead><tr><th>Nome</th><th>Cognome</th><th>Qualifica</th><th>Email</th><th style="width:120px;text-align:center">📁 Fascicolo</th><th style="width:80px"></th></tr></thead><tbody id="tb-doc"></tbody></table></div>
       <div id="fascicolo-panel" style="display:none;margin-top:16px">
         <div class="card" style="border-top:3px solid #7C3AED">
           <div class="card-header">
@@ -597,6 +619,109 @@ textarea.fc{min-height:68px;resize:vertical}
     </div>
 
 
+    <!-- ═══ OFFERTE ═══ -->
+    <div class="page" id="page-offerte">
+      <div class="grid-2">
+
+        <!-- Colonna sinistra: genera offerta -->
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">📋 Genera offerta</span></div>
+            <div style="padding:16px">
+              <div class="fg">
+                <label class="fl">Tipo offerta *</label>
+                <select class="fc" id="off-tipo" onchange="onOffTipoChange()">
+                  <option value="">Seleziona template...</option>
+                </select>
+              </div>
+              <div id="off-tipo-desc" style="display:none;background:var(--surface2);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
+              <div class="fg">
+                <label class="fl">Cliente *</label>
+                <select class="fc" id="off-az" onchange="onOffAzChange()"><option value="">Seleziona azienda...</option></select>
+              </div>
+              <div id="off-cliente-info" style="display:none;background:var(--surface2);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
+              <div class="fr2">
+                <div class="fg"><label class="fl">N° offerta</label><input class="fc" id="off-num" placeholder="es. 001/2026"></div>
+                <div class="fg"><label class="fl">Data offerta</label><input class="fc" id="off-data" type="date"></div>
+              </div>
+              <div class="fg"><label class="fl">Referente cliente (CA)</label><input class="fc" id="off-referente" placeholder="es. Mario Rossi"></div>
+              <div class="fg"><label class="fl">Note aggiuntive</label><input class="fc" id="off-note" placeholder="es. Sede aggiuntiva inclusa"></div>
+              <div class="fg">
+                <label class="fl">Validità offerta (giorni)</label>
+                <input class="fc" id="off-validita" type="number" value="30" min="1" style="max-width:100px">
+              </div>
+              <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="generaOfferta()">📥 Scarica .docx</button>
+                <button class="btn btn-sm" onclick="togglePersonalizza()">✏️ Personalizza</button>
+                <button class="btn btn-sm" onclick="salvaOffertaBozza('bozza')">💾 Salva bozza</button>
+                <button class="btn btn-sm" style="background:#1A56DB;color:white" onclick="salvaOffertaBozza('inviata')">📤 Inviata</button>
+                <button class="btn btn-sm" style="background:#D4620A;color:white" onclick="salvaOffertaBozza('attesa')">⏳ In attesa</button>
+                <button class="btn btn-xs btn-danger" onclick="resetOfferta()">✕ Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bozze salvate -->
+          <!-- Personalizzazione voci -->
+          <div class="card mt-2" id="off-custom-panel" style="display:none">
+            <div class="card-header">
+              <span class="card-title">✏️ Personalizza voci offerta</span>
+              <button class="btn btn-xs" onclick="document.getElementById('off-custom-panel').style.display='none'">✕</button>
+            </div>
+            <div style="padding:12px">
+              <p class="text-xs text-muted" style="margin-bottom:8px">Modifica le voci prima di scaricare. Lascia vuoto per usare quelle standard del template.</p>
+              <div id="off-voci-custom-list"></div>
+              <button class="btn btn-xs btn-primary" style="margin-top:6px" onclick="addVoceCustom()">+ Aggiungi voce</button>
+              <div class="fg" style="margin-top:10px">
+                <label class="fl" style="font-size:11px">Note personalizzate (sostituisce note standard)</label>
+                <textarea class="fc" id="off-note-custom" rows="3" placeholder="Lascia vuoto per usare le note standard del template..." style="resize:vertical;font-size:11px"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-2">
+            <div class="card-header">
+              <span class="card-title">📁 Storico offerte</span>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input class="fc" id="off-search" placeholder="🔍 Cerca..." oninput="renderOfferteBozze()" style="max-width:140px;font-size:11px">
+                <select class="fc" id="off-filter-stato" onchange="renderOfferteBozze()" style="max-width:110px;font-size:11px">
+                  <option value="">Tutti</option>
+                  <option value="bozza">📝 Bozza</option>
+                  <option value="inviata">📤 Inviata</option>
+                  <option value="attesa">⏳ In attesa</option>
+                  <option value="accettata">✅ Accettata</option>
+                  <option value="rifiutata">❌ Rifiutata</option>
+                  <option value="scaduta">⌛ Scaduta</option>
+                </select>
+              </div>
+            </div>
+            <div id="off-bozze-list" style="padding:12px"></div>
+          </div>
+        </div>
+
+        <!-- Colonna destra: catalogo template -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📚 Catalogo template offerte</span>
+              <button class="btn btn-xs btn-primary" onclick="importaTemplateOfferta()">⬆️ Importa CSV</button>
+            </div>
+            <div style="padding:12px">
+              <p class="text-xs text-muted" style="margin-bottom:10px">Questi sono i template di offerta disponibili. Seleziona un tipo dalla lista a sinistra per generare l'offerta per il cliente.</p>
+              <div id="off-catalogo-list"></div>
+              <div style="margin-top:10px;display:flex;gap:8px">
+                <button class="btn btn-xs btn-primary" onclick="scaricaTemplateCatalogoOfferte()">⬇️ Scarica template CSV</button>
+                <button class="btn btn-xs" onclick="aggiungiTemplateOfferta()">+ Nuovo template</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <input type="file" id="off-import-file" accept=".csv" style="display:none" onchange="onImportTemplateOfferta(this)">
+    </div>
+
+
     <!-- ═══ FONDIMPRESA ═══ -->
     <div class="page" id="page-fondimpresa">
       <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
@@ -724,7 +849,9 @@ textarea.fc{min-height:68px;resize:vertical}
           <div class="flex gap-2" style="flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard();toast('Dati ricaricati da Supabase','☁️')})">↻ Sincronizza ora</button>
             <button class="btn btn-sm" onclick="exportJSON()">💾 Esporta backup JSON</button>
+            <button class="btn btn-sm" onclick="creaTabellaSupabase()" id="btn-crea-tabella" style="background:#7C3AED;color:white">⚡ Crea tabella offerte</button>
           </div>
+          <div id="crea-tabella-msg" style="display:none;margin-top:8px"></div>
           <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:var(--r);font-size:12px;color:var(--text2)">
             <strong>Come funziona:</strong> ogni modifica viene salvata automaticamente su Supabase. Apri l'app da qualsiasi Mac o dispositivo e i dati sono sempre aggiornati. Il backup JSON è un'ulteriore sicurezza.
           </div>
@@ -769,6 +896,11 @@ textarea.fc{min-height:68px;resize:vertical}
         <div style="padding:18px">
           <p class="text-sm text-muted" style="margin-bottom:12px">Cancella tutti i dati locali e da Supabase. <strong>Operazione irreversibile.</strong></p>
           <button class="btn btn-danger btn-sm" onclick="if(confirm('Cancellare TUTTI i dati? Questa operazione è irreversibile.')){clearAll()}">🗑 Cancella tutti i dati</button>
+          <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+            <div style="font-weight:600;font-size:12px;margin-bottom:6px">🔄 Auto-backup locale</div>
+            <p class="text-sm text-muted" style="margin-bottom:10px">Ad ogni apertura dell'app viene salvato automaticamente un backup locale degli ultimi 7 giorni. In caso di cancellazione accidentale puoi ripristinare i dati.</p>
+            <button class="btn btn-primary btn-sm" onclick="ripristinaAutoBackup()">🔄 Ripristina da auto-backup</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1057,7 +1189,7 @@ const LS = {
 // Cache locale per velocità UI
 const cache = {
   aziende: null, lavoratori: null, docenti: null,
-  corsi: null, sessioni: null, piani_fondo: null
+  corsi: null, sessioni: null, piani_fondo: null, offerte: null
 };
 
 const db = {
@@ -1066,12 +1198,14 @@ const db = {
   docenti:    () => cache.docenti    || LS.g('docenti'),
   corsi:      () => cache.corsi      || LS.g('corsi'),
   sessioni:   () => cache.sessioni   || LS.g('sessioni'),
+  offerte:    () => cache.offerte    || LS.g('offerte'),
   save: {
     aziende:    async v => { cache.aziende=v;    LS.s('aziende',v);    await supaUpsert('aziende',v) },
     lavoratori: async v => { cache.lavoratori=v; LS.s('lavoratori',v); await supaUpsert('lavoratori',v) },
     docenti:    async v => { cache.docenti=v;    LS.s('docenti',v);    await supaUpsert('docenti',v) },
     corsi:      async v => { cache.corsi=v;      LS.s('corsi',v);      await supaUpsert('corsi',v) },
     sessioni:   async v => { cache.sessioni=v;   LS.s('sessioni',v);   await supaUpsert('sessioni',v) },
+    offerte:    async v => { cache.offerte=v;    LS.s('offerte',v);    await supaUpsert('offerte',v) },
   }
 };
 
@@ -1089,7 +1223,7 @@ async function supaUpsert(table, records) {
 async function loadFromSupabase() {
   showSyncStatus('loading');
   try {
-    const tables = ['aziende','lavoratori','docenti','corsi','sessioni'];
+    const tables = ['aziende','lavoratori','docenti','corsi','sessioni','offerte'];
     await Promise.all(tables.map(async t => {
       const {data, error} = await supa.from(t).select('data');
       if(error) { console.warn(t, error.message); return }
@@ -1293,7 +1427,7 @@ function parseCSVorXLSX(data, filename){
 }
 
 async function clearAll(){
-  const tables = ['aziende','lavoratori','docenti','corsi','sessioni','piani_fondo'];
+  const tables = ['aziende','lavoratori','docenti','corsi','sessioni','piani_fondo','offerte'];
   // clear local
   tables.forEach(k=>{ LS.s(k,[]); cache[k]=null });
   localStorage.removeItem('frm_fondo');
@@ -1307,7 +1441,7 @@ async function clearAll(){
 
 // ══ NAVIGATION ══
 let currentPage = 'dashboard';
-const titles = {dashboard:'Dashboard',aziende:'Aziende',lavoratori:'Lavoratori',docenti:'Docenti',corsi:'Corsi standard',sessioni:'Sessioni corso',documenti:'Documenti',preventivi:'Preventivi',storico:'Storico',scadenze:'Scadenze',import:'Importa dati',impostazioni:'Impostazioni'};
+const titles = {dashboard:'Dashboard',aziende:'Aziende',lavoratori:'Lavoratori',docenti:'Docenti',corsi:'Corsi standard',sessioni:'Sessioni corso',documenti:'Documenti',preventivi:'Preventivi',offerte:'Offerte',storico:'Storico',scadenze:'Scadenze',import:'Importa dati',impostazioni:'Impostazioni'};
 
 function goTo(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
@@ -1319,7 +1453,7 @@ function goTo(p){
   renderPage(p);
 }
 function renderPage(p){
-  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
+  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,offerte:renderOfferte,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
 }
 function openM(id){ document.getElementById(id).classList.add('open'); if(id==='m-lavoratore') popLavAz(); if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
@@ -1522,7 +1656,8 @@ function importCorsiFile(f){
       norma:    hdr.findIndex(h=>h.includes('norm')||h.includes('legge')||h.includes('decreto')||h.includes('riferim')),
       durata:   hdr.findIndex(h=>h.includes('durata')||h.includes('ore')),
       validita: hdr.findIndex(h=>h.includes('valid')||h.includes('anni')||h.includes('scad')),
-      tipo:     hdr.findIndex(h=>h.includes('tipo')||h.includes('categ')||h.includes('area'))
+      tipo:     hdr.findIndex(h=>h.includes('tipo')||h.includes('categ')||h.includes('area')),
+      argomenti:hdr.findIndex(h=>h.includes('argomenti')||h.includes('contenuti')||h.includes('programma')||h.includes('moduli'))
     };
     if(ci.titolo<0){ document.getElementById('imp-cor-result').innerHTML=`<span style="color:var(--red)">❌ Colonna "Titolo" non trovata. Intestazioni rilevate: <em>${hdr.join(', ')}</em></span>`; return; }
     let added=0, skip=0;
@@ -1537,12 +1672,22 @@ function importCorsiFile(f){
       // Fuzzy tipo match
       const tipoMap={'sicurezza':'Sicurezza','antincendio':'Antincendio','primo soccorso':'Primo soccorso','pronto soccorso':'Primo soccorso','attrezzature':'Attrezzature','altro':'Altro'};
       tipo=tipoMap[tipo.toLowerCase()]||(!tipiValidi.includes(tipo)?'Altro':tipo);
+      // Parse argomenti: "Arg1 | Arg2 | Arg3" → sezione unica con punti
+      let sezioni=[];
+      if(ci.argomenti>=0&&r[ci.argomenti]){
+        const argStr=(r[ci.argomenti]||'').toString().trim();
+        if(argStr){
+          // Support both | and ; as argomenti separators
+          const punti=argStr.split(/[|]/).map(a=>a.trim()).filter(Boolean);
+          if(punti.length) sezioni=[{titolo:'Contenuti del corso', punti}];
+        }
+      }
       corsi.push({
         id:uid(), titolo,
         norma:    ci.norma>=0   ?(r[ci.norma]||'').toString().trim():'',
         durata:   ci.durata>=0  ?(r[ci.durata]||'').toString().trim():'',
         validita: ci.validita>=0?parseInt(r[ci.validita])||5:5,
-        tipo, sezioni:[], domande:[]
+        tipo, sezioni, domande:[]
       });
       added++;
     });
@@ -1674,49 +1819,49 @@ function scaricaTemplateLavoratori(){
 
 function scaricaTemplateCorsi(){
   const csv=[
-    'Titolo;Normativa;Durata (ore);Validità (anni);Tipo',
+    'Titolo;Normativa;Durata (ore);Validità (anni);Tipo;Argomenti (separati da |)',
     // Sicurezza generale
-    'Formazione generale lavoratori;Art. 37 D.Lgs. 81/08;4;5;Sicurezza',
-    'Formazione specifica lavoratori rischio basso;Art. 37 D.Lgs. 81/08;4;5;Sicurezza',
-    'Formazione specifica lavoratori rischio medio;Art. 37 D.Lgs. 81/08;8;5;Sicurezza',
-    'Formazione specifica lavoratori rischio alto;Art. 37 D.Lgs. 81/08;12;5;Sicurezza',
-    'Aggiornamento formazione lavoratori;Art. 37 D.Lgs. 81/08;6;5;Sicurezza',
-    'Formazione preposti;Art. 37 D.Lgs. 81/08;8;5;Sicurezza',
-    'Aggiornamento preposti;Art. 37 D.Lgs. 81/08;6;5;Sicurezza',
-    'Formazione dirigenti;Art. 37 D.Lgs. 81/08;16;5;Sicurezza',
+    'Formazione generale lavoratori;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;4;5;Sicurezza;Concetti di rischio, danno, prevenzione e protezione | organizzazione della prevenzione aziendale | diritti, doveri e sanzioni dei soggetti aziendali | organi di vigilanza, controllo e assistenza',
+    'Formazione specifica lavoratori rischio basso;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;4;5;Sicurezza;Rischi infortuni | rischi meccanici | rischio elettrico | rischio incendio | rischi fisici | movimentazione manuale dei carichi | segnaletica | DPI | procedure di sicurezza ed emergenza',
+    'Formazione specifica lavoratori rischio medio;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;8;5;Sicurezza;Rischi infortuni | rischi meccanici | rischio elettrico | rischio incendio ed esplosione | rischi fisici (rumore, vibrazioni) | movimentazione manuale dei carichi | movimentazione merci | segnaletica | DPI | procedure di sicurezza ed emergenza',
+    'Formazione specifica lavoratori rischio alto;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;12;5;Sicurezza;Rischi infortuni | rischi meccanici | rischio elettrico | rischio incendio ed esplosione | rischi fisici | rischi chimici | rischi biologici | movimentazione manuale dei carichi | cadute dall alto | segnaletica | DPI | procedure di sicurezza ed emergenza',
+    'Aggiornamento formazione lavoratori;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;6;5;Sicurezza;Aggiornamento su rischi specifici | aggiornamento normativo | aggiornamento su procedure di sicurezza | aggiornamento su DPI | aggiornamento su gestione emergenze',
+    'Formazione preposti;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;8;5;Sicurezza;Compiti, obblighi e responsabilità del preposto | vigilanza sull osservanza delle disposizioni | gestione operativa della sicurezza | valutazione dei rischi | comunicazione e formazione | gestione delle emergenze',
+    'Aggiornamento preposti;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;6;5;Sicurezza;Aggiornamento su compiti e responsabilità | aggiornamento normativo | aggiornamento su tecniche di vigilanza | aggiornamento su gestione sicurezza',
+    'Formazione dirigenti;Art. 37 D.Lgs. 81/08 - Accordo Stato-Regioni 2025;12;5;Sicurezza;Sistema legislativo in materia di sicurezza | gestione e organizzazione della sicurezza | individuazione e valutazione dei rischi | comunicazione, formazione e consultazione dei lavoratori',
     // Antincendio
-    'Formazione antincendio rischio basso;D.M. 02/09/2021;4;5;Antincendio',
-    'Formazione antincendio rischio medio;D.M. 02/09/2021;8;5;Antincendio',
-    'Formazione antincendio rischio alto;D.M. 02/09/2021;16;5;Antincendio',
-    'Aggiornamento antincendio rischio basso;D.M. 02/09/2021;2;5;Antincendio',
-    'Aggiornamento antincendio rischio medio;D.M. 02/09/2021;5;5;Antincendio',
-    'Aggiornamento antincendio rischio alto;D.M. 02/09/2021;8;5;Antincendio',
+    'Formazione antincendio rischio basso;D.M. 02/09/2021;4;5;Antincendio;Principi della combustione | rischi di incendio | misure di prevenzione | procedure di emergenza | uso degli estintori',
+    'Formazione antincendio rischio medio;D.M. 02/09/2021;8;5;Antincendio;Principi della combustione | sostanze estinguenti | rischi incendio | misure di prevenzione e protezione | procedure di emergenza | uso attrezzature antincendio',
+    'Formazione antincendio rischio alto;D.M. 02/09/2021;16;5;Antincendio;Principi della combustione | dinamica incendio | sostanze estinguenti | sistemi di protezione attiva e passiva | procedure complesse di emergenza | uso attrezzature antincendio',
+    'Aggiornamento antincendio rischio basso;D.M. 02/09/2021;2;5;Antincendio;Aggiornamento su prevenzione incendi | procedure di emergenza | uso estintori',
+    'Aggiornamento antincendio rischio medio;D.M. 02/09/2021;5;5;Antincendio;Aggiornamento su rischi incendio | misure di prevenzione | procedure di emergenza | uso attrezzature antincendio',
+    'Aggiornamento antincendio rischio alto;D.M. 02/09/2021;8;5;Antincendio;Aggiornamento su dinamica incendio | sistemi di protezione | gestione emergenze complesse | uso attrezzature antincendio',
     // Primo soccorso
-    'Primo soccorso gruppo A;D.Lgs. 81/08 - D.M. 388/03;16;3;Primo soccorso',
-    'Primo soccorso gruppo B;D.Lgs. 81/08 - D.M. 388/03;12;3;Primo soccorso',
-    'Primo soccorso gruppo C;D.Lgs. 81/08 - D.M. 388/03;12;3;Primo soccorso',
-    'Aggiornamento primo soccorso gruppo A;D.Lgs. 81/08 - D.M. 388/03;6;3;Primo soccorso',
-    'Aggiornamento primo soccorso gruppo B/C;D.Lgs. 81/08 - D.M. 388/03;4;3;Primo soccorso',
+    'Primo soccorso gruppo A;D.Lgs. 81/08 - D.M. 388/03;16;3;Primo soccorso;Allertare il sistema di soccorso | riconoscere emergenza sanitaria | interventi di primo soccorso | traumi e patologie specifiche | tecniche di intervento pratico',
+    'Primo soccorso gruppo B;D.Lgs. 81/08 - D.M. 388/03;12;3;Primo soccorso;Allertare il sistema di soccorso | riconoscere emergenza sanitaria | interventi di primo soccorso | tecniche di intervento',
+    'Primo soccorso gruppo C;D.Lgs. 81/08 - D.M. 388/03;12;3;Primo soccorso;Allertare il sistema di soccorso | riconoscere emergenza sanitaria | interventi di primo soccorso | tecniche di intervento',
+    'Aggiornamento primo soccorso gruppo A;D.Lgs. 81/08 - D.M. 388/03;6;3;Primo soccorso;Aggiornamento su tecniche di primo soccorso | aggiornamento pratico | gestione emergenze sanitarie',
+    'Aggiornamento primo soccorso gruppo B/C;D.Lgs. 81/08 - D.M. 388/03;4;3;Primo soccorso;Aggiornamento su tecniche di primo soccorso | aggiornamento pratico | gestione emergenze sanitarie',
     // Attrezzature
-    'Uso carrello elevatore frontale;Accordo Stato-Regioni 22/02/2012;12;5;Attrezzature',
-    'Aggiornamento carrello elevatore frontale;Accordo Stato-Regioni 22/02/2012;4;5;Attrezzature',
-    'Uso piattaforme elevabili (PLE) senza stabilizzatori;Accordo Stato-Regioni 22/02/2012;10;5;Attrezzature',
-    'Uso piattaforme elevabili (PLE) con stabilizzatori;Accordo Stato-Regioni 22/02/2012;14;5;Attrezzature',
-    'Uso gru su autocarro;Accordo Stato-Regioni 22/02/2012;12;5;Attrezzature',
-    'Uso gru a torre;Accordo Stato-Regioni 22/02/2012;14;5;Attrezzature',
-    'Uso escavatore idraulico;Accordo Stato-Regioni 22/02/2012;10;5;Attrezzature',
-    'Uso macchine movimento terra;Accordo Stato-Regioni 22/02/2012;16;5;Attrezzature',
+    'Uso carrello elevatore frontale;Accordo Stato-Regioni 22/02/2012;12;5;Attrezzature;Normativa di riferimento | caratteristiche tecniche | controlli e verifiche | utilizzo in sicurezza | rischi specifici | manovre operative | procedure di emergenza',
+    'Aggiornamento carrello elevatore frontale;Accordo Stato-Regioni 22/02/2012;4;5;Attrezzature;Aggiornamento normativo | aggiornamento su utilizzo in sicurezza | rischi e procedure operative',
+    'Uso piattaforme elevabili (PLE) senza stabilizzatori;Accordo Stato-Regioni 22/02/2012;10;5;Attrezzature;Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre | emergenze',
+    'Uso piattaforme elevabili (PLE) con stabilizzatori;Accordo Stato-Regioni 22/02/2012;14;5;Attrezzature;Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre | emergenze',
+    'Uso gru su autocarro;Accordo Stato-Regioni 22/02/2012;12;5;Attrezzature;Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze',
+    'Uso gru a torre;Accordo Stato-Regioni 22/02/2012;14;5;Attrezzature;Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze',
+    'Uso escavatore idraulico;Accordo Stato-Regioni 22/02/2012;10;5;Attrezzature;Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze',
+    'Uso macchine movimento terra;Accordo Stato-Regioni 22/02/2012;16;5;Attrezzature;Normativa | caratteristiche attrezzatura | controlli | utilizzo in sicurezza | rischi specifici | manovre operative | emergenze',
     // Altro
-    'Formazione DPI - Dispositivi di protezione individuale;Art. 77 D.Lgs. 81/08;4;5;Sicurezza',
-    'Lavori in quota;Art. 115-116 D.Lgs. 81/08;8;5;Sicurezza',
-    'Lavori in spazi confinati;D.P.R. 177/2011;8;5;Sicurezza',
-    'Formazione RSPP datore di lavoro rischio basso;Art. 34 D.Lgs. 81/08;16;5;Sicurezza',
-    'Formazione RSPP datore di lavoro rischio medio;Art. 34 D.Lgs. 81/08;32;5;Sicurezza',
-    'Formazione RSPP datore di lavoro rischio alto;Art. 34 D.Lgs. 81/08;48;5;Sicurezza',
-    'Movimentazione manuale dei carichi;Art. 37 D.Lgs. 81/08 - Tit. VI;4;5;Sicurezza',
-    'Uso videoterminali;Art. 37 D.Lgs. 81/08 - Tit. VII;4;5;Sicurezza',
-    'Rischio chimico;Art. 37 D.Lgs. 81/08 - Tit. IX;8;5;Sicurezza',
-    'Rischio rumore;Art. 37 D.Lgs. 81/08 - Tit. VIII;4;5;Sicurezza',
+    'Formazione DPI;Art. 77 D.Lgs. 81/08;4;5;Sicurezza;Normativa DPI | classificazione DPI | criteri di scelta | utilizzo corretto | manutenzione | obblighi dei lavoratori',
+    'Lavori in quota;Art. 115-116 D.Lgs. 81/08;8;5;Sicurezza;Definizione lavoro in quota | rischio caduta dall alto | sistemi di protezione | DPI anticaduta | procedure operative',
+    'Lavori in spazi confinati;D.P.R. 177/2011;8;5;Sicurezza;Definizione | rischi specifici | procedure di accesso | permessi di lavoro | gestione emergenze',
+    'Formazione RSPP datore di lavoro rischio basso;Art. 34 D.Lgs. 81/08;16;5;Sicurezza;Normativa sicurezza | gestione sicurezza | valutazione rischi | organizzazione prevenzione',
+    'Formazione RSPP datore di lavoro rischio medio;Art. 34 D.Lgs. 81/08;32;5;Sicurezza;Normativa sicurezza | gestione sicurezza | valutazione rischi | organizzazione prevenzione | rischi specifici',
+    'Formazione RSPP datore di lavoro rischio alto;Art. 34 D.Lgs. 81/08;48;5;Sicurezza;Normativa sicurezza | gestione sicurezza | valutazione rischi | organizzazione prevenzione | gestione avanzata dei rischi',
+    'Movimentazione manuale dei carichi;Art. 37 D.Lgs. 81/08 - Tit. VI;4;5;Sicurezza;Normativa | rischi ergonomici | tecniche corrette | prevenzione',
+    'Uso videoterminali;Art. 37 D.Lgs. 81/08 - Tit. VII;4;5;Sicurezza;Rischi postura e vista | ergonomia | organizzazione lavoro',
+    'Rischio chimico;Art. 37 D.Lgs. 81/08 - Tit. IX;8;5;Sicurezza;Classificazione | etichettatura | schede sicurezza | prevenzione | DPI',
+    'Rischio rumore;Art. 37 D.Lgs. 81/08 - Tit. VIII;4;5;Sicurezza;Effetti | valori limite | prevenzione | DPI uditivi',
   ].join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='catalogo_corsi_template.csv'; a.click();
@@ -1726,16 +1871,28 @@ function scaricaTemplateCorsi(){
 // ══ DOCENTI ══
 function renderDocenti(){ 
   const d=db.docenti(),tb=document.getElementById('tb-doc'); 
-  if(!d.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">🎓</div><h3>Nessun docente</h3></div></td></tr>';return} 
+  if(!d.length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">🎓</div><h3>Nessun docente</h3><p>Aggiungi il primo docente con il pulsante + Nuovo</p></div></td></tr>';return} 
   tb.innerHTML=d.map(x=>{
     const fasc=getFascicolo(x.id);
     const docs=['cv','autocert','rspp','privacy','riservatezza','altro'];
+    const docLabels={cv:'CV',autocert:'Autocert.',rspp:'RSPP',privacy:'Privacy',riservatezza:'Riserv.',altro:'Altro'};
     const loaded=docs.filter(k=>fasc[k]).length;
-    const fascBadge=loaded>0?`<span class="badge bg" style="font-size:10px">${loaded}/6</span>`:`<span class="badge bgr" style="font-size:10px">0/6</span>`;
-    return `<tr>
-      <td>${x.nome}</td><td><strong>${x.cognome}</strong></td>
-      <td>${x.qualifica||'—'}</td><td>${x.resp||'—'}</td><td>${x.email||'—'}</td>
-      <td><button class="btn btn-xs" style="background:#7C3AED;color:white" onclick="apriFascicolo('${x.id}')">📁 ${fascBadge}</button></td>
+    const isFascicoloOpen=fascDocId===x.id;
+    // Pill-style badges for loaded docs
+    const docPills=docs.filter(k=>fasc[k]).map(k=>`<span style="background:#2D7D46;color:white;font-size:9px;padding:1px 5px;border-radius:8px;margin:1px">${docLabels[k]}</span>`).join('');
+    const fascLabel=loaded===0
+      ? '<span style="font-size:10px;color:var(--text2)">Vuoto</span>'
+      : docPills;
+    return `<tr style="${isFascicoloOpen?'background:#F3E8FF;':''}">
+      <td><strong>${x.cognome}</strong> ${x.nome}</td>
+      <td style="font-size:11px;color:var(--text2)">${x.qualifica||'—'}</td>
+      <td style="font-size:11px">${x.email||'—'}</td>
+      <td style="text-align:center">
+        <button onclick="apriFascicolo('${x.id}')" style="background:${isFascicoloOpen?'#5B21B6':'#7C3AED'};color:white;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;margin:0 auto">
+          📁 Apri fascicolo
+        </button>
+        <div style="margin-top:3px;display:flex;flex-wrap:wrap;justify-content:center;gap:1px">${fascLabel}</div>
+      </td>
       <td class="actions"><button class="btn btn-xs" onclick="editDoc('${x.id}')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delDoc('${x.id}')">✕</button></td>
     </tr>`;
   }).join('') 
@@ -2171,7 +2328,37 @@ function exportScadCSV(){
 }
 
 // ══ DASHBOARD ══
-function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad(); const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg30=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length,urg60=sc.filter(x=>diffDays(x.sc)>30&&diffDays(x.sc)<=60).length,urg90=sc.filter(x=>diffDays(x.sc)>60&&diffDays(x.sc)<=90).length; document.getElementById('stats-grid').innerHTML=[{l:'🏢 Aziende',v:az.length,s:'clienti'},{l:'👷 Lavoratori',v:lav.length,s:'in anagrafica'},{l:'📅 Sessioni',v:sess.length,s:sess.filter(s=>s.stato==='completata').length+' completate'},{l:'⚠ Scadenze',v:scad+urg30,s:(scad?'🔴 '+scad+' scadute · ':'')+'🔴 '+urg30+' (30gg) · 🟠 '+urg60+' (60gg) · 🟡 '+urg90+' (90gg)'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tot=scad+urg30,b=document.getElementById('badge-scad'); b.textContent=tot; b.style.display=tot?'':'none'; const ul=sc.filter(x=>diffDays(x.sc)<=90).slice(0,8); document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`; const ulS=sess.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6); document.getElementById('dash-sess').innerHTML=ulS.length?ulS.map(s=>`<div class="srow"><div class="sdot ${s.stato==='completata'?'g':'o'}"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">📅</div><h3>Nessuna sessione</h3></div>`; renderCalendario(); }
+function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad();
+  // Offerte stats
+  const offerte=db.offerte();
+  const offStati={bozza:0,inviata:0,attesa:0,accettata:0,rifiutata:0,scaduta:0};
+  offerte.forEach(o=>{ if(offStati[o.stato]!==undefined) offStati[o.stato]++; else offStati.bozza++; });
+  const offBadge=document.getElementById('badge-offerte');
+  if(offBadge){ const tot=offStati.inviata+offStati.attesa; offBadge.textContent=tot; offBadge.style.display=tot?'':'none'; } const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg30=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length,urg60=sc.filter(x=>diffDays(x.sc)>30&&diffDays(x.sc)<=60).length,urg90=sc.filter(x=>diffDays(x.sc)>60&&diffDays(x.sc)<=90).length; document.getElementById('stats-grid').innerHTML=[{l:'🏢 Aziende',v:az.length,s:'clienti'},{l:'👷 Lavoratori',v:lav.length,s:'in anagrafica'},{l:'📅 Sessioni',v:sess.length,s:sess.filter(s=>s.stato==='completata').length+' completate'},{l:'⚠ Scadenze',v:scad+urg30,s:(scad?'🔴 '+scad+' scadute · ':'')+'🔴 '+urg30+' (30gg) · 🟠 '+urg60+' (60gg) · 🟡 '+urg90+' (90gg)'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tot=scad+urg30,b=document.getElementById('badge-scad'); b.textContent=tot; b.style.display=tot?'':'none'; const ul=sc.filter(x=>diffDays(x.sc)<=90).slice(0,8); document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`; const ulS=sess.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6); document.getElementById('dash-sess').innerHTML=ulS.length?ulS.map(s=>`<div class="srow"><div class="sdot ${s.stato==='completata'?'g':'o'}"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">📅</div><h3>Nessuna sessione</h3></div>`; renderCalendario();
+  // Dash offerte
+  const dashOff=document.getElementById('dash-offerte');
+  if(dashOff){
+    if(!offerte.length){ dashOff.innerHTML='<div class="empty" style="padding:14px"><div class="ei">📋</div><h3>Nessuna offerta</h3></div>'; }
+    else {
+      const colors={bozza:'#888',inviata:'#1A56DB',attesa:'#D4620A',accettata:'#2D7D46',rifiutata:'#C0392B',scaduta:'#666'};
+      const labels={bozza:'Bozza',inviata:'Inviata',attesa:'In attesa',accettata:'Accettata',rifiutata:'Rifiutata',scaduta:'Scaduta'};
+      const righe=Object.entries(offStati).filter(([,v])=>v>0).map(([k,v])=>`
+        <div class="srow" onclick="goTo('offerte')" style="cursor:pointer">
+          <div class="sdot" style="background:${colors[k]||'#888'}"></div>
+          <div class="sinfo"><div class="sname">${labels[k]||k}</div></div>
+          <div class="sdate" style="font-weight:700;color:${colors[k]||'#888'}">${v}</div>
+        </div>`).join('');
+      // Recent 3 offers
+      const recenti=offerte.slice(0,3).map(o=>`
+        <div class="srow" style="cursor:pointer" onclick="goTo('offerte')">
+          <div class="sdot" style="background:${colors[o.stato||'bozza']||'#888'}"></div>
+          <div class="sinfo"><div class="sname">${o.azNome||'—'}</div><div class="smeta">${o.codice||''} ${o.titoloTipo||''}</div></div>
+          <div class="sdate">${o.dataCreazione||o.dataOff||''}</div>
+        </div>`).join('');
+      dashOff.innerHTML=`<div style="padding:8px 4px 0">${righe}</div><div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">${recenti}</div>`;
+    }
+  }
+}
 
 // ══ IMPOSTAZIONI ══
 
@@ -2852,6 +3039,698 @@ function saveListino(l){ localStorage.setItem('frm_listino', JSON.stringify(l));
 
 let prevRighe = [];
 
+// ══ CATALOGO OFFERTE ══
+
+const CATALOGO_OFFERTE_DEFAULT = [
+  {
+    id:'dvr', codice:'OF-DVR-01', titolo:'Redazione DVR Generale',
+    sottotitolo:'Documento di Valutazione dei Rischi',
+    normativa:'D.Lgs. 81/2008 art. 28',
+    descrizione:'Redazione del Documento di Valutazione dei Rischi (DVR) previa visita in loco e raccolta dati. Include valutazione rischi generali, misure di prevenzione, programma migliorativo.',
+    sezioni:[
+      {num:'1', titolo:"Descrizione dell'incarico", testo:"Redazione del Documento di Valutazione dei Rischi (DVR) ai sensi dell'art. 28 del D.Lgs. 81/2008, previa visita in loco e raccolta dati. Il DVR è il documento fondamentale del sistema di sicurezza aziendale: descrive tutti i rischi presenti, le misure di prevenzione adottate, il programma delle misure migliorative e i ruoli delle figure della sicurezza."},
+      {num:'2', titolo:'Oggetto e limiti', testo:"Il servizio comprende la valutazione dei rischi generali (organizzativi, ergonomici, stress lavoro-correlato generico, rischio incendio di base, movimentazione manuale dei carichi, uso di attrezzature) con sopralluogo in azienda. Le valutazioni tecniche specialistiche sono oggetto di offerte separate."},
+      {num:'3', titolo:'Prestazioni incluse', testo:"— Sopralluogo in azienda per raccolta dati e osservazione dei luoghi di lavoro.\n— Intervista con il datore di lavoro, RSPP e RLS.\n— Identificazione e valutazione di tutti i rischi generali presenti.\n— Redazione del DVR completo con: descrizione azienda, organigramma sicurezza, valutazione rischi, misure di prevenzione, programma migliorativo, scadenziario.\n— Consegna del DVR in formato editabile (Word) e PDF con data certa."},
+    ],
+    voci:[
+      {desc:'Micro impresa – fino a 5 dip. – rischio basso (uffici, commercio, servizi)', importo:'€ 600,00'},
+      {desc:'Piccola impresa – 6–10 dip. – rischio basso/medio', importo:'€ 900,00'},
+      {desc:'Piccola impresa – 6–10 dip. – rischio medio/alto (artigianato, produzione)', importo:'€ 1.200,00'},
+      {desc:'Media impresa – 11–30 dip. – rischio medio', importo:'€ 1.500,00'},
+      {desc:'Media impresa – 11–30 dip. – rischio alto (industria, metalmeccanica)', importo:'€ 2.000,00'},
+      {desc:'Oltre 30 dipendenti o attività multi-sede', importo:'Preventivo specifico'},
+      {desc:'Aggiornamento DVR esistente (revisione parziale)', importo:'€ 300,00 – € 600,00'},
+    ],
+    noteCompensi:"• Prezzi al netto di IVA 22%.\n• I prezzi si riferiscono a sede singola. Unità operative aggiuntive: + 30% per sede.\n• Le valutazioni tecniche specialistiche (rumore, vibrazioni, agenti chimici, CEM, ecc.) sono escluse.\n• Consegna entro 20–30 gg lavorativi dal sopralluogo e dalla ricezione della documentazione.",
+    esclusioni:"— Valutazioni tecniche specialistiche (rumore, vibrazioni, agenti chimici, CEM, ROA, Microclima).\n— Valutazione SLC approfondita.\n— Piano di emergenza e planimetrie evacuazione.\n— Tutto quanto non espressamente indicato al punto 3.",
+    documenti:"— DVR completo in formato Word editabile e PDF con data certa.\n— Nomina delle figure di sicurezza (facsimile).\n— Scadenziario delle attività di sicurezza pianificate.",
+    tempi:'Consegna entro 20–30 giorni lavorativi dal sopralluogo e dalla ricezione completa della documentazione.',
+    incarico:'Redazione DVR Generale',
+    categoria:'Sicurezza'
+  },
+  {
+    id:'for', codice:'OF-FOR-01', titolo:'Formazione Sicurezza Lavoratori',
+    sottotitolo:'Formazione obbligatoria ai sensi D.Lgs. 81/2008',
+    normativa:'Art. 37 D.Lgs. 81/2008 – Accordo Stato-Regioni 2025',
+    descrizione:'Erogazione corsi di formazione obbligatoria sulla sicurezza per lavoratori, preposti, dirigenti, addetti antincendio e primo soccorso.',
+    sezioni:[
+      {num:'1', titolo:"Descrizione dell'incarico", testo:"Erogazione di corsi di formazione obbligatoria sulla sicurezza ai sensi del D.Lgs. 81/2008 artt. 36–37 e del nuovo Accordo Stato-Regioni 2025. Corsi erogati in aula presso la sede del Cliente o presso sede Framyx."},
+      {num:'2', titolo:'Oggetto e limiti', testo:"Progettazione, erogazione e documentazione dei percorsi formativi obbligatori per le diverse figure della sicurezza: lavoratori, preposti, dirigenti, datore di lavoro, addetti antincendio e primo soccorso, attrezzature soggette ad abilitazione."},
+      {num:'3', titolo:'Prestazioni incluse', testo:"— Progettazione didattica conforme all'Accordo Stato-Regioni 2025.\n— Erogazione in aula (o videoconferenza sincrona ove consentito).\n— Materiale didattico per ogni partecipante.\n— Test di verifica apprendimento (obbligatorio ex ASR 2025).\n— Registro di presenza firmato.\n— Attestati individuali di partecipazione.\n— Custodia documentazione corso."},
+    ],
+    voci:[
+      {desc:'Formazione generale lavoratori – 4 ore (fino a 15 part.)', importo:'€ 350,00'},
+      {desc:'Formazione specifica rischio BASSO – 4 ore (fino a 15 part.)', importo:'€ 350,00'},
+      {desc:'Formazione specifica rischio MEDIO – 8 ore (fino a 15 part.)', importo:'€ 650,00'},
+      {desc:'Formazione specifica rischio ALTO – 12 ore (fino a 15 part.)', importo:'€ 900,00'},
+      {desc:'Formazione preposti – 8 ore (fino a 15 part.)', importo:'€ 650,00'},
+      {desc:'Formazione dirigenti – 12 ore (fino a 10 part.)', importo:'€ 1.200,00'},
+      {desc:'Addetti antincendio rischio BASSO – 4 ore', importo:'€ 450,00'},
+      {desc:'Addetti antincendio rischio MEDIO – 8 ore', importo:'€ 750,00'},
+      {desc:'Addetti primo soccorso Gr. B/C – 12 ore', importo:'€ 900,00'},
+      {desc:'Partecipante aggiuntivo oltre il numero standard', importo:'€ 25,00 / persona'},
+      {desc:'Trasferta A+R ≥ 1 ora', importo:'€ 70,00 / h'},
+    ],
+    noteCompensi:"• Prezzi al netto di IVA 22%.\n• Trasferte fuori provincia di Vicenza: rimborso km ACI 2026 + ore viaggio € 70,00/h.\n• I corsi sono erogati da formatori qualificati con esperienza triennale documentata.\n• ATTENZIONE: in vigore il nuovo Accordo Stato-Regioni 2025 (GU 24/05/2025). Periodo transitorio fino al 24/05/2026.",
+    esclusioni:"— Corsi RSPP/ASPP (percorsi specifici su preventivo dedicato).\n— Formazione e-learning.\n— Tutto quanto non espressamente indicato al punto 3.",
+    documenti:"— Registro presenze firmato.\n— Test di verifica apprendimento.\n— Attestati individuali di partecipazione.\n— Documentazione conservata presso Framyx.",
+    tempi:'I corsi vengono pianificati entro 15 gg lavorativi dalla conferma. Gli attestati vengono consegnati entro 5 gg dalla conclusione.',
+    incarico:'Formazione Sicurezza sul Lavoro',
+    categoria:'Formazione'
+  },
+  {
+    id:'rspp', codice:'OF-RSPP-01', titolo:'Servizio RSPP Esterno',
+    sottotitolo:'Responsabile del Servizio di Prevenzione e Protezione',
+    normativa:'Art. 31-32 D.Lgs. 81/2008',
+    descrizione:'Assunzione dell\'incarico di RSPP esterno con sopralluoghi periodici, aggiornamento della documentazione di sicurezza e supporto operativo continuo.',
+    sezioni:[
+      {num:'1', titolo:"Descrizione dell'incarico", testo:"Assunzione dell'incarico di Responsabile del Servizio di Prevenzione e Protezione (RSPP) esterno ai sensi dell'art. 31 del D.Lgs. 81/2008, con svolgimento di tutte le attività previste dalla normativa vigente."},
+      {num:'2', titolo:'Oggetto e limiti', testo:"Il servizio comprende le attività di RSPP previste dall'art. 33 del D.Lgs. 81/2008: individuazione dei fattori di rischio, elaborazione delle misure preventive, proposta dei programmi di formazione, partecipazione alle consultazioni del RLS."},
+      {num:'3', titolo:'Prestazioni incluse', testo:"— Nomina formale come RSPP esterno.\n— Sopralluogo periodico presso la sede aziendale.\n— Collaborazione alla redazione/aggiornamento del DVR.\n— Supporto nella definizione delle misure di prevenzione.\n— Partecipazione alle riunioni periodiche di sicurezza (art. 35).\n— Assistenza nella gestione degli infortuni e near miss.\n— Aggiornamento continuo sulla normativa di sicurezza applicabile."},
+    ],
+    voci:[
+      {desc:'RSPP esterno – micro impresa fino a 5 dip. (canone annuo)', importo:'€ 800,00 / anno'},
+      {desc:'RSPP esterno – piccola impresa 6–15 dip. (canone annuo)', importo:'€ 1.200,00 / anno'},
+      {desc:'RSPP esterno – media impresa 16–30 dip. (canone annuo)', importo:'€ 1.800,00 / anno'},
+      {desc:'RSPP esterno – oltre 30 dip.', importo:'Preventivo specifico'},
+      {desc:'Sopralluogo aggiuntivo non incluso nel canone', importo:'€ 120,00 / sopralluogo'},
+      {desc:'Partecipazione riunione art. 35 (extra canone)', importo:'€ 90,00 / ora'},
+    ],
+    noteCompensi:"• Prezzi al netto di IVA 22%.\n• Il canone include n. 2 sopralluoghi/anno per le micro imprese, n. 4 per le piccole, n. 6 per le medie.\n• Trasferte fuori provincia di Vicenza: rimborso km ACI 2026 + ore viaggio € 70,00/h.",
+    esclusioni:"— Redazione DVR (vedi OF-DVR-01).\n— Valutazioni tecniche specialistiche.\n— Formazione lavoratori (vedi OF-FOR-01).\n— Tutto quanto non espressamente indicato al punto 3.",
+    documenti:"— Nomina RSPP sottoscritta.\n— Verbali sopralluoghi.\n— Verbali riunioni periodiche.\n— Relazione annuale attività RSPP.",
+    tempi:"L'incarico decorre dalla firma dell'offerta. Il primo sopralluogo viene effettuato entro 15 gg lavorativi.",
+    incarico:'Servizio RSPP Esterno',
+    categoria:'Sicurezza'
+  },
+  {
+    id:'slc', codice:'OF-SLC-01', titolo:'Valutazione Stress Lavoro-Correlato',
+    sottotitolo:'Valutazione del rischio SLC – Metodologia INAIL',
+    normativa:'Art. 28 D.Lgs. 81/2008 – Circolare Ministeriale 18/11/2010',
+    descrizione:'Valutazione approfondita del rischio da stress lavoro-correlato con metodologia INAIL, fase preliminare e approfondita.',
+    sezioni:[
+      {num:'1', titolo:"Descrizione dell'incarico", testo:"Valutazione del rischio da stress lavoro-correlato (SLC) ai sensi dell'art. 28 del D.Lgs. 81/2008 e della Circolare Ministeriale del 18/11/2010, mediante applicazione della metodologia INAIL nelle sue fasi preliminare e, ove necessario, approfondita."},
+      {num:'2', titolo:'Oggetto e limiti', testo:"La valutazione comprende la fase preliminare (indicatori oggettivi) e la fase approfondita (percezione soggettiva dei lavoratori tramite questionari validati). Escluse le eventuali misure di intervento organizzativo che potranno essere oggetto di separata proposta."},
+      {num:'3', titolo:'Prestazioni incluse', testo:"— Incontro preliminare con il datore di lavoro e le figure della sicurezza.\n— Raccolta e analisi degli indicatori oggettivi (eventi sentinella, fattori di contenuto e contesto lavorativo).\n— Somministrazione questionario validato ai lavoratori (fase approfondita se necessaria).\n— Elaborazione dei dati e redazione della relazione di valutazione.\n— Restituzione dei risultati al datore di lavoro.\n— Integrazione nel DVR."},
+    ],
+    voci:[
+      {desc:'Valutazione SLC – fino a 10 lavoratori (fase preliminare)', importo:'€ 500,00'},
+      {desc:'Valutazione SLC – 11–30 lavoratori (fase preliminare + approfondita)', importo:'€ 900,00'},
+      {desc:'Valutazione SLC – oltre 30 lavoratori', importo:'Preventivo specifico'},
+      {desc:'Aggiornamento valutazione SLC (biennale)', importo:'€ 300,00 – € 500,00'},
+    ],
+    noteCompensi:"• Prezzi al netto di IVA 22%.\n• La fase approfondita è inclusa per aziende con più di 10 lavoratori o in caso di indicatori critici nella fase preliminare.\n• I questionari vengono somministrati in forma anonima e aggregata.",
+    esclusioni:"— Interventi di miglioramento organizzativo.\n— Formazione dei lavoratori sulla gestione dello stress.\n— Consulenza psicologica individuale.\n— Tutto quanto non espressamente indicato al punto 3.",
+    documenti:"— Relazione di valutazione SLC completa.\n— Schede di rilevazione (anonimizzate).\n— Integrazione nel DVR.",
+    tempi:'Consegna della relazione entro 20 gg lavorativi dalla raccolta completa dei dati.',
+    incarico:'Valutazione Stress Lavoro-Correlato',
+    categoria:'Sicurezza'
+  },
+  {
+    id:'inc', codice:'OF-INC-01', titolo:'Piano di Emergenza e Evacuazione',
+    sottotitolo:'Gestione emergenze – Piano di emergenza aziendale',
+    normativa:'Art. 43-46 D.Lgs. 81/2008 – D.M. 02/09/2021',
+    descrizione:'Redazione del Piano di Emergenza e Evacuazione aziendale, planimetrie con vie di esodo, designazione addetti e prove di evacuazione.',
+    sezioni:[
+      {num:'1', titolo:"Descrizione dell'incarico", testo:"Redazione del Piano di Emergenza e Evacuazione (PEE) aziendale ai sensi degli artt. 43-46 del D.Lgs. 81/2008, con individuazione delle procedure di emergenza, delle figure preposte e delle vie di esodo."},
+      {num:'2', titolo:'Oggetto e limiti', testo:"Il servizio comprende la redazione del piano di emergenza, la predisposizione delle planimetrie con le vie di esodo e i punti di raccolta, e il supporto nell'organizzazione della prova di evacuazione."},
+      {num:'3', titolo:'Prestazioni incluse', testo:"— Sopralluogo per rilevazione delle vie di esodo e dei presidi antincendio.\n— Redazione del Piano di Emergenza ed Evacuazione.\n— Predisposizione delle planimetrie con vie di esodo e punti di raccolta.\n— Designazione delle figure di emergenza (addetti evacuazione, primo soccorso, antincendio).\n— Supporto all'organizzazione della prova di evacuazione.\n— Integrazione nel DVR."},
+    ],
+    voci:[
+      {desc:'Piano di emergenza – sede unica fino a 500 mq', importo:'€ 400,00'},
+      {desc:'Piano di emergenza – sede unica 500–2000 mq', importo:'€ 700,00'},
+      {desc:'Piano di emergenza – sede oltre 2000 mq o multi-piano', importo:'Preventivo specifico'},
+      {desc:'Planimetria aggiuntiva (per piano/area)', importo:'€ 120,00'},
+      {desc:'Assistenza prova evacuazione in loco', importo:'€ 200,00'},
+      {desc:'Aggiornamento piano esistente', importo:'€ 200,00 – € 400,00'},
+    ],
+    noteCompensi:"• Prezzi al netto di IVA 22%.\n• Le planimetrie vengono realizzate su base fornita dal cliente (planimetria esistente o rilievo semplificato).\n• Rilievo metrico completo da parte di Framyx: aggiuntivo su preventivo.",
+    esclusioni:"— Progettazione antincendio e SCIA antincendio.\n— Formazione addetti antincendio e primo soccorso (vedi OF-FOR-01).\n— Rilievo metrico professionale.\n— Tutto quanto non espressamente indicato al punto 3.",
+    documenti:"— Piano di Emergenza ed Evacuazione completo.\n— Planimetrie con vie di esodo e punti di raccolta.\n— Verbale prova di evacuazione (se assistita da Framyx).",
+    tempi:'Consegna entro 15 gg lavorativi dal sopralluogo e dalla ricezione delle planimetrie.',
+    incarico:'Piano di Emergenza e Evacuazione',
+    categoria:'Sicurezza'
+  },
+  {
+    id:'pos', codice:'OF-POS-01', titolo:'Piano Operativo di Sicurezza (POS)',
+    sottotitolo:'Cantieri temporanei e mobili',
+    normativa:'D.Lgs. 81/2008 – Allegato XV',
+    descrizione:'Redazione del Piano Operativo di Sicurezza per imprese esecutrici nei cantieri temporanei e mobili.',
+    sezioni:[
+      {num:'1', titolo:"Descrizione dell'incarico", testo:"Redazione del Piano Operativo di Sicurezza (POS) per i cantieri temporanei e mobili ai sensi del D.Lgs. 81/2008 e dell'Allegato XV, per l'impresa esecutrice."},
+      {num:'2', titolo:'Oggetto e limiti', testo:"Il POS viene redatto sulla base delle informazioni fornite dall'impresa esecutrice e del Piano di Sicurezza e Coordinamento (PSC) quando disponibile."},
+      {num:'3', titolo:'Prestazioni incluse', testo:"— Raccolta delle informazioni sull'impresa e sul cantiere.\n— Analisi del PSC (se disponibile).\n— Redazione del POS completo con: anagrafica impresa, descrizione lavorazioni, valutazione rischi specifici, misure di prevenzione, procedure operative, DPI, gestione emergenze.\n— Eventuale integrazione con il PSC."},
+    ],
+    voci:[
+      {desc:'POS – cantiere semplice (lavorazioni omogenee)', importo:'€ 350,00'},
+      {desc:'POS – cantiere medio (più lavorazioni)', importo:'€ 550,00'},
+      {desc:'POS – cantiere complesso (strutture, impiantistica, ecc.)', importo:'€ 800,00'},
+      {desc:'Aggiornamento POS per variante in corso d\'opera', importo:'€ 150,00 – € 300,00'},
+    ],
+    noteCompensi:"• Prezzi al netto di IVA 22%.\n• Il prezzo non comprende la partecipazione alle riunioni di coordinamento con il CSE.\n• Per cantieri con particolari rischi (amianto, spazi confinati, ecc.) il prezzo è soggetto a supplemento.",
+    esclusioni:"— Piano di Sicurezza e Coordinamento (PSC) – vedi OF-PSC-01.\n— Coordinamento in fase di esecuzione (CSE).\n— Notifica preliminare.\n— Tutto quanto non espressamente indicato al punto 3.",
+    documenti:"— POS completo firmato dal datore di lavoro dell'impresa.\n— Allegati tecnici (planimetrie, schede DPI, ecc.).",
+    tempi:'Consegna entro 7–10 gg lavorativi dalla raccolta completa delle informazioni.',
+    incarico:'Piano Operativo di Sicurezza (POS)',
+    categoria:'Cantieri'
+  },
+];
+
+function getCatalogoOfferte(){
+  try{
+    const s=JSON.parse(localStorage.getItem('frm_catalogo_offerte')||'null');
+    return s||CATALOGO_OFFERTE_DEFAULT;
+  }catch(e){ return CATALOGO_OFFERTE_DEFAULT; }
+}
+function saveCatalogoOfferte(c){ localStorage.setItem('frm_catalogo_offerte',JSON.stringify(c)); }
+
+function renderOfferte(){
+  // Populate selects
+  const selTipo=document.getElementById('off-tipo');
+  const selAz=document.getElementById('off-az');
+  if(!selTipo||!selAz) return;
+
+  const cat=getCatalogoOfferte();
+  selTipo.innerHTML='<option value="">Seleziona template...</option>'+
+    cat.map(t=>`<option value="${t.id}">[${t.codice}] ${t.titolo}</option>`).join('');
+
+  selAz.innerHTML='<option value="">Seleziona azienda...</option>'+
+    db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+
+  const dataEl=document.getElementById('off-data');
+  if(dataEl&&!dataEl.value) dataEl.value=new Date().toISOString().slice(0,10);
+
+  renderCatalogoOfferte();
+  renderOfferteBozze();
+}
+
+function onOffTipoChange(){
+  const id=document.getElementById('off-tipo').value;
+  const cat=getCatalogoOfferte();
+  const t=cat.find(x=>x.id===id);
+  const el=document.getElementById('off-tipo-desc');
+  if(!t||!el){ if(el) el.style.display='none'; return; }
+  el.style.display='block';
+  el.innerHTML=`<span style="font-weight:600;color:var(--accent-dark)">${t.codice}</span> — ${t.normativa}<br><span style="color:var(--text2)">${t.descrizione}</span>`;
+}
+
+function onOffAzChange(){
+  const azId=document.getElementById('off-az').value;
+  const az=db.aziende().find(a=>a.id===azId);
+  const el=document.getElementById('off-cliente-info');
+  if(!az||!el){ if(el) el.style.display='none'; return; }
+  el.style.display='block';
+  el.innerHTML=`<strong>${az.nome}</strong>${az.piva?' — P.IVA '+az.piva:''}${az.indirizzo?'<br>'+az.indirizzo:''}${az.comune?' — '+az.comune:''}${az.referente?'<br>Ref: '+az.referente:''}`;
+  const refEl=document.getElementById('off-referente');
+  if(refEl&&!refEl.value&&az.referente) refEl.value=az.referente;
+}
+
+function renderCatalogoOfferte(){
+  const el=document.getElementById('off-catalogo-list'); if(!el) return;
+  const cat=getCatalogoOfferte();
+  const byCategory={};
+  cat.forEach(t=>{ if(!byCategory[t.categoria]) byCategory[t.categoria]=[]; byCategory[t.categoria].push(t); });
+
+  el.innerHTML=Object.entries(byCategory).map(([cat,items])=>`
+    <div style="font-weight:700;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">${cat}</div>
+    ${items.map(t=>`
+      <div style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:600">${t.titolo} <span style="font-size:10px;color:var(--text2);font-weight:400">[${t.codice}]</span></div>
+          <div style="font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.normativa}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-xs btn-primary" onclick="selezionaTipoOfferta('${t.id}')">Usa</button>
+          <button class="btn btn-xs btn-danger" onclick="eliminaTemplateOfferta('${t.id}')">✕</button>
+        </div>
+      </div>
+    `).join('')}
+  `).join('');
+}
+
+function selezionaTipoOfferta(id){
+  const sel=document.getElementById('off-tipo');
+  if(sel){ sel.value=id; onOffTipoChange(); }
+  document.getElementById('off-az').scrollIntoView({behavior:'smooth'});
+}
+
+function eliminaTemplateOfferta(id){
+  if(!confirm('Eliminare questo template?')) return;
+  const cat=getCatalogoOfferte().filter(t=>t.id!==id);
+  saveCatalogoOfferte(cat);
+  renderCatalogoOfferte();
+  renderOfferte();
+}
+
+function aggiungiTemplateOfferta(){
+  const codice=prompt('Codice template (es. OF-NEW-01):');
+  if(!codice) return;
+  const titolo=prompt('Titolo offerta (es. Valutazione Rischio Chimico):');
+  if(!titolo) return;
+  const normativa=prompt('Normativa di riferimento:');
+  const descrizione=prompt('Descrizione breve:');
+  const categoria=prompt('Categoria (es. Sicurezza, Cantieri, Formazione):') || 'Sicurezza';
+  const cat=getCatalogoOfferte();
+  cat.push({
+    id:'custom_'+Date.now(), codice, titolo, sottotitolo:'', normativa:normativa||'',
+    descrizione:descrizione||'', sezioni:[], voci:[], noteCompensi:'', esclusioni:'',
+    documenti:'', tempi:'', incarico:titolo, categoria
+  });
+  saveCatalogoOfferte(cat);
+  renderCatalogoOfferte();
+  renderOfferte();
+  toast('Template aggiunto','✅');
+}
+
+function scaricaTemplateCatalogoOfferte(){
+  const csv=['Codice;Titolo;Sottotitolo;Normativa;Descrizione;Categoria;Incarico;Voci (desc:importo | desc:importo);Note Compensi;Esclusioni;Documenti;Tempi'];
+  getCatalogoOfferte().forEach(t=>{
+    const voci=t.voci.map(v=>v.desc+':'+v.importo).join(' | ');
+    csv.push([t.codice,t.titolo,t.sottotitolo||'',t.normativa||'',t.descrizione||'',t.categoria||'',t.incarico||t.titolo,voci,t.noteCompensi||'',t.esclusioni||'',t.documenti||'',t.tempi||''].map(s=>'"'+String(s).replace(/"/g,'""')+'"').join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+csv.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='catalogo_offerte_template.csv';a.click();
+  toast('Template CSV scaricato','📥');
+}
+
+function importaTemplateOfferta(){
+  document.getElementById('off-import-file').click();
+}
+
+function onImportTemplateOfferta(input){
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=parseCSVorXLSX(e.target.result,f.name);
+    if(!rows||rows.length<2){ toast('File non valido','❌'); return; }
+    const hdr=rows[0].map(h=>(h||'').toString().toLowerCase().trim());
+    const gi=k=>hdr.findIndex(h=>h.includes(k));
+    const cat=getCatalogoOfferte();
+    let added=0;
+    rows.slice(1).forEach(r=>{
+      const codice=(r[gi('codice')]||'').toString().trim();
+      const titolo=(r[gi('titolo')]||'').toString().trim();
+      if(!codice||!titolo) return;
+      if(cat.find(t=>t.codice===codice)) return;
+      const vociStr=(r[gi('voci')]||'').toString();
+      const voci=vociStr.split('|').map(v=>{
+        const parts=v.split(':'); return {desc:(parts[0]||'').trim(),importo:(parts[1]||'').trim()};
+      }).filter(v=>v.desc);
+      cat.push({
+        id:'imp_'+Date.now()+'_'+added, codice, titolo,
+        sottotitolo:(r[gi('sottotitolo')]||'').toString().trim(),
+        normativa:(r[gi('normativa')]||'').toString().trim(),
+        descrizione:(r[gi('descrizione')]||'').toString().trim(),
+        categoria:(r[gi('categoria')]||'Sicurezza').toString().trim(),
+        incarico:(r[gi('incarico')]||titolo).toString().trim(),
+        sezioni:[], voci,
+        noteCompensi:(r[gi('note')]||'').toString().trim(),
+        esclusioni:(r[gi('esclusioni')]||'').toString().trim(),
+        documenti:(r[gi('documenti')]||'').toString().trim(),
+        tempi:(r[gi('tempi')]||'').toString().trim(),
+      });
+      added++;
+    });
+    saveCatalogoOfferte(cat);
+    renderCatalogoOfferte();
+    renderOfferte();
+    toast(added+' template importati','✅');
+  };
+  r.readAsText(f,'UTF-8');
+  input.value='';
+}
+
+function salvaOffertaBozza(stato){
+  const tipoId=document.getElementById('off-tipo').value;
+  const azId=document.getElementById('off-az').value;
+  if(!tipoId||!azId){ toast('Seleziona tipo offerta e cliente','⚠️'); return; }
+  const az=db.aziende().find(a=>a.id===azId)||{};
+  const t=getCatalogoOfferte().find(x=>x.id===tipoId)||{};
+  const offerte=db.offerte();
+  const nuova={
+    id:'ob_'+Date.now(),
+    dataCreazione:new Date().toISOString().slice(0,10),
+    tipoId, titoloTipo:t.titolo||'', codice:t.codice||'',
+    azId, azNome:az.nome||'',
+    num:document.getElementById('off-num').value,
+    referente:document.getElementById('off-referente').value,
+    note:document.getElementById('off-note').value,
+    validita:document.getElementById('off-validita').value||'30',
+    dataOff:document.getElementById('off-data').value,
+    stato: stato||'bozza', // bozza | inviata | accettata | rifiutata
+    // Salva personalizzazioni se presenti
+    vociPersonalizzate: getVociPersonalizzate(),
+    notePersonalizzate: document.getElementById('off-note-custom')?.value||'',
+  };
+  offerte.unshift(nuova);
+  db.save.offerte(offerte);
+  renderOfferteBozze();
+  toast('Offerta salvata','💾');
+}
+
+function getVociPersonalizzate(){
+  const el=document.getElementById('off-voci-custom-list');
+  if(!el) return null;
+  const rows=el.querySelectorAll('.off-voce-row');
+  if(!rows.length) return null;
+  return [...rows].map((_,i)=>({
+    desc:(document.getElementById('off-vc-desc-'+i)||{}).value||'',
+    importo:(document.getElementById('off-vc-imp-'+i)||{}).value||''
+  })).filter(v=>v.desc);
+}
+
+function renderOfferteBozze(){
+  const el=document.getElementById('off-bozze-list'); if(!el) return;
+  const q=(document.getElementById('off-search')?.value||'').toLowerCase();
+  const fStato=document.getElementById('off-filter-stato')?.value||'';
+  let offerte=db.offerte();
+  if(q) offerte=offerte.filter(b=>(b.azNome||'').toLowerCase().includes(q)||(b.titoloTipo||'').toLowerCase().includes(q)||(b.num||'').toLowerCase().includes(q)||(b.codice||'').toLowerCase().includes(q));
+  if(fStato) offerte=offerte.filter(b=>b.stato===fStato);
+  offerte=offerte.slice(0,50);
+  if(!offerte.length){ el.innerHTML='<div class="text-xs text-muted" style="padding:8px">Nessuna offerta trovata</div>'; return; }
+  const statoColors={bozza:'#888',inviata:'#1A56DB',attesa:'#D4620A',accettata:'#2D7D46',rifiutata:'#C0392B',scaduta:'#666'};
+  const statoLabels={bozza:'📝 Bozza',inviata:'📤 Inviata',attesa:'⏳ In attesa',accettata:'✅ Accettata',rifiutata:'❌ Rifiutata',scaduta:'⌛ Scaduta'};
+  el.innerHTML=offerte.map(b=>`
+    <div style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="font-weight:600;font-size:12px">${b.azNome||'—'}</div>
+        <select style="font-size:10px;border:1px solid var(--border);border-radius:4px;padding:1px 4px;color:${statoColors[b.stato||'bozza']};font-weight:600" onchange="aggiornaStatoOfferta('${b.id}',this.value)">
+          ${['bozza','inviata','attesa','accettata','rifiutata','scaduta'].map(s=>`<option value="${s}" ${b.stato===s?'selected':''}>${statoLabels[s]||s}</option>`).join('')}
+        </select>
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${b.codice||''} — ${b.titoloTipo||''}</div>
+      <div style="font-size:10px;color:var(--text2)">${b.dataCreazione||b.dataOff||''}${b.num?' — N°'+b.num:''}</div>
+      <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-primary" onclick="caricaOffertaBozza('${b.id}')">✏️ Modifica</button>
+        <button class="btn btn-xs" onclick="rigenera('${b.id}')">📥 Scarica</button>
+        <button class="btn btn-xs btn-danger" onclick="eliminaOffertaBozza('${b.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function aggiornaStatoOfferta(id, stato){
+  const offerte=db.offerte().map(o=>o.id===id?{...o,stato}:o);
+  db.save.offerte(offerte);
+  renderOfferteBozze();
+  toast('Stato aggiornato: '+stato,'✅');
+}
+
+function caricaOffertaBozza(id){
+  const bozze=db.offerte();
+  const b=bozze.find(x=>x.id===id); if(!b) return;
+  document.getElementById('off-tipo').value=b.tipoId||'';
+  document.getElementById('off-az').value=b.azId||'';
+  document.getElementById('off-num').value=b.num||'';
+  document.getElementById('off-data').value=b.dataOff||new Date().toISOString().slice(0,10);
+  document.getElementById('off-referente').value=b.referente||'';
+  document.getElementById('off-note').value=b.note||'';
+  document.getElementById('off-validita').value=b.validita||'30';
+  onOffTipoChange();
+  onOffAzChange();
+  toast('Offerta caricata','📁');
+}
+
+function rigenera(id){
+  caricaOffertaBozza(id);
+  setTimeout(generaOfferta, 200);
+}
+
+function eliminaOffertaBozza(id){
+  confDel('Eliminare questa offerta?', async ()=>{
+    await supaDelete('offerte',id);
+    db.save.offerte(db.offerte().filter(b=>b.id!==id));
+    renderOfferteBozze();
+    toast('Offerta eliminata','🗑');
+  });
+}
+
+function togglePersonalizza(){
+  const panel=document.getElementById('off-custom-panel');
+  if(!panel) return;
+  const tipoId=document.getElementById('off-tipo').value;
+  let t=JSON.parse(JSON.stringify(getCatalogoOfferte().find(x=>x.id===tipoId)||{}));
+  // Apply customizations if present
+  const vociCustom=getVociPersonalizzate();
+  if(vociCustom&&vociCustom.length) t.voci=vociCustom;
+  const noteCustom=document.getElementById('off-note-custom')?.value||'';
+  if(noteCustom) t.noteCompensi=noteCustom;
+  if(panel.style.display==='none'){
+    if(!tipoId){ toast('Seleziona prima il tipo di offerta','⚠️'); return; }
+    panel.style.display='block';
+    // Preload voci from template
+    const voci=t?.voci||[];
+    renderVociCustom(voci);
+    panel.scrollIntoView({behavior:'smooth'});
+  } else {
+    panel.style.display='none';
+  }
+}
+
+function renderVociCustom(voci){
+  const el=document.getElementById('off-voci-custom-list'); if(!el) return;
+  el.innerHTML=voci.map((v,i)=>`
+    <div class="off-voce-row" style="display:flex;gap:6px;margin-bottom:5px;align-items:center">
+      <input class="fc" id="off-vc-desc-${i}" value="${(v.desc||'').replace(/"/g,'&quot;')}" placeholder="Descrizione prestazione" style="flex:1;font-size:11px">
+      <input class="fc" id="off-vc-imp-${i}" value="${(v.importo||'').replace(/"/g,'&quot;')}" placeholder="Importo" style="width:120px;font-size:11px">
+      <button class="btn btn-xs btn-danger" onclick="this.closest('.off-voce-row').remove()">✕</button>
+    </div>
+  `).join('');
+}
+
+function addVoceCustom(){
+  const el=document.getElementById('off-voci-custom-list'); if(!el) return;
+  const i=el.querySelectorAll('.off-voce-row').length;
+  const row=document.createElement('div');
+  row.className='off-voce-row';
+  row.style.cssText='display:flex;gap:6px;margin-bottom:5px;align-items:center';
+  row.innerHTML=`<input class="fc" id="off-vc-desc-${i}" placeholder="Descrizione prestazione" style="flex:1;font-size:11px"><input class="fc" id="off-vc-imp-${i}" placeholder="Importo" style="width:120px;font-size:11px"><button class="btn btn-xs btn-danger" onclick="this.closest('.off-voce-row').remove()">✕</button>`;
+  el.appendChild(row);
+}
+
+function resetOfferta(){
+  ['off-tipo','off-az','off-num','off-referente','off-note','off-note-custom'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('off-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('off-validita').value='30';
+  document.getElementById('off-tipo-desc').style.display='none';
+  document.getElementById('off-cliente-info').style.display='none';
+  const cp=document.getElementById('off-custom-panel'); if(cp) cp.style.display='none';
+  const vcl=document.getElementById('off-voci-custom-list'); if(vcl) vcl.innerHTML='';
+}
+
+async function generaOfferta(){
+  const tipoId=document.getElementById('off-tipo').value;
+  const azId=document.getElementById('off-az').value;
+  if(!tipoId){ toast('Seleziona il tipo di offerta','⚠️'); return; }
+  if(!azId){ toast('Seleziona il cliente','⚠️'); return; }
+
+  const t=getCatalogoOfferte().find(x=>x.id===tipoId);
+  const az=db.aziende().find(a=>a.id===azId)||{};
+  const cfg=JSON.parse(localStorage.getItem('frm_att_config')||'{}');
+  const mittente=cfg.aziendaNome||'Framyx Srl SB';
+  const num=document.getElementById('off-num').value||'___';
+  const dataOff=document.getElementById('off-data').value||new Date().toISOString().slice(0,10);
+  const referente=document.getElementById('off-referente').value||az.referente||'';
+  const note=document.getElementById('off-note').value||'';
+  const validita=document.getElementById('off-validita').value||'30';
+  const fmtData=d=>{ if(!d) return ''; const p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+
+  // Generate via docx.js browser
+  try {
+    toast('Generazione offerta in corso...','⏳');
+    await generaOffertaDocx({t, az, cfg, mittente, num, dataOff:fmtData(dataOff), referente, note, validita});
+  } catch(e) {
+    console.error(e);
+    toast('Errore: '+e.message,'❌');
+  }
+}
+
+async function generaOffertaDocx({t, az, cfg, mittente, num, dataOff, referente, note, validita}){
+  if(!window.docx){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js';
+      s.onload=res; s.onerror=rej;
+      document.head.appendChild(s);
+    });
+  }
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+          AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign } = window.docx;
+
+  const border={style:BorderStyle.SINGLE,size:1,color:'CCCCCC'};
+  const borders={top:border,bottom:border,left:border,right:border};
+  const bN={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const bsN={top:bN,bottom:bN,left:bN,right:bN};
+  const W=9638;
+
+  const tc=(text,opts={})=>new TableCell({
+    borders:opts.borders||borders, width:{size:opts.w||Math.round(W/2),type:WidthType.DXA},
+    shading:opts.shade?{fill:opts.shade,type:ShadingType.CLEAR}:undefined,
+    verticalAlign:VerticalAlign.CENTER, margins:{top:80,bottom:80,left:120,right:120},
+    children:[new Paragraph({alignment:opts.align||AlignmentType.LEFT,children:[
+      new TextRun({text:String(text||''),font:'Arial',size:opts.size||20,bold:opts.bold||false,color:opts.color||'000000'})
+    ]})]
+  });
+  const pr=(text,opts={})=>new Paragraph({
+    alignment:opts.align||AlignmentType.LEFT, spacing:{before:opts.before||60,after:opts.after||60},
+    children:[new TextRun({text:String(text||''),font:'Arial',size:opts.size||20,bold:opts.bold||false,color:opts.color||'222222',italics:opts.italic||false})]
+  });
+  const hd=(text)=>new Table({
+    width:{size:W,type:WidthType.DXA},columnWidths:[W],
+    rows:[new TableRow({children:[new TableCell({
+      borders, width:{size:W,type:WidthType.DXA},
+      shading:{fill:'FDC400',type:ShadingType.CLEAR},
+      margins:{top:80,bottom:80,left:140,right:120},
+      children:[new Paragraph({children:[new TextRun({text,font:'Arial',size:22,bold:true,color:'1A1916'})]})]
+    })]})]
+  });
+
+  const children=[];
+
+  // Header
+  children.push(new Table({
+    width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.55),Math.round(W*0.45)],
+    rows:[new TableRow({children:[
+      new TableCell({
+        borders:{top:border,bottom:border,left:border,right:bN},
+        width:{size:Math.round(W*0.55),type:WidthType.DXA},margins:{top:80,bottom:80,left:140,right:120},
+        children:[
+          new Paragraph({children:[new TextRun({text:'Offerta prestazioni professionali',font:'Arial',size:26,bold:true})]}),
+          new Paragraph({spacing:{before:40},children:[new TextRun({text:t.titolo||'',font:'Arial',size:20,bold:true})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:t.normativa||'',font:'Arial',size:18,italics:true,color:'555555'})]})
+        ]
+      }),
+      new TableCell({
+        borders:{top:border,bottom:border,left:bN,right:border},
+        width:{size:Math.round(W*0.45),type:WidthType.DXA},
+        shading:{fill:'F5F5F5',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},
+        children:[
+          new Paragraph({children:[new TextRun({text:'Data: '+dataOff,font:'Arial',size:18})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:'N\u00b0 offerta: '+num,font:'Arial',size:18})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Codice: '+t.codice+' Rev. 00',font:'Arial',size:18})]})
+        ]
+      })
+    ]})]
+  }));
+
+  children.push(pr('',{before:120,after:0}));
+
+  // Committente / Erogato da
+  children.push(new Table({
+    width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W/2),Math.round(W/2)],
+    rows:[
+      new TableRow({children:[
+        tc('Committente',{w:Math.round(W/2),bold:true,shade:'484F54',color:'FFFFFF',size:22}),
+        tc('Erogato da',{w:Math.round(W/2),bold:true,shade:'484F54',color:'FFFFFF',size:22}),
+      ]}),
+      new TableRow({children:[
+        new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:80,bottom:80,left:120,right:120},children:[
+          new Paragraph({children:[new TextRun({text:az.nome||'[Ragione Sociale Cliente]',font:'Arial',size:20,bold:true})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:(az.indirizzo?az.indirizzo+' \u2013 ':'')+(az.comune||''),font:'Arial',size:18})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:az.piva?'P.IVA '+az.piva:'P.IVA _______________',font:'Arial',size:18})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:referente?'Alla C.A. '+referente:'',font:'Arial',size:18})]})
+        ]}),
+        new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},shading:{fill:'FFFDE7',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},children:[
+          new Paragraph({children:[new TextRun({text:mittente,font:'Arial',size:20,bold:true})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Via Stazio, 36 \u2013 36029 Valbrenta (VI)',font:'Arial',size:18})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:'P.IVA 03959010244',font:'Arial',size:18})]}),
+          new Paragraph({spacing:{before:20},children:[new TextRun({text:'roberta.sermoni@framyx.it | www.framyx.com',font:'Arial',size:18})]})
+        ]})
+      ]})
+    ]
+  }));
+
+  children.push(pr('',{before:200,after:0}));
+
+  // Sezioni dinamiche dal template
+  (t.sezioni||[]).forEach(s=>{
+    children.push(hd(s.num+'. '+s.titolo));
+    children.push(pr((s.testo||'')+(s.num==='1'&&note?'\n\nNote specifiche: '+note:''),{before:80,after:60}));
+  });
+
+  // Sezione compensi
+  if(t.voci&&t.voci.length){
+    children.push(hd((t.sezioni?.length||0)+1+'. Compensi'));
+    children.push(pr('Il compenso viene determinato secondo la tabella seguente:',{before:60,after:60}));
+    const righeVoci=t.voci.map((v,i)=>new TableRow({children:[
+      new TableCell({borders,width:{size:Math.round(W*0.75),type:WidthType.DXA},margins:{top:60,bottom:60,left:120,right:80},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},children:[new Paragraph({children:[new TextRun({text:v.desc||'',font:'Arial',size:19})]})]}),
+      new TableCell({borders,width:{size:Math.round(W*0.25),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:120},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:v.importo||'',font:'Arial',size:19,bold:true})]})]})
+    ]}));
+    children.push(new Table({
+      width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.75),Math.round(W*0.25)],
+      rows:[
+        new TableRow({children:[
+          new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.75),type:WidthType.DXA},margins:{top:60,bottom:60,left:120,right:80},children:[new Paragraph({children:[new TextRun({text:'Prestazione',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
+          new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.25),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:120},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Importo',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
+        ]}),
+        ...righeVoci
+      ]
+    }));
+    if(t.noteCompensi){
+      children.push(pr('',{before:100,after:0}));
+      children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],rows:[new TableRow({children:[new TableCell({
+        borders:{top:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},bottom:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},left:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},right:{style:BorderStyle.SINGLE,size:2,color:'FDC400'}},
+        shading:{fill:'FFFDE7',type:ShadingType.CLEAR},width:{size:W,type:WidthType.DXA},margins:{top:80,bottom:80,left:140,right:140},
+        children:[new Paragraph({children:[new TextRun({text:'Note sui compensi',font:'Arial',size:20,bold:true})]}),new Paragraph({spacing:{before:60},children:[new TextRun({text:t.noteCompensi,font:'Arial',size:18})]})],
+      })]})]  }));
+    }
+  }
+
+  children.push(pr('',{before:160,after:0}));
+
+  // Sezioni finali
+  const secNum=(t.sezioni?.length||0)+2;
+  [[t.esclusioni?'Esclusioni':null,t.esclusioni],[t.tempi?'Tempi di esecuzione':null,t.tempi],[t.documenti?'Documenti rilasciati':null,t.documenti]].filter(([h])=>h).forEach(([h,tx],i)=>{
+    children.push(hd((secNum+i)+'. '+h));
+    children.push(pr(tx||'',{before:80,after:60}));
+  });
+
+  // Pagamento e validità
+  const lastNum=secNum+[[t.esclusioni],[t.tempi],[t.documenti]].filter(x=>x[0]).length;
+  children.push(hd(lastNum+". Modalit\u00e0 di pagamento"));
+  children.push(pr("Acconto: 30% del preventivato entro 10 gg dall\u2019accettazione, previa presentazione avviso di parcella.\nAcconti intermedi: emessi a SAL durante le attivit\u00e0, a 30 gg fine mese.\nSaldo: alla consegna del documento finale, a 30 gg fine mese.\nPagamento: bonifico bancario 30 gg DFFM.",{before:80,after:60}));
+  children.push(hd((lastNum+1)+". Validit\u00e0 dell\u2019offerta"));
+  children.push(pr("Le condizioni della presente offerta sono valide per "+validita+" ("+validita+") giorni dalla data di emissione. Le Condizioni Generali di Contratto Framyx Srl SB sono disponibili su www.framyx.com/condizioni-generali e sono parte integrante della presente offerta. La firma per accettazione implica integrale accettazione delle stesse.",{before:80,after:60}));
+
+  // Conferma incarico
+  children.push(pr('',{before:80,after:0}));
+  children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.55),Math.round(W*0.15),Math.round(W*0.3)],
+    rows:[
+      new TableRow({children:[
+        tc('Incarico',{w:Math.round(W*0.55),bold:true,shade:'F5F5F5'}),
+        tc('Conferma',{w:Math.round(W*0.15),bold:true,shade:'F5F5F5',align:AlignmentType.CENTER}),
+        tc('Importo',{w:Math.round(W*0.3),bold:true,shade:'F5F5F5',align:AlignmentType.RIGHT}),
+      ]}),
+      new TableRow({children:[
+        tc(t.incarico||t.titolo||'',{w:Math.round(W*0.55)}),
+        tc('\u2610',{w:Math.round(W*0.15),align:AlignmentType.CENTER,size:22}),
+        tc('Vedi punto compensi',{w:Math.round(W*0.3),align:AlignmentType.RIGHT}),
+      ]})
+    ]
+  }));
+
+  children.push(pr('Fiduciosi in una Vostra conferma, porgiamo cordiali saluti.',{before:160,after:80,italic:true}));
+
+  // Firma
+  children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W/2),Math.round(W/2)],rows:[
+    new TableRow({children:[tc('Data emissione:',{w:Math.round(W/2),bold:true}),tc('Per accettazione \u2013 Il Committente',{w:Math.round(W/2),bold:true})]}),
+    new TableRow({children:[new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr(dataOff)]}),new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]})]}),
+    new TableRow({children:[tc('Data accettazione:',{w:Math.round(W/2),bold:true}),tc(mittente,{w:Math.round(W/2),bold:true})]}),
+    new TableRow({children:[new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]}),new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]})]}),
+  ]}));
+
+  const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1134,bottom:1134,left:1134,right:1134}}},children}]});
+  const buf=await Packer.toBuffer(doc);
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const azNome=(az.nome||'cliente').replace(/[^a-zA-Z0-9]/g,'_').slice(0,25);
+  a.download=(t.codice||'OF')+'_'+azNome+'_'+num.replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
+  a.click();
+  toast('Offerta .docx scaricata!','📥');
+}
+
+
 function renderPreventivi(){
   // populate aziende select
   const sel=document.getElementById('prev-az');
@@ -3346,6 +4225,32 @@ async function generatePreventivoDocxBrowser(p){
   toast('Preventivo .docx scaricato!','📥');
 }
 
+async function creaTabellaSupabase(){
+  const btn=document.getElementById('btn-crea-tabella');
+  const msg=document.getElementById('crea-tabella-msg');
+  if(btn) btn.disabled=true;
+  if(msg){ msg.style.display='block'; msg.innerHTML='⏳ Creazione tabella in corso...'; }
+  try {
+    // Try to insert a test record to see if table exists
+    const { error: testErr } = await supa.from('offerte').select('id').limit(1);
+    if(!testErr){
+      if(msg) msg.innerHTML='<span style="color:var(--green);font-weight:600">✅ Tabella offerte già presente — tutto OK!</span>';
+      if(btn) btn.disabled=false;
+      return;
+    }
+    // Table doesn't exist — create via RPC if available, otherwise show SQL
+    if(msg) msg.innerHTML=`<div style="background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;padding:10px 12px;font-size:11px">
+      <strong>⚠️ La tabella offerte non esiste ancora.</strong><br>
+      Vai su <strong>Supabase → SQL Editor</strong> e incolla questo SQL:<br>
+      <code style="display:block;background:#f5f5f5;padding:6px;margin-top:6px;border-radius:4px;font-size:11px;user-select:all">CREATE TABLE IF NOT EXISTS offerte (id text PRIMARY KEY, data jsonb, updated_at timestamptz DEFAULT now());<br>ALTER TABLE offerte DISABLE ROW LEVEL SECURITY;</code>
+      <button class="btn btn-xs btn-primary" style="margin-top:8px" onclick="navigator.clipboard.writeText('CREATE TABLE IF NOT EXISTS offerte (id text PRIMARY KEY, data jsonb, updated_at timestamptz DEFAULT now()); ALTER TABLE offerte DISABLE ROW LEVEL SECURITY;').then(()=>toast('SQL copiato!','📋'))">📋 Copia SQL</button>
+    </div>`;
+  } catch(e) {
+    if(msg) msg.innerHTML='<span style="color:var(--red)">❌ Errore: '+e.message+'</span>';
+  }
+  if(btn) btn.disabled=false;
+}
+
 function renderImpostazioni(){
   const cfg=getAttConfig();
   document.getElementById('att-azienda-nome').value=cfg.aziendaNome||'Framyx Srl — Società Benefit';
@@ -3495,7 +4400,8 @@ function openFondoModal() {
   sel.innerHTML = '<option value="">Seleziona...</option>' + db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
   renderAzioniEditor([]);
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
-  openM('m-fondo');
+  // Use _origOpenM directly to avoid loop with the override
+  _origOpenM('m-fondo');
 }
 
 function salvaFondo() {
@@ -3525,7 +4431,7 @@ function editFondo(id) {
   sel.value = p.aziendaId||'';
   renderAzioniEditor(p.azioni||[]);
   document.getElementById('m-fondo-t').textContent = 'Modifica piano Fondimpresa';
-  openM('m-fondo');
+  _origOpenM('m-fondo');
 }
 
 function delFondo(id) {
@@ -3761,6 +4667,56 @@ async function init() {
   if(!loaded || db.aziende().length === 0) loadDemo();
   updateFilters();
   renderDashboard();
+  // Auto-backup silenzioso all'apertura
+  setTimeout(autoBackup, 3000);
+}
+
+function autoBackup(){
+  try {
+    const tables=['aziende','lavoratori','docenti','corsi','sessioni','offerte'];
+    const backup={
+      _version:1,
+      _data:new Date().toISOString(),
+      _tipo:'auto'
+    };
+    let hasDati=false;
+    tables.forEach(t=>{
+      const d=db[t]?.();
+      if(d&&d.length){ backup[t]=d; hasDati=true; }
+    });
+    if(!hasDati) return;
+    // Salva ultimi 7 backup in localStorage con timestamp
+    const key='frm_autobackup_'+new Date().toISOString().slice(0,10);
+    localStorage.setItem(key, JSON.stringify(backup));
+    // Mantieni solo ultimi 7 giorni
+    const allKeys=Object.keys(localStorage).filter(k=>k.startsWith('frm_autobackup_'));
+    allKeys.sort().reverse().slice(7).forEach(k=>localStorage.removeItem(k));
+    console.log('✅ Auto-backup salvato:', key, '— record:', Object.keys(backup).filter(k=>!k.startsWith('_')).map(k=>k+':'+backup[k].length).join(', '));
+  } catch(e){ console.warn('Auto-backup fallito:', e); }
+}
+
+function ripristinaAutoBackup(){
+  const allKeys=Object.keys(localStorage).filter(k=>k.startsWith('frm_autobackup_')).sort().reverse();
+  if(!allKeys.length){ toast('Nessun auto-backup disponibile','ℹ️'); return; }
+  const opzioni=allKeys.map((k,i)=>{
+    try{
+      const b=JSON.parse(localStorage.getItem(k)||'{}');
+      const count=Object.keys(b).filter(x=>!x.startsWith('_')).map(t=>b[t]?.length||0).reduce((a,v)=>a+v,0);
+      return `${i+1}. ${k.replace('frm_autobackup_','')} — ${count} record totali`;
+    }catch(e){ return `${i+1}. ${k.replace('frm_autobackup_','')}`; }
+  }).join('\n');
+  const scelta=prompt('Scegli il backup da ripristinare (inserisci il numero):\n\n'+opzioni+'\n\nATTENZIONE: sovrascrivera i dati attuali!');
+  if(!scelta) return;
+  const idx=parseInt(scelta)-1;
+  if(isNaN(idx)||idx<0||idx>=allKeys.length){ toast('Selezione non valida','❌'); return; }
+  try{
+    const b=JSON.parse(localStorage.getItem(allKeys[idx])||'{}');
+    ['aziende','lavoratori','docenti','corsi','sessioni','offerte'].forEach(t=>{
+      if(b[t]){ db.save[t]?.(b[t]); }
+    });
+    updateFilters(); renderDashboard();
+    toast('Backup del '+allKeys[idx].replace('frm_autobackup_','')+' ripristinato!','✅');
+  }catch(e){ toast('Errore ripristino: '+e.message,'❌'); }
 }
 
 // Check if already logged in this session
