@@ -593,7 +593,7 @@ textarea.fc{min-height:68px;resize:vertical}
           </div>
 
           <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="generaPreventivo()">📥 Scarica preventivo .docx</button>
+            <button class="btn btn-primary" onclick="generaPreventivo()">📄 Genera PDF preventivo</button>
             <button class="btn btn-sm" onclick="salvaPrevBozza()">💾 Salva bozza</button>
             <button class="btn btn-xs btn-danger" onclick="resetPreventivo()">✕ Reset</button>
           </div>
@@ -654,7 +654,7 @@ textarea.fc{min-height:68px;resize:vertical}
                 <input class="fc" id="off-validita" type="number" value="30" min="1" style="max-width:100px">
               </div>
               <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-primary" onclick="generaOfferta()">📥 Scarica .docx</button>
+                <button class="btn btn-primary" onclick="generaOfferta()">📄 Genera PDF</button>
                 <button class="btn btn-sm" onclick="togglePersonalizza()">✏️ Personalizza</button>
                 <button class="btn btn-sm" onclick="salvaOffertaBozza('bozza')">💾 Salva bozza</button>
                 <button class="btn btn-sm" style="background:#1A56DB;color:white" onclick="salvaOffertaBozza('inviata')">📤 Inviata</button>
@@ -3589,190 +3589,94 @@ async function generaOfferta(){
 }
 
 async function generaOffertaDocx({t, az, cfg, mittente, num, dataOff, referente, note, validita}){
-  if(!window.docx){
-    await new Promise((res,rej)=>{
-      const s=document.createElement('script');
-      s.src='https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.umd.js';
-      s.onload=res; s.onerror=rej;
-      document.head.appendChild(s);
-    });
-  }
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-          AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign } = window.docx;
+  const fmtEur = n => '\u20ac\u00a0' + parseFloat(n).toFixed(2).replace('.',',');
 
-  const border={style:BorderStyle.SINGLE,size:1,color:'CCCCCC'};
-  const borders={top:border,bottom:border,left:border,right:border};
-  const bN={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
-  const bsN={top:bN,bottom:bN,left:bN,right:bN};
-  const W=9638;
+  // Sezioni testo
+  const sezioniHtml = (t.sezioni||[]).map(s=>`
+    <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">${s.num}. ${s.titolo}</div>
+    <p style="line-height:1.7;white-space:pre-line">${(s.testo||'')+(s.num==='1'&&note?'\n\nNote: '+note:'')}</p>`).join('');
 
-  const tc=(text,opts={})=>new TableCell({
-    borders:opts.borders||borders, width:{size:opts.w||Math.round(W/2),type:WidthType.DXA},
-    shading:opts.shade?{fill:opts.shade,type:ShadingType.CLEAR}:undefined,
-    verticalAlign:VerticalAlign.CENTER, margins:{top:80,bottom:80,left:120,right:120},
-    children:[new Paragraph({alignment:opts.align||AlignmentType.LEFT,children:[
-      new TextRun({text:String(text||''),font:'Arial',size:opts.size||20,bold:opts.bold||false,color:opts.color||'000000'})
-    ]})]
-  });
-  const pr=(text,opts={})=>new Paragraph({
-    alignment:opts.align||AlignmentType.LEFT, spacing:{before:opts.before||60,after:opts.after||60},
-    children:[new TextRun({text:String(text||''),font:'Arial',size:opts.size||20,bold:opts.bold||false,color:opts.color||'222222',italics:opts.italic||false})]
-  });
-  const hd=(text)=>new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[W],
-    rows:[new TableRow({children:[new TableCell({
-      borders, width:{size:W,type:WidthType.DXA},
-      shading:{fill:'FDC400',type:ShadingType.CLEAR},
-      margins:{top:80,bottom:80,left:140,right:120},
-      children:[new Paragraph({children:[new TextRun({text,font:'Arial',size:22,bold:true,color:'1A1916'})]})]
-    })]})]
-  });
-
-  const children=[];
-
-  // Header
-  children.push(new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.55),Math.round(W*0.45)],
-    rows:[new TableRow({children:[
-      new TableCell({
-        borders:{top:border,bottom:border,left:border,right:bN},
-        width:{size:Math.round(W*0.55),type:WidthType.DXA},margins:{top:80,bottom:80,left:140,right:120},
-        children:[
-          new Paragraph({children:[new TextRun({text:'Offerta prestazioni professionali',font:'Arial',size:26,bold:true})]}),
-          new Paragraph({spacing:{before:40},children:[new TextRun({text:t.titolo||'',font:'Arial',size:20,bold:true})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:t.normativa||'',font:'Arial',size:18,italics:true,color:'555555'})]})
-        ]
-      }),
-      new TableCell({
-        borders:{top:border,bottom:border,left:bN,right:border},
-        width:{size:Math.round(W*0.45),type:WidthType.DXA},
-        shading:{fill:'F5F5F5',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},
-        children:[
-          new Paragraph({children:[new TextRun({text:'Data: '+dataOff,font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'N\u00b0 offerta: '+num,font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Codice: '+t.codice+' Rev. 00',font:'Arial',size:18})]})
-        ]
-      })
-    ]})]
-  }));
-
-  children.push(pr('',{before:120,after:0}));
-
-  // Committente / Erogato da
-  children.push(new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W/2),Math.round(W/2)],
-    rows:[
-      new TableRow({children:[
-        tc('Committente',{w:Math.round(W/2),bold:true,shade:'484F54',color:'FFFFFF',size:22}),
-        tc('Erogato da',{w:Math.round(W/2),bold:true,shade:'484F54',color:'FFFFFF',size:22}),
-      ]}),
-      new TableRow({children:[
-        new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:80,bottom:80,left:120,right:120},children:[
-          new Paragraph({children:[new TextRun({text:az.nome||'[Ragione Sociale Cliente]',font:'Arial',size:20,bold:true})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:(az.indirizzo?az.indirizzo+' \u2013 ':'')+(az.comune||''),font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:az.piva?'P.IVA '+az.piva:'P.IVA _______________',font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:referente?'Alla C.A. '+referente:'',font:'Arial',size:18})]})
-        ]}),
-        new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},shading:{fill:'FFFDE7',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},children:[
-          new Paragraph({children:[new TextRun({text:mittente,font:'Arial',size:20,bold:true})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Via Stazio, 36 \u2013 36029 Valbrenta (VI)',font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'P.IVA 03959010244',font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'roberta.sermoni@framyx.it | www.framyx.com',font:'Arial',size:18})]})
-        ]})
-      ]})
-    ]
-  }));
-
-  children.push(pr('',{before:200,after:0}));
-
-  // Sezioni dinamiche dal template
-  (t.sezioni||[]).forEach(s=>{
-    children.push(hd(s.num+'. '+s.titolo));
-    children.push(pr((s.testo||'')+(s.num==='1'&&note?'\n\nNote specifiche: '+note:''),{before:80,after:60}));
-  });
-
-  // Sezione compensi
-  if(t.voci&&t.voci.length){
-    children.push(hd((t.sezioni?.length||0)+1+'. Compensi'));
-    children.push(pr('Il compenso viene determinato secondo la tabella seguente:',{before:60,after:60}));
-    const righeVoci=t.voci.map((v,i)=>new TableRow({children:[
-      new TableCell({borders,width:{size:Math.round(W*0.75),type:WidthType.DXA},margins:{top:60,bottom:60,left:120,right:80},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},children:[new Paragraph({children:[new TextRun({text:v.desc||'',font:'Arial',size:19})]})]}),
-      new TableCell({borders,width:{size:Math.round(W*0.25),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:120},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:v.importo||'',font:'Arial',size:19,bold:true})]})]})
-    ]}));
-    children.push(new Table({
-      width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.75),Math.round(W*0.25)],
-      rows:[
-        new TableRow({children:[
-          new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.75),type:WidthType.DXA},margins:{top:60,bottom:60,left:120,right:80},children:[new Paragraph({children:[new TextRun({text:'Prestazione',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
-          new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.25),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:120},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Importo',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
-        ]}),
-        ...righeVoci
-      ]
-    }));
-    if(t.noteCompensi){
-      children.push(pr('',{before:100,after:0}));
-      children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],rows:[new TableRow({children:[new TableCell({
-        borders:{top:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},bottom:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},left:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},right:{style:BorderStyle.SINGLE,size:2,color:'FDC400'}},
-        shading:{fill:'FFFDE7',type:ShadingType.CLEAR},width:{size:W,type:WidthType.DXA},margins:{top:80,bottom:80,left:140,right:140},
-        children:[new Paragraph({children:[new TextRun({text:'Note sui compensi',font:'Arial',size:20,bold:true})]}),new Paragraph({spacing:{before:60},children:[new TextRun({text:t.noteCompensi,font:'Arial',size:18})]})],
-      })]})]  }));
-    }
-  }
-
-  children.push(pr('',{before:160,after:0}));
+  // Tabella voci
+  const vociHtml = (t.voci&&t.voci.length) ? `
+    <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">${(t.sezioni?.length||0)+1}. Compensi</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
+      <tr style="background:#484F54;color:white"><th style="padding:5px 8px;text-align:left;font-size:10px">Prestazione</th><th style="padding:5px 8px;text-align:right;font-size:10px;width:28%">Importo</th></tr>
+      ${(t.voci||[]).map((v,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}"><td style="padding:5px 8px;border-bottom:1px solid #eee">${v.desc||''}</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:600">${v.importo||''}</td></tr>`).join('')}
+    </table>
+    ${t.noteCompensi?`<div style="border:1px solid #FDC400;background:#FFFDE7;padding:8px 12px;font-size:10px;margin-bottom:10px"><strong>Note sui compensi</strong><br><span style="white-space:pre-line">${t.noteCompensi}</span></div>`:''}` : '';
 
   // Sezioni finali
   const secNum=(t.sezioni?.length||0)+2;
-  [[t.esclusioni?'Esclusioni':null,t.esclusioni],[t.tempi?'Tempi di esecuzione':null,t.tempi],[t.documenti?'Documenti rilasciati':null,t.documenti]].filter(([h])=>h).forEach(([h,tx],i)=>{
-    children.push(hd((secNum+i)+'. '+h));
-    children.push(pr(tx||'',{before:80,after:60}));
-  });
+  const finaliHtml = [[t.esclusioni?'Esclusioni':null,t.esclusioni],[t.tempi?'Tempi di esecuzione':null,t.tempi],[t.documenti?'Documenti rilasciati':null,t.documenti]].filter(([h])=>h).map(([h,tx],i)=>`
+    <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">${secNum+i}. ${h}</div>
+    <p style="line-height:1.7;white-space:pre-line">${tx||''}</p>`).join('');
+  const lastN=secNum+[[t.esclusioni],[t.tempi],[t.documenti]].filter(x=>x[0]).length;
 
-  // Pagamento e validità
-  const lastNum=secNum+[[t.esclusioni],[t.tempi],[t.documenti]].filter(x=>x[0]).length;
-  children.push(hd(lastNum+". Modalit\u00e0 di pagamento"));
-  children.push(pr("Acconto: 30% del preventivato entro 10 gg dall\u2019accettazione, previa presentazione avviso di parcella.\nAcconti intermedi: emessi a SAL durante le attivit\u00e0, a 30 gg fine mese.\nSaldo: alla consegna del documento finale, a 30 gg fine mese.\nPagamento: bonifico bancario 30 gg DFFM.",{before:80,after:60}));
-  children.push(hd((lastNum+1)+". Validit\u00e0 dell\u2019offerta"));
-  children.push(pr("Le condizioni della presente offerta sono valide per "+validita+" ("+validita+") giorni dalla data di emissione. Le Condizioni Generali di Contratto Framyx Srl SB sono disponibili su www.framyx.com/condizioni-generali e sono parte integrante della presente offerta. La firma per accettazione implica integrale accettazione delle stesse.",{before:80,after:60}));
+  const html = `
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    <tr>
+      <td style="padding:12px 14px;border:1px solid #ddd;width:58%">
+        <div style="font-size:15px;font-weight:700">Offerta prestazioni professionali</div>
+        <div style="font-weight:700;margin-top:4px">${t.titolo||''}</div>
+        <div style="color:#555;font-style:italic;font-size:10px;margin-top:2px">${t.normativa||''}</div>
+      </td>
+      <td style="padding:10px 12px;border:1px solid #ddd;background:#f5f5f5;font-size:10px">
+        <div>Data: <strong>${dataOff}</strong></div>
+        <div style="margin-top:3px">N° offerta: <strong>${num}</strong></div>
+        <div style="margin-top:3px">Codice: <strong>${t.codice||''} Rev. 00</strong></div>
+      </td>
+    </tr>
+  </table>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    <tr>
+      <td style="padding:4px 8px;background:#484F54;color:white;font-weight:700;font-size:11px;width:50%">Committente</td>
+      <td style="padding:4px 8px;background:#484F54;color:white;font-weight:700;font-size:11px">Erogato da</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 10px;border:1px solid #ddd;vertical-align:top">
+        <div style="font-weight:700">${az.nome||'—'}</div>
+        <div style="margin-top:2px;font-size:10px;color:#555">${(az.indirizzo?az.indirizzo+' \u2013 ':'')+( az.comune||'')}</div>
+        <div style="font-size:10px;color:#555">${az.piva?'P.IVA '+az.piva:''}</div>
+        <div style="font-size:10px">${referente?'Alla C.A. '+referente:''}</div>
+      </td>
+      <td style="padding:10px 10px;border:1px solid #ddd;background:#FFFDE7;vertical-align:top">
+        <div style="font-weight:700">${mittente}</div>
+        <div style="font-size:10px;color:#555;margin-top:2px">Via Stazio, 36 \u2013 36029 Valbrenta (VI)</div>
+        <div style="font-size:10px;color:#555">P.IVA 03959010244</div>
+        <div style="font-size:10px">roberta.sermoni@framyx.it | www.framyx.com</div>
+      </td>
+    </tr>
+  </table>
+  ${sezioniHtml}${vociHtml}${finaliHtml}
+  <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">${lastN}. Modalit\u00e0 di pagamento</div>
+  <p style="line-height:1.7">Acconto: 30% entro 10 gg dall\u2019accettazione. Acconti intermedi a SAL. Saldo alla consegna. Pagamento: bonifico 30 gg DFFM.</p>
+  <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">${lastN+1}. Validit\u00e0 dell\u2019offerta</div>
+  <p style="line-height:1.7">Valida ${validita} giorni dalla data di emissione. Condizioni generali: www.framyx.com/condizioni-generali.</p>
+  <div style="margin-top:20px;border:1px solid #ddd;padding:8px 12px;background:#f9f9f9">
+    <table style="width:100%;border-collapse:collapse">
+      <tr><th style="text-align:left;padding:3px 6px;font-size:10px;border-bottom:1px solid #ddd">Incarico</th><th style="text-align:center;font-size:10px;border-bottom:1px solid #ddd;width:80px">Conferma</th><th style="text-align:right;font-size:10px;border-bottom:1px solid #ddd">Importo</th></tr>
+      <tr><td style="padding:4px 6px">${t.incarico||t.titolo||''}</td><td style="text-align:center;font-size:14px">&#9744;</td><td style="text-align:right;font-size:10px">Vedi punto compensi</td></tr>
+    </table>
+  </div>
+  <p style="margin-top:14px;font-style:italic;color:#555">Fiduciosi in una Vostra conferma, porgiamo cordiali saluti.</p>
+  <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div><div style="font-size:10px;font-weight:700;margin-bottom:2px">Data emissione:</div><div style="font-size:11px">${dataOff}</div><div style="border-top:1px solid #ccc;margin-top:28px;font-size:9px;color:#aaa">Per accettazione \u2013 Il Committente</div></div>
+    <div><div style="font-size:10px;font-weight:700;margin-bottom:2px">${mittente}</div><div style="height:28px"></div><div style="border-top:1px solid #ccc;margin-top:0;font-size:9px;color:#aaa">Firma Framyx</div></div>
+  </div>`;
 
-  // Conferma incarico
-  children.push(pr('',{before:80,after:0}));
-  children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.55),Math.round(W*0.15),Math.round(W*0.3)],
-    rows:[
-      new TableRow({children:[
-        tc('Incarico',{w:Math.round(W*0.55),bold:true,shade:'F5F5F5'}),
-        tc('Conferma',{w:Math.round(W*0.15),bold:true,shade:'F5F5F5',align:AlignmentType.CENTER}),
-        tc('Importo',{w:Math.round(W*0.3),bold:true,shade:'F5F5F5',align:AlignmentType.RIGHT}),
-      ]}),
-      new TableRow({children:[
-        tc(t.incarico||t.titolo||'',{w:Math.round(W*0.55)}),
-        tc('\u2610',{w:Math.round(W*0.15),align:AlignmentType.CENTER,size:22}),
-        tc('Vedi punto compensi',{w:Math.round(W*0.3),align:AlignmentType.RIGHT}),
-      ]})
-    ]
-  }));
-
-  children.push(pr('Fiduciosi in una Vostra conferma, porgiamo cordiali saluti.',{before:160,after:80,italic:true}));
-
-  // Firma
-  children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W/2),Math.round(W/2)],rows:[
-    new TableRow({children:[tc('Data emissione:',{w:Math.round(W/2),bold:true}),tc('Per accettazione \u2013 Il Committente',{w:Math.round(W/2),bold:true})]}),
-    new TableRow({children:[new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr(dataOff)]}),new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]})]}),
-    new TableRow({children:[tc('Data accettazione:',{w:Math.round(W/2),bold:true}),tc(mittente,{w:Math.round(W/2),bold:true})]}),
-    new TableRow({children:[new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]}),new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]})]}),
-  ]}));
-
-  const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1134,bottom:1134,left:1134,right:1134}}},children}]});
-  const buf=await Packer.toBuffer(doc);
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
   const azNome=(az.nome||'cliente').replace(/[^a-zA-Z0-9]/g,'_').slice(0,25);
-  a.download=(t.codice||'OF')+'_'+azNome+'_'+num.replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
-  a.click();
-  toast('Offerta .docx scaricata!','📥');
+  stampaPDF(html, (t.codice||'OF')+'_'+azNome+'_'+num+'.pdf');
+  toast('Apertura anteprima PDF\u2026','📄');
 }
 
+
+function stampaPDF(htmlContent, nomeFile){
+  const win = window.open('', '_blank');
+  if(!win){ toast('Popup bloccato — abilita i popup per generare PDF','⚠️'); return; }
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+nomeFile+'</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;background:white}@media print{body{margin:0}@page{size:A4;margin:15mm 15mm 15mm 15mm}.no-print{display:none!important}}@media screen{body{padding:24px;max-width:820px;margin:0 auto}.print-btn{position:fixed;top:12px;right:12px;background:#1A56DB;color:white;border:none;padding:9px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.2)}}</style></head><body><button class="print-btn no-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>'+htmlContent+'</body></html>');
+  win.document.close();
+  win.addEventListener('load', function(){ setTimeout(function(){ win.print(); }, 500); });
+}
 
 function renderPreventivi(){
   // populate aziende select
@@ -4073,199 +3977,94 @@ const fs = require('fs');
 }
 
 async function generatePreventivoDocxBrowser(p){
-  // Load docx.js from CDN if not loaded
-  if(!window.docx){
-    await new Promise((res,rej)=>{
-      const s=document.createElement('script');
-      s.src='https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.umd.js';
-      s.onload=res; s.onerror=rej;
-      document.head.appendChild(s);
-    });
-  }
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-          AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign } = window.docx;
-
-  const fmtEur = n => '\u20ac ' + parseFloat(n).toFixed(2).replace('.',',');
-  const border = { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
-  const borders = { top: border, bottom: border, left: border, right: border };
-  const bNone = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-  const bsNone = { top: bNone, bottom: bNone, left: bNone, right: bNone };
-  const W = 9638;
+  const fmtEur = n => '\u20ac\u00a0' + parseFloat(n).toFixed(2).replace('.',',');
   const mittente = p.cfg.aziendaNome || 'Framyx Srl SB';
 
-  const tc = (text, opts={}) => new TableCell({
-    borders: opts.borders || borders,
-    width: { size: opts.w || Math.round(W/2), type: WidthType.DXA },
-    shading: opts.shade ? { fill: opts.shade, type: ShadingType.CLEAR } : undefined,
-    verticalAlign: VerticalAlign.CENTER,
-    margins: { top: 80, bottom: 80, left: 120, right: 120 },
-    children: [new Paragraph({ alignment: opts.align || AlignmentType.LEFT, children: [
-      new TextRun({ text: String(text||''), font:'Arial', size: opts.size||20, bold: opts.bold||false, color: opts.color||'000000' })
-    ]})]
-  });
+  const imponibile = p.righe.reduce((s,r)=>s+(r.qta*r.prezzo),0);
+  const scontoAmt = imponibile*(p.sconto||0)/100;
+  const imponibileNetto = imponibile - scontoAmt;
+  const ivaAmt = imponibileNetto*(p.ivaPerc||22)/100;
+  const totale = imponibileNetto + ivaAmt;
 
-  const pr = (text, opts={}) => new Paragraph({
-    alignment: opts.align || AlignmentType.LEFT,
-    spacing: { before: opts.before||60, after: opts.after||60 },
-    children: [new TextRun({ text: String(text||''), font:'Arial', size: opts.size||20,
-      bold: opts.bold||false, color: opts.color||'222222', italics: opts.italic||false })]
-  });
+  const righeHtml = p.righe.map((r,i)=>`
+    <tr style="background:${i%2?'#f9f9f9':'white'}">
+      <td style="padding:5px 8px;border-bottom:1px solid #eee">${r.desc||'\u2014'}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;width:60px">${r.qta}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;width:120px;font-weight:600">${r.prezzo>0?fmtEur(r.qta*r.prezzo):'Preventivo specifico'}</td>
+    </tr>`).join('');
 
-  const hd = (text) => new Table({
-    width:{size:W,type:WidthType.DXA}, columnWidths:[W],
-    rows:[new TableRow({children:[new TableCell({
-      borders, width:{size:W,type:WidthType.DXA},
-      shading:{fill:'FDC400',type:ShadingType.CLEAR},
-      margins:{top:80,bottom:80,left:140,right:120},
-      children:[new Paragraph({children:[new TextRun({text,font:'Arial',size:22,bold:true,color:'1A1916'})]})]
-    })]})]
-  });
+  const totaliHtml = `
+    ${p.sconto>0?`<tr><td colspan="2" style="text-align:right;padding:3px 8px;font-size:10px;color:#555">Imponibile lordo</td><td style="text-align:right;padding:3px 8px;font-size:10px">${fmtEur(imponibile)}</td></tr>
+     <tr><td colspan="2" style="text-align:right;padding:3px 8px;font-size:10px;color:#555">Sconto ${p.sconto}%</td><td style="text-align:right;padding:3px 8px;font-size:10px">- ${fmtEur(scontoAmt)}</td></tr>`:''}
+    <tr><td colspan="2" style="text-align:right;padding:3px 8px;font-size:10px;color:#555">Imponibile netto</td><td style="text-align:right;padding:3px 8px;font-size:10px">${fmtEur(imponibileNetto)}</td></tr>
+    <tr><td colspan="2" style="text-align:right;padding:3px 8px;font-size:10px;color:#555">IVA ${p.ivaPerc}%</td><td style="text-align:right;padding:3px 8px;font-size:10px">${fmtEur(ivaAmt)}</td></tr>
+    <tr style="background:#FFFDE7"><td colspan="2" style="text-align:right;padding:6px 8px;font-weight:700">TOTALE OFFERTA</td><td style="text-align:right;padding:6px 8px;font-weight:700;color:#C89A00;font-size:13px">${fmtEur(totale)}</td></tr>`;
 
-  const children = [];
+  const noteText = ['\u2022 Prezzi al netto di IVA '+p.ivaPerc+'% e contributo previdenziale ove applicabile.',
+    '\u2022 Trasferte fuori provincia di Vicenza: rimborso km ACI 2026 + ore viaggio \u20ac 70,00/h.',
+    '\u2022 I corsi sono erogati da formatori qualificati in conformit\u00e0 all\u2019ASR 2025.',
+    '\u2022 Dal 24/05/2025 \u00e8 in vigore il nuovo Accordo Stato-Regioni 2025. Periodo transitorio fino al 24/05/2026.',
+    ...(p.noteCompensi?['\u2022 '+p.noteCompensi]:[])
+  ].join('\n');
 
-  // Header table
-  children.push(new Table({
-    width:{size:W,type:WidthType.DXA}, columnWidths:[Math.round(W*0.55),Math.round(W*0.45)],
-    rows:[new TableRow({children:[
-      new TableCell({
-        borders:{top:border,bottom:border,left:border,right:bNone},
-        width:{size:Math.round(W*0.55),type:WidthType.DXA}, margins:{top:80,bottom:80,left:140,right:120},
-        children:[
-          new Paragraph({children:[new TextRun({text:'Offerta prestazioni professionali',font:'Arial',size:26,bold:true})]}),
-          new Paragraph({spacing:{before:40},children:[new TextRun({text:'Formazione Sicurezza Lavoratori',font:'Arial',size:20,bold:true})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Accordo Stato-Regioni 2025 \u2013 D.Lgs. 81/2008 artt. 36\u201337',font:'Arial',size:18,italics:true,color:'555555'})]})
-        ]
-      }),
-      new TableCell({
-        borders:{top:border,bottom:border,left:bNone,right:border},
-        width:{size:Math.round(W*0.45),type:WidthType.DXA},
-        shading:{fill:'F5F5F5',type:ShadingType.CLEAR}, margins:{top:80,bottom:80,left:120,right:120},
-        children:[
-          new Paragraph({children:[new TextRun({text:'Data: '+p.fmtData_dataOff,font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'N\u00b0 offerta: '+p.num,font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Codice: OF-FOR-01 Rev. 00',font:'Arial',size:18})]})
-        ]
-      })
-    ]})]
-  }));
+  const html = `
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    <tr>
+      <td style="padding:12px 14px;border:1px solid #ddd;width:58%">
+        <div style="font-size:15px;font-weight:700">Offerta prestazioni professionali</div>
+        <div style="font-weight:700;margin-top:4px">Formazione Sicurezza Lavoratori</div>
+        <div style="color:#555;font-style:italic;font-size:10px;margin-top:2px">Accordo Stato-Regioni 2025 \u2013 D.Lgs. 81/2008 artt. 36\u201337</div>
+      </td>
+      <td style="padding:10px 12px;border:1px solid #ddd;background:#f5f5f5;font-size:10px">
+        <div>Data: <strong>${p.fmtData_dataOff}</strong></div>
+        <div style="margin-top:3px">N\u00b0 offerta: <strong>${p.num}</strong></div>
+        <div style="margin-top:3px">Codice: <strong>OF-FOR-01 Rev. 00</strong></div>
+      </td>
+    </tr>
+  </table>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    <tr>
+      <td style="padding:4px 8px;background:#484F54;color:white;font-weight:700;font-size:11px;width:50%">Committente</td>
+      <td style="padding:4px 8px;background:#484F54;color:white;font-weight:700;font-size:11px">Erogato da</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;border:1px solid #ddd;vertical-align:top">
+        <div style="font-weight:700">${p.az.nome||'\u2014'}</div>
+        <div style="font-size:10px;color:#555;margin-top:2px">${(p.az.indirizzo?p.az.indirizzo+' \u2013 ':'')+(p.az.comune||'')}</div>
+        <div style="font-size:10px;color:#555">${p.az.piva?'P.IVA '+p.az.piva:''}</div>
+        <div style="font-size:10px">${p.referente?'Alla C.A. '+p.referente:''}</div>
+      </td>
+      <td style="padding:10px;border:1px solid #ddd;background:#FFFDE7;vertical-align:top">
+        <div style="font-weight:700">${mittente}</div>
+        <div style="font-size:10px;color:#555;margin-top:2px">Via Stazio, 36 \u2013 36029 Valbrenta (VI)</div>
+        <div style="font-size:10px;color:#555">P.IVA 03959010244</div>
+        <div style="font-size:10px">roberta.sermoni@framyx.it | www.framyx.com</div>
+      </td>
+    </tr>
+  </table>
+  <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">1. Descrizione dell\u2019incarico</div>
+  <p style="line-height:1.7">Erogazione di corsi di formazione obbligatoria sulla sicurezza ai sensi del D.Lgs. 81/2008 artt. 36\u201337 e del nuovo Accordo Stato-Regioni 2025.${p.note?' Note specifiche: '+p.note:''}</p>
+  <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">2. Prestazioni incluse</div>
+  <p style="line-height:1.8">\u2014 Progettazione didattica conforme all\u2019ASR 2025.<br>\u2014 Erogazione in aula o videoconferenza sincrona.<br>\u2014 Materiale didattico per ogni partecipante.<br>\u2014 Test di verifica apprendimento (obbligatorio ex ASR 2025).<br>\u2014 Registro presenze firmato.<br>\u2014 Attestati individuali.</p>
+  <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">3. Compensi</div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+    <tr style="background:#484F54;color:white"><th style="padding:5px 8px;text-align:left;font-size:10px">Prestazione</th><th style="padding:5px 8px;text-align:center;font-size:10px;width:60px">Qt\u00e0</th><th style="padding:5px 8px;text-align:right;font-size:10px;width:120px">Importo</th></tr>
+    ${righeHtml}
+    ${totaliHtml}
+  </table>
+  <div style="border:1px solid #FDC400;background:#FFFDE7;padding:8px 12px;font-size:10px;margin:10px 0">
+    <strong>Note sui compensi</strong><br><span style="white-space:pre-line">${noteText}</span>
+  </div>
+  <div style="background:#FDC400;padding:5px 10px;margin:14px 0 6px;font-weight:700;font-size:11px;color:#1A1916">4. Validit\u00e0 dell\u2019offerta</div>
+  <p style="line-height:1.7">Valida ${p.validita} giorni dalla data di emissione. Condizioni generali: www.framyx.com/condizioni-generali. La firma per accettazione implica accettazione integrale.</p>
+  <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div><div style="font-size:10px;font-weight:700">Data emissione: ${p.fmtData_dataOff}</div><div style="border-top:1px solid #ccc;margin-top:36px;padding-top:3px;font-size:9px;color:#aaa">Per accettazione \u2013 Il Committente</div></div>
+    <div><div style="font-size:10px;font-weight:700">${mittente}</div><div style="border-top:1px solid #ccc;margin-top:36px;padding-top:3px;font-size:9px;color:#aaa">Firma Framyx</div></div>
+  </div>`;
 
-  children.push(pr('', {before:120,after:0}));
-
-  // Committente / Erogato da
-  children.push(new Table({
-    width:{size:W,type:WidthType.DXA}, columnWidths:[Math.round(W/2),Math.round(W/2)],
-    rows:[
-      new TableRow({children:[
-        tc('Committente',{w:Math.round(W/2),bold:true,shade:'484F54',color:'FFFFFF',size:22}),
-        tc('Erogato da',{w:Math.round(W/2),bold:true,shade:'484F54',color:'FFFFFF',size:22}),
-      ]}),
-      new TableRow({children:[
-        new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:80,bottom:80,left:120,right:120},children:[
-          new Paragraph({children:[new TextRun({text:p.az.nome||'[Ragione Sociale Cliente]',font:'Arial',size:20,bold:true})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:(p.az.indirizzo?p.az.indirizzo+' \u2013 ':'')+(p.az.comune||''),font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:p.az.piva?'P.IVA '+p.az.piva:'P.IVA _______________',font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:p.referente?'Alla C.A. '+p.referente:'Alla C.A. _______________',font:'Arial',size:18})]})
-        ]}),
-        new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},shading:{fill:'FFFDE7',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},children:[
-          new Paragraph({children:[new TextRun({text:mittente,font:'Arial',size:20,bold:true})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'Via Stazio, 36 \u2013 36029 Valbrenta (VI)',font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'P.IVA 03959010244',font:'Arial',size:18})]}),
-          new Paragraph({spacing:{before:20},children:[new TextRun({text:'roberta.sermoni@framyx.it | www.framyx.com',font:'Arial',size:18})]})
-        ]})
-      ]})
-    ]
-  }));
-
-  children.push(pr('',{before:160,after:0}));
-
-  // Sezioni 1-3
-  [['1. Descrizione dell\u2019incarico','Erogazione di corsi di formazione obbligatoria sulla sicurezza ai sensi del D.Lgs. 81/2008 artt. 36\u201337 e del nuovo Accordo Stato-Regioni 2025, che sostituisce e unifica i precedenti accordi del 2011 e 2016. Corsi erogati in aula presso la sede del Cliente o presso sede Framyx.'+(p.note?'\n\nOggetto specifico: '+p.note:'')],
-   ['2. Oggetto e limiti dell\u2019incarico','Progettazione, erogazione e documentazione dei percorsi formativi obbligatori per le diverse figure della sicurezza: lavoratori (formazione generale + specifica), preposti, dirigenti, datore di lavoro, RSPP/ASPP, RLS, addetti antincendio e primo soccorso, attrezzature soggette ad abilitazione.'],
-   ['3. Prestazioni professionali incluse','\u2014 Progettazione didattica conforme all\u2019Accordo Stato-Regioni 2025.\n\u2014 Erogazione in aula (o videoconferenza sincrona ove consentito).\n\u2014 Materiale didattico per ogni partecipante.\n\u2014 Test di verifica apprendimento (obbligatorio ex ASR 2025).\n\u2014 Registro di presenza firmato.\n\u2014 Attestati individuali di partecipazione.\n\u2014 Custodia documentazione corso.'],
-  ].forEach(([h,t])=>{
-    children.push(hd(h));
-    children.push(pr(t,{before:80,after:60}));
-  });
-
-  // Sezione 4: tabella compensi
-  children.push(hd('4. Compensi professionali preventivati'));
-  children.push(pr('Il compenso \u00e8 determinato secondo la tabella seguente:',{before:60,after:60}));
-
-  const righeRows=p.righe.map((r,i)=>new TableRow({children:[
-    new TableCell({borders,width:{size:Math.round(W*0.65),type:WidthType.DXA},margins:{top:60,bottom:60,left:120,right:80},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},children:[new Paragraph({children:[new TextRun({text:r.desc||'\u2014',font:'Arial',size:19})]})]}),
-    new TableCell({borders,width:{size:Math.round(W*0.15),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:80},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:String(r.qta),font:'Arial',size:19})]})]}),
-    new TableCell({borders,width:{size:Math.round(W*0.2),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:120},shading:{fill:i%2?'F9F9F9':'FFFFFF',type:ShadingType.CLEAR},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:r.prezzo>0?fmtEur(r.qta*r.prezzo):'Preventivo specifico',font:'Arial',size:19,bold:r.prezzo>0})]})]}),
-  ]}));
-
-  children.push(new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.65),Math.round(W*0.15),Math.round(W*0.2)],
-    rows:[
-      new TableRow({children:[
-        new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.65),type:WidthType.DXA},margins:{top:60,bottom:60,left:120,right:80},children:[new Paragraph({children:[new TextRun({text:'Prestazione',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
-        new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.15),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:80},children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Qt\u00e0',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
-        new TableCell({borders,shading:{fill:'484F54',type:ShadingType.CLEAR},width:{size:Math.round(W*0.2),type:WidthType.DXA},margins:{top:60,bottom:60,left:80,right:120},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Importo',font:'Arial',size:20,bold:true,color:'FFFFFF'})]})] }),
-      ]}),
-      ...righeRows
-    ]
-  }));
-
-  // Totali
-  const trows=[];
-  if(p.sconto>0){ trows.push(['Imponibile lordo',fmtEur(p.imponibile)]); trows.push(['Sconto '+p.sconto+'%','- '+fmtEur(p.scontoAmt)]); }
-  trows.push(['Imponibile netto',fmtEur(p.imponibileNetto)]);
-  trows.push(['IVA '+p.ivaPerc+'%',fmtEur(p.ivaAmt)]);
-  trows.forEach(([l,v])=>{
-    children.push(new Table({ width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.8),Math.round(W*0.2)],
-      rows:[new TableRow({children:[
-        new TableCell({borders:bsNone,width:{size:Math.round(W*0.8),type:WidthType.DXA},margins:{top:20,bottom:20,left:0,right:80},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:l,font:'Arial',size:19,color:'555555'})]})] }),
-        new TableCell({borders:bsNone,width:{size:Math.round(W*0.2),type:WidthType.DXA},margins:{top:20,bottom:20,left:80,right:0},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:v,font:'Arial',size:19})]})]}),
-      ]})]
-    }));
-  });
-  children.push(new Table({ width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W*0.8),Math.round(W*0.2)],
-    rows:[new TableRow({children:[
-      new TableCell({borders:{top:border,bottom:border,left:bNone,right:bNone},shading:{fill:'FFFDE7',type:ShadingType.CLEAR},width:{size:Math.round(W*0.8),type:WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'TOTALE OFFERTA',font:'Arial',size:22,bold:true})]})]}),
-      new TableCell({borders:{top:border,bottom:border,left:bNone,right:bNone},shading:{fill:'FFFDE7',type:ShadingType.CLEAR},width:{size:Math.round(W*0.2),type:WidthType.DXA},margins:{top:80,bottom:80,left:80,right:120},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:fmtEur(p.totale),font:'Arial',size:22,bold:true,color:'C89A00'})]})]})
-    ]})]
-  }));
-
-  // Note box
-  const noteText='\u2022 Prezzi al netto di IVA '+p.ivaPerc+'% e contributo previdenziale ove applicabile.\n\u2022 Trasferte fuori provincia di Vicenza: rimborso km ACI 2026 + ore viaggio \u20ac 70,00/h.\n\u2022 I corsi sono erogati da formatori qualificati con esperienza triennale documentata, in conformit\u00e0 all\u2019ASR 2025.\n\u2022 ATTENZIONE: dal 24/05/2025 \u00e8 in vigore il nuovo Accordo Stato-Regioni 2025. Periodo transitorio fino al 24/05/2026.'+(p.noteCompensi?'\n\u2022 '+p.noteCompensi:'');
-  children.push(pr('',{before:120,after:0}));
-  children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],rows:[new TableRow({children:[new TableCell({borders:{top:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},bottom:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},left:{style:BorderStyle.SINGLE,size:2,color:'FDC400'},right:{style:BorderStyle.SINGLE,size:2,color:'FDC400'}},shading:{fill:'FFFDE7',type:ShadingType.CLEAR},width:{size:W,type:WidthType.DXA},margins:{top:80,bottom:80,left:140,right:140},children:[new Paragraph({children:[new TextRun({text:'Note sui compensi',font:'Arial',size:20,bold:true})]}),new Paragraph({spacing:{before:60},children:[new TextRun({text:noteText,font:'Arial',size:18})]})]})]})]  }));
-
-  children.push(pr('',{before:160,after:0}));
-
-  // Sezioni 5-10
-  [['5. Documenti rilasciati','\u2014 Registro presenze firmato.\n\u2014 Test di verifica apprendimento (obbligatorio ASR 2025).\n\u2014 Attestati individuali di partecipazione.\n\u2014 Documentazione del corso conservata presso Framyx.'],
-   ['6. Obblighi del Cliente','\u2014 Mettere a disposizione la documentazione aziendale richiesta.\n\u2014 Garantire accesso ai locali e disponibilit\u00e0 del personale.\n\u2014 Comunicare il numero di partecipanti e la mansione/ruolo con almeno 5 gg di anticipo.\n\u2014 Mettere a disposizione un\u2019aula idonea (se corso in sede cliente).\n\u2014 Garantire la presenza dei partecipanti per l\u2019intera durata del corso.'],
-   ['7. Esclusioni','\u2014 Corsi RSPP/ASPP (percorsi specifici su preventivo dedicato).\n\u2014 Formazione e-learning (disponibile tramite partner accreditato su richiesta).\n\u2014 Tutto quanto non espressamente indicato al punto 3.'],
-   ['8. Tempi di esecuzione','I corsi vengono pianificati entro 15 gg lavorativi dalla conferma. Gli attestati vengono consegnati entro 5 gg dalla conclusione del corso.'],
-   ['9. Modalit\u00e0 di pagamento','Acconto: 30% del preventivato entro 10 gg dall\u2019accettazione, previa presentazione avviso di parcella.\nAcconti intermedi: emessi a SAL durante le attivit\u00e0, a 30 gg fine mese.\nSaldo: alla consegna del documento finale, a 30 gg fine mese.\nPagamento: bonifico bancario 30 gg DFFM.'],
-   ['10. Validit\u00e0 dell\u2019offerta','Le condizioni contenute nella presente offerta sono valide per '+p.validita+' ('+p.validita+') giorni dalla data di emissione. Le Condizioni Generali di Contratto Framyx Srl SB sono disponibili su www.framyx.com/condizioni-generali e sono parte integrante della presente offerta.'],
-  ].forEach(([h,t])=>{ children.push(hd(h)); children.push(pr(t,{before:80,after:60})); });
-
-  // Firma
-  children.push(pr('',{before:200,after:0}));
-  children.push(new Table({width:{size:W,type:WidthType.DXA},columnWidths:[Math.round(W/2),Math.round(W/2)],rows:[
-    new TableRow({children:[tc('Data emissione:',{w:Math.round(W/2),bold:true}),tc('Per accettazione \u2013 Il Committente',{w:Math.round(W/2),bold:true})]}),
-    new TableRow({children:[new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr(p.fmtData_dataOff)]}),new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]})]}),
-    new TableRow({children:[tc('Data accettazione:',{w:Math.round(W/2),bold:true}),tc(mittente,{w:Math.round(W/2),bold:true})]}),
-    new TableRow({children:[new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]}),new TableCell({borders,width:{size:Math.round(W/2),type:WidthType.DXA},margins:{top:200,bottom:200,left:120,right:120},children:[pr('_________________________________')]})]}),
-  ]}));
-
-  const doc = new Document({
-    sections:[{ properties:{page:{size:{width:11906,height:16838},margin:{top:1134,bottom:1134,left:1134,right:1134}}}, children }]
-  });
-
-  const buf = await Packer.toBuffer(doc);
-  const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  const azNome = (p.az.nome||'cliente').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
-  a.download = 'Preventivo_'+azNome+'_'+p.num.replace(/[^a-zA-Z0-9]/g,'_')+'.docx';
-  a.click();
-  toast('Preventivo .docx scaricato!','📥');
+  const azNome=(p.az.nome||'cliente').replace(/[^a-zA-Z0-9]/g,'_').slice(0,25);
+  stampaPDF(html, 'Preventivo_'+azNome+'_'+p.num+'.pdf');
+  toast('Apertura anteprima PDF\u2026','📄');
 }
 
 async function creaTabellaSupabase(){
