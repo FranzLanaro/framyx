@@ -256,26 +256,29 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="nav-item" onclick="goTo('aziende')" id="nav-aziende"><span class="ni">🏢</span>Aziende</div>
     <div class="nav-item" onclick="goTo('lavoratori')" id="nav-lavoratori"><span class="ni">👷</span>Lavoratori</div>
     <div class="nav-item" onclick="goTo('docenti')" id="nav-docenti"><span class="ni">🎓</span>Docenti</div>
-    <div class="nav-item" onclick="goTo('corsi')" id="nav-corsi"><span class="ni">📋</span>Corsi standard</div>
+    <div class="nav-item" onclick="goTo('corsi')" id="nav-corsi"><span class="ni">📚</span>Corsi</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Attività</div>
-    <div class="nav-item" onclick="goTo('sessioni')" id="nav-sessioni"><span class="ni">📅</span>Sessioni corso</div>
+    <div class="nav-label">Formazione</div>
+    <div class="nav-item" onclick="goTo('sessioni')" id="nav-sessioni"><span class="ni">📅</span>Sessioni</div>
     <div class="nav-item" onclick="goTo('documenti')" id="nav-documenti"><span class="ni">📄</span>Documenti</div>
-    <div class="nav-item" onclick="goTo('preventivi')" id="nav-preventivi"><span class="ni">💼</span>Preventivi</div>
-    <div class="nav-item" onclick="goTo('incarichi')" id="nav-incarichi"><span class="ni">✉️</span>Incarichi</div>
-    <div class="nav-item" onclick="goTo('contratti')" id="nav-contratti"><span class="ni">📁</span>Contratti<span id="badge-contratti" class="badge bb" style="display:none;margin-left:auto;font-size:10px"></span></div>
-    <div class="nav-item" onclick="goTo('offerte')" id="nav-offerte"><span class="ni">📋</span>Offerte<span id="badge-offerte" class="badge bb" style="display:none;margin-left:auto;font-size:10px"></span></div>
+    <div class="nav-item" onclick="goTo('storico')" id="nav-storico"><span class="ni">🗂</span>Storico corsi</div>
+    <div class="nav-item" onclick="goTo('scadenze')" id="nav-scadenze"><span class="ni">⏰</span>Scadenze</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Archivio</div>
-    <div class="nav-item" onclick="goTo('storico')" id="nav-storico"><span class="ni">🗂</span>Storico</div>
-    <div class="nav-item" onclick="goTo('scadenze')" id="nav-scadenze"><span class="ni">⏰</span>Scadenze</div>
+    <div class="nav-label">Commerciale</div>
+    <div class="nav-item" onclick="goTo('offerte')" id="nav-offerte"><span class="ni">📋</span>Offerte servizi<span id="badge-offerte" class="badge bb" style="display:none;margin-left:auto;font-size:10px"></span></div>
+    <div class="nav-item" onclick="goTo('preventivi')" id="nav-preventivi"><span class="ni">💼</span>Offerte formazione</div>
+    <div class="nav-item" onclick="goTo('contratti')" id="nav-contratti"><span class="ni">📁</span>Incarichi attivi</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Collaboratori</div>
+    <div class="nav-item" onclick="goTo('incarichi')" id="nav-incarichi"><span class="ni">✉️</span>Lettere incarico</div>
     <div class="nav-item" onclick="goTo('fondimpresa')" id="nav-fondimpresa"><span class="ni">🏛</span>Fondimpresa</div>
-    <div class="nav-item" onclick="goTo('import')" id="nav-import"><span class="ni">📥</span>Importa dati</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Sistema</div>
+    <div class="nav-item" onclick="goTo('import')" id="nav-import"><span class="ni">📥</span>Importa dati</div>
     <div class="nav-item" onclick="goTo('impostazioni')" id="nav-impostazioni"><span class="ni">⚙️</span>Impostazioni</div>
   </div>
 </nav>
@@ -1745,7 +1748,7 @@ function goTo(p){
 function renderPage(p){
   ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,offerte:renderOfferte,incarichi:renderIncarichi,contratti:renderContratti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
 }
-function openM(id){ document.getElementById(id).classList.add('open'); if(id==='m-lavoratore') popLavAz(); if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
+function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore') popLavAz(); if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
 document.addEventListener('click',e=>{ if(e.target.classList.contains('overlay')) closeM(e.target.id) });
 
@@ -6065,6 +6068,8 @@ window.renderPage = function(p) {
 
 // ══ INIT ══
 async function init() {
+  // Chiudi tutti i modal all'avvio
+  document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
   showSyncStatus('loading');
   const loaded = await loadFromSupabase();
   if(!loaded || db.aziende().length === 0) loadDemo();
