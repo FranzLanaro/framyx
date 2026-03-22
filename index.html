@@ -900,87 +900,6 @@ textarea.fc{min-height:68px;resize:vertical}
 
     </div>
 
-    <!-- Modal nuovo/modifica incarico -->
-    <div class="modal" id="m-contratto">
-      <div class="mc" style="max-width:780px;width:95%">
-        <div class="mh"><span class="mt" id="m-ct-title">Nuovo incarico</span><span class="mx" onclick="closeM('m-contratto')">✕</span></div>
-        <div style="padding:20px;overflow-y:auto;max-height:80vh">
-
-          <div class="fr2">
-            <div class="fg"><label class="fl">Cliente *</label>
-              <select class="fc" id="ct-az"><option value="">Seleziona azienda...</option></select>
-            </div>
-            <div class="fg"><label class="fl">Consulente assegnato *</label>
-              <select class="fc" id="ct-doc"><option value="">Seleziona consulente...</option></select>
-            </div>
-          </div>
-
-          <div class="fr2">
-            <div class="fg"><label class="fl">Tipo incarico *</label>
-              <select class="fc" id="ct-tipo-m">
-                <option>RSPP esterno</option><option>DVR</option><option>Consulenza</option>
-                <option>Medico Competente</option><option>Sopralluogo</option>
-                <option>Piano Emergenza</option><option>Altro</option>
-              </select>
-            </div>
-            <div class="fg"><label class="fl">Stato</label>
-              <select class="fc" id="ct-stato-m">
-                <option value="attivo">✅ Attivo</option>
-                <option value="sospeso">⏸ Sospeso</option>
-                <option value="concluso">🔚 Concluso</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="fg"><label class="fl">Descrizione / oggetto incarico</label>
-            <textarea class="fc" id="ct-desc" rows="2" placeholder="es. Servizio RSPP esterno annuale — formula base — rischio basso" style="resize:vertical"></textarea>
-          </div>
-
-          <!-- Date contratto -->
-          <div class="fr3">
-            <div class="fg"><label class="fl">Data inizio</label><input class="fc" id="ct-inizio" type="date"></div>
-            <div class="fg"><label class="fl">Data fine / scadenza</label><input class="fc" id="ct-fine" type="date"></div>
-            <div class="fg"><label class="fl">Rinnovo automatico</label>
-              <select class="fc" id="ct-rinnovo">
-                <option value="no">No</option>
-                <option value="annuale">Annuale</option>
-                <option value="biennale">Biennale</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Economico -->
-          <div class="fr3">
-            <div class="fg"><label class="fl">Valore contratto (€ + IVA)</label><input class="fc" id="ct-valore" type="number" min="0" step="0.01" placeholder="es. 1500"></div>
-            <div class="fg"><label class="fl">Frequenza visite/anno</label><input class="fc" id="ct-freq" type="number" min="0" placeholder="es. 4"></div>
-            <div class="fg"><label class="fl">Ore previste/anno</label><input class="fc" id="ct-ore" type="number" min="0" placeholder="es. 12"></div>
-          </div>
-
-          <!-- Appuntamenti -->
-          <div style="border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="font-weight:600;font-size:13px;margin-bottom:8px">📅 Appuntamenti</div>
-            <div id="ct-app-list"></div>
-            <button class="btn btn-xs btn-primary" onclick="addAppuntamento()">+ Aggiungi appuntamento</button>
-          </div>
-
-          <!-- Documenti prodotti -->
-          <div style="border-top:1px solid var(--border);margin:14px 0 10px">
-            <div style="font-weight:600;font-size:13px;margin-bottom:8px">📄 Documenti prodotti</div>
-            <div id="ct-doc-list"></div>
-            <button class="btn btn-xs btn-primary" onclick="addDocumento()">+ Aggiungi documento</button>
-          </div>
-
-          <div class="fg"><label class="fl">Note</label>
-            <textarea class="fc" id="ct-note" rows="2" style="resize:vertical"></textarea>
-          </div>
-
-        </div>
-        <div class="mf">
-          <button class="btn" onclick="closeM('m-contratto')">Annulla</button>
-          <button class="btn btn-primary" onclick="salvaContratto()">💾 Salva incarico</button>
-        </div>
-      </div>
-    </div>
 
     <!-- ═══ FONDIMPRESA ═══ -->
     <div class="page" id="page-fondimpresa">
@@ -1205,6 +1124,87 @@ textarea.fc{min-height:68px;resize:vertical}
 <!-- ═══ MODALS ═══ -->
 
 <!-- Azienda -->
+<div class="overlay top" id="m-contratto">
+  <div class="mc" style="max-width:780px;width:95%">
+    <div class="mh"><span class="mt" id="m-ct-title">Nuovo incarico</span><span class="mx" onclick="closeM('m-contratto')">✕</span></div>
+    <div style="padding:20px;overflow-y:auto;max-height:75vh">
+
+          <div class="fr2">
+            <div class="fg"><label class="fl">Cliente *</label>
+              <select class="fc" id="ct-az"><option value="">Seleziona azienda...</option></select>
+            </div>
+            <div class="fg"><label class="fl">Consulente assegnato *</label>
+              <select class="fc" id="ct-doc"><option value="">Seleziona consulente...</option></select>
+            </div>
+          </div>
+
+          <div class="fr2">
+            <div class="fg"><label class="fl">Tipo incarico *</label>
+              <select class="fc" id="ct-tipo-m">
+                <option>RSPP esterno</option><option>DVR</option><option>Consulenza</option>
+                <option>Medico Competente</option><option>Sopralluogo</option>
+                <option>Piano Emergenza</option><option>Altro</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">Stato</label>
+              <select class="fc" id="ct-stato-m">
+                <option value="attivo">✅ Attivo</option>
+                <option value="sospeso">⏸ Sospeso</option>
+                <option value="concluso">🔚 Concluso</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fg"><label class="fl">Descrizione / oggetto incarico</label>
+            <textarea class="fc" id="ct-desc" rows="2" placeholder="es. Servizio RSPP esterno annuale — formula base — rischio basso" style="resize:vertical"></textarea>
+          </div>
+
+          <!-- Date contratto -->
+          <div class="fr3">
+            <div class="fg"><label class="fl">Data inizio</label><input class="fc" id="ct-inizio" type="date"></div>
+            <div class="fg"><label class="fl">Data fine / scadenza</label><input class="fc" id="ct-fine" type="date"></div>
+            <div class="fg"><label class="fl">Rinnovo automatico</label>
+              <select class="fc" id="ct-rinnovo">
+                <option value="no">No</option>
+                <option value="annuale">Annuale</option>
+                <option value="biennale">Biennale</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Economico -->
+          <div class="fr3">
+            <div class="fg"><label class="fl">Valore contratto (€ + IVA)</label><input class="fc" id="ct-valore" type="number" min="0" step="0.01" placeholder="es. 1500"></div>
+            <div class="fg"><label class="fl">Frequenza visite/anno</label><input class="fc" id="ct-freq" type="number" min="0" placeholder="es. 4"></div>
+            <div class="fg"><label class="fl">Ore previste/anno</label><input class="fc" id="ct-ore" type="number" min="0" placeholder="es. 12"></div>
+          </div>
+
+          <!-- Appuntamenti -->
+          <div style="border-top:1px solid var(--border);margin:14px 0 10px">
+            <div style="font-weight:600;font-size:13px;margin-bottom:8px">📅 Appuntamenti</div>
+            <div id="ct-app-list"></div>
+      <button class="btn btn-xs btn-primary" onclick="addAppuntamento()">+ Aggiungi appuntamento</button>
+          </div>
+
+          <!-- Documenti prodotti -->
+          <div style="border-top:1px solid var(--border);margin:14px 0 10px">
+            <div style="font-weight:600;font-size:13px;margin-bottom:8px">📄 Documenti prodotti</div>
+            <div id="ct-doc-list"></div>
+      <button class="btn btn-xs btn-primary" onclick="addDocumento()">+ Aggiungi documento</button>
+          </div>
+
+          <div class="fg"><label class="fl">Note</label>
+            <textarea class="fc" id="ct-note" rows="2" style="resize:vertical"></textarea>
+          </div>
+
+    </div>
+    <div class="mf">
+    <button class="btn" onclick="closeM('m-contratto')">Annulla</button>
+    <button class="btn btn-primary" onclick="salvaContratto()">💾 Salva incarico</button>
+        </div>
+    </div>
+</div>
+
 <div class="overlay" id="m-azienda">
   <div class="modal">
     <div class="mh"><span class="mt" id="m-azienda-t">Nuova azienda</span><span class="mx" onclick="closeM('m-azienda')">✕</span></div>
