@@ -303,11 +303,10 @@ textarea.fc{min-height:68px;resize:vertical}
 
     <!-- ═══ DASHBOARD ═══ -->
     <div class="page active" id="page-dashboard">
-      <div class="stats-grid" id="stats-grid"></div>
       <div class="grid-2">
         <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti</span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte</button></div><div id="dash-scad"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📋 Offerte</span><button class="btn btn-sm" onclick="goTo('offerte')">Vedi tutte</button></div><div id="dash-offerte"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📅 Sessioni recenti</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📋 Offerte / Preventivi da confermare</span><button class="btn btn-sm" onclick="goTo('offerte')">Vedi tutte</button></div><div id="dash-offerte"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📚 Formazione in corso</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
       </div>
       <div class="card mt-2">
         <div class="card-header">
@@ -533,6 +532,7 @@ textarea.fc{min-height:68px;resize:vertical}
 
     <!-- ═══ PREVENTIVI ═══ -->
     <div class="page" id="page-preventivi">
+      <div style="background:#EBF5FF;border:1px solid #93C5FD;border-radius:6px;padding:9px 14px;margin-bottom:12px;font-size:12px">💼 <strong>Offerta Formazione</strong> — elenca i corsi con prezzi e genera un preventivo Word. Per i corsi di formazione.</div>
       <div class="grid-2">
         <!-- Colonna sinistra: configuratore -->
         <div>
@@ -622,6 +622,8 @@ textarea.fc{min-height:68px;resize:vertical}
 
     <!-- ═══ OFFERTE ═══ -->
     <div class="page" id="page-offerte">
+      <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:6px;padding:9px 14px;margin-bottom:10px;font-size:12px">📋 <strong>Offerta Servizi</strong> — documento completo con incarico, prestazioni e compensi. Per DVR, RSPP, SLC, Piani di emergenza e altri servizi professionali.</div>
+      <div id="off-riepilogo" style="margin-bottom:14px"></div>
       <div class="grid-2">
 
         <!-- Colonna sinistra: genera offerta -->
@@ -1876,8 +1878,8 @@ function scaricaTemplateCorsi(){
 }
 
 // ══ DOCENTI ══
-function renderDocenti(){ 
-  const d=db.docenti(),tb=document.getElementById('tb-doc'); 
+function renderDocenti(){
+  const d=db.docenti().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it')),tb=document.getElementById('tb-doc'); 
   if(!d.length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">🎓</div><h3>Nessun docente</h3><p>Aggiungi il primo docente con il pulsante + Nuovo</p></div></td></tr>';return} 
   tb.innerHTML=d.map(x=>{
     const fasc=getFascicolo(x.id);
@@ -2038,7 +2040,7 @@ function onIntestazioneChange(){
 }
 
 function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note','ss-intestazione-custom','ss-citta'); document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; document.getElementById('ss-intestazione-tipo').value='framyx'; document.getElementById('ss-intestazione-custom').style.display='none'; const fEl=document.getElementById('ss-fondimpresa'); if(fEl) fEl.checked=false; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; document.getElementById('chip-part').innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso'; renderGiornate([]); }
-function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().sort((a,b)=>b.data.localeCompare(a.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
+function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().slice().sort((a,b)=>a.data.localeCompare(b.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
 function editSess(id){ const s=db.sessioni().find(x=>x.id===id); if(!s) return; popSessSelects(); sv({'ss':{id:s.id,corso:s.corsoId,az:s.aziendaId,data:s.data,sede:s.sede||'',doc:s.docenteId||'',mod:s.modalita||'In presenza',stato:s.stato||'pianificata',note:s.note||''}}); selPart=[...(s.partecipanti||[])]; renderArgS(s.argomenti||[]); renderChip(s.aziendaId,selPart); // restore giornate
   const giornate=s.giornate&&s.giornate.length?s.giornate:[{data:s.data||'',ini:s.oraInizio||'09:00',fine:s.oraFine||'17:00'}]; setTimeout(()=>renderGiornate(giornate),50); document.getElementById('m-sess-t').textContent='Modifica sessione'; const intTipo=s.intestazioneTipo||'framyx'; document.getElementById('ss-intestazione-tipo').value=intTipo; const custEl=document.getElementById('ss-intestazione-custom'); custEl.value=s.intestazioneCustom||''; custEl.style.display=intTipo==='custom'?'':'none'; document.getElementById('ss-citta').value=s.cittaAttestato||''; const fEl=document.getElementById('ss-fondimpresa'); if(fEl) fEl.checked=s.fondimpresa||false; openM('m-sessione') }
 function delSess(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('sessioni',_id); db.save.sessioni(db.sessioni().filter(s=>s.id!==id)); renderSessioni(); renderDashboard(); toast('Eliminata','🗑') }) }
@@ -2341,7 +2343,18 @@ function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.se
   const offStati={bozza:0,inviata:0,attesa:0,accettata:0,rifiutata:0,scaduta:0};
   offerte.forEach(o=>{ if(offStati[o.stato]!==undefined) offStati[o.stato]++; else offStati.bozza++; });
   const offBadge=document.getElementById('badge-offerte');
-  if(offBadge){ const tot=offStati.inviata+offStati.attesa; offBadge.textContent=tot; offBadge.style.display=tot?'':'none'; } const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg30=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length,urg60=sc.filter(x=>diffDays(x.sc)>30&&diffDays(x.sc)<=60).length,urg90=sc.filter(x=>diffDays(x.sc)>60&&diffDays(x.sc)<=90).length; document.getElementById('stats-grid').innerHTML=[{l:'🏢 Aziende',v:az.length,s:'clienti'},{l:'👷 Lavoratori',v:lav.length,s:'in anagrafica'},{l:'📅 Sessioni',v:sess.length,s:sess.filter(s=>s.stato==='completata').length+' completate'},{l:'⚠ Scadenze',v:scad+urg30,s:(scad?'🔴 '+scad+' scadute · ':'')+'🔴 '+urg30+' (30gg) · 🟠 '+urg60+' (60gg) · 🟡 '+urg90+' (90gg)'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tot=scad+urg30,b=document.getElementById('badge-scad'); b.textContent=tot; b.style.display=tot?'':'none'; const ul=sc.filter(x=>diffDays(x.sc)<=90).slice(0,8); document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`; const ulS=sess.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6); document.getElementById('dash-sess').innerHTML=ulS.length?ulS.map(s=>`<div class="srow"><div class="sdot ${s.stato==='completata'?'g':'o'}"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">📅</div><h3>Nessuna sessione</h3></div>`; renderCalendario();
+  if(offBadge){ const tot=offStati.inviata+offStati.attesa; offBadge.textContent=tot; offBadge.style.display=tot?'':'none'; }
+  // Badge scadenze
+  const scad=sc.filter(x=>diffDays(x.sc)<0).length,urg30=sc.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=30).length;
+  const totScad=scad+urg30, bScad=document.getElementById('badge-scad');
+  if(bScad){bScad.textContent=totScad;bScad.style.display=totScad?'':'none';}
+  // Scadenze urgenti
+  const ul=sc.filter(x=>diffDays(x.sc)<=90).slice(0,8);
+  document.getElementById('dash-scad').innerHTML=ul.length?ul.map(x=>{ const d=diffDays(x.sc); const cls=d<0?'r':d<=30?'o':'g'; return`<div class="srow"><div class="sdot ${cls}"></div><div class="sinfo"><div class="sname">${gLav(x.lid)}</div><div class="smeta">${gAz(x.aid)} · ${gCorso(x.cid)}</div></div><div class="sdate">${fmt(x.sc)}</div></div>` }).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Tutto in regola!</h3></div>`;
+  // Formazione in corso (sessioni pianificate non completate)
+  const sessAttive=sess.filter(s=>s.stato!=='completata').sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6);
+  document.getElementById('dash-sess').innerHTML=sessAttive.length?sessAttive.map(s=>`<div class="srow" style="cursor:pointer" onclick="goTo('sessioni')"><div class="sdot o"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Nessuna formazione aperta</h3></div>`;
+  renderCalendario();
   // Dash offerte
   const dashOff=document.getElementById('dash-offerte');
   if(dashOff){
@@ -2427,7 +2440,12 @@ function renderCalendario(){
     events.slice(0,2).forEach(s=>{
       const color = s.stato==='completata'?'#2D7D46':'#1A56DB';
       const bg = s.stato==='completata'?'#EAF5EE':'#EBF5FF';
-      html+=`<div style="font-size:9px;background:${bg};color:${color};padding:1px 4px;border-radius:3px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer" title="${gCorso(s.corsoId)} — ${gAz(s.aziendaId)}">${gCorso(s.corsoId).slice(0,18)}</div>`;
+      const azNome=gAz(s.aziendaId);
+      const corsoNome=gCorso(s.corsoId);
+      html+=`<div onclick="editSess('${s.id}')" style="font-size:9px;background:${bg};color:${color};padding:2px 5px;border-radius:3px;margin-bottom:2px;overflow:hidden;cursor:pointer;border-left:2px solid ${color}" title="${corsoNome} — ${azNome}">
+        <div style="font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${azNome.slice(0,15)}</div>
+        <div style="opacity:.75;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${corsoNome.slice(0,15)}</div>
+      </div>`;
     });
     if(events.length>2) html+=`<div style="font-size:9px;color:var(--text2)">+${events.length-2} altri</div>`;
     html+='</div>';
@@ -3212,6 +3230,24 @@ function getCatalogoOfferte(){
 function saveCatalogoOfferte(c){ localStorage.setItem('frm_catalogo_offerte',JSON.stringify(c)); }
 
 function renderOfferte(){
+  // Riepilogo stati cliccabili
+  const tutteOff=db.offerte();
+  const colors={bozza:'#888',inviata:'#1A56DB',attesa:'#D4620A',accettata:'#2D7D46',rifiutata:'#C0392B',scaduta:'#666'};
+  const labels={bozza:'📝 Bozze',inviata:'📤 Inviate',attesa:'⏳ In attesa',accettata:'✅ Accettate',rifiutata:'❌ Rifiutate',scaduta:'⌛ Scadute'};
+  const cnt={bozza:0,inviata:0,attesa:0,accettata:0,rifiutata:0,scaduta:0};
+  tutteOff.forEach(o=>{ const s=o.stato||'bozza'; if(cnt[s]!==undefined) cnt[s]++; });
+  const riel=document.getElementById('off-riepilogo');
+  if(riel){
+    // Suggerimento prossima numerazione
+    const lastN=tutteOff.reduce((m,o)=>{ const n=parseInt((o.num||'0').replace(/[^0-9]/g,''))||0; return n>m?n:m; },0);
+    const prossimaNum=String(lastN+1).padStart(3,'0')+'/'+new Date().getFullYear();
+    riel.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">${
+      Object.entries(cnt).map(([k,v])=>`<div onclick="document.getElementById('off-filter-stato').value='${k}';renderOfferteBozze()" style="background:white;border:1px solid var(--border);border-left:3px solid ${colors[k]};border-radius:6px;padding:7px 14px;cursor:pointer;min-width:80px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:${colors[k]}">${v}</div>
+        <div style="font-size:10px;color:var(--text2);white-space:nowrap">${labels[k]}</div>
+      </div>`).join('')
+    }</div><div style="font-size:11px;color:var(--text2)">Prossima numerazione suggerita: <strong>${prossimaNum}</strong> <button class="btn btn-xs" onclick="document.getElementById('off-num').value='${prossimaNum}';toast('Numero inserito','✅')">Usa</button></div>`;
+  }
   // Populate selects
   const selTipo=document.getElementById('off-tipo');
   const selAz=document.getElementById('off-az');
@@ -3556,7 +3592,7 @@ async function generaOffertaDocx({t, az, cfg, mittente, num, dataOff, referente,
   if(!window.docx){
     await new Promise((res,rej)=>{
       const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js';
+      s.src='https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.umd.js';
       s.onload=res; s.onerror=rej;
       document.head.appendChild(s);
     });
@@ -3795,7 +3831,7 @@ function renderSelettoreCorsi(){
   const q=(document.getElementById('sel-cor-q')?.value||'').toLowerCase();
   const tipo=document.getElementById('sel-cor-tipo')?.value||'';
   const tb2={'Sicurezza':'#1A56DB','Antincendio':'#C0392B','Primo soccorso':'#2D7D46','Attrezzature':'#D4620A','Altro':'#666'};
-  let corsi=db.corsi();
+  let corsi=db.corsi().slice().sort((a,b)=>(a.titolo||'').localeCompare(b.titolo||'','it'));
   if(q) corsi=corsi.filter(c=>c.titolo.toLowerCase().includes(q)||(c.norma||'').toLowerCase().includes(q));
   if(tipo) corsi=corsi.filter(c=>c.tipo===tipo);
   if(!corsi.length){ el.innerHTML='<div class="text-xs text-muted" style="padding:8px">Nessun corso trovato</div>'; return; }
@@ -4041,7 +4077,7 @@ async function generatePreventivoDocxBrowser(p){
   if(!window.docx){
     await new Promise((res,rej)=>{
       const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js';
+      s.src='https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.umd.js';
       s.onload=res; s.onerror=rej;
       document.head.appendChild(s);
     });
