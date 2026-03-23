@@ -1378,6 +1378,11 @@ textarea.fc{min-height:68px;resize:vertical}
       <div class="fg" style="margin-top:16px">
         <div class="flex items-center" style="justify-content:space-between;margin-bottom:8px">
           <label class="fl" style="margin:0">🧪 Test di verifica (domande a risposta multipla)</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-xs btn-primary" onclick="addDomanda()">+ Domanda</button>
+            <button class="btn btn-xs" style="background:#7C3AED;color:white" onclick="generaDomandeAI()" title="Genera domande con AI basate sugli argomenti del corso">✨ Genera con AI</button>
+            <button class="btn btn-xs" onclick="duplicaDomandePrePost()" title="Duplica tutte le domande: prima vengono poste all'inizio, poi le stesse alla fine">🔄 Pre+Post</button>
+          </div>
           <button class="btn btn-xs btn-blue" onclick="addDomanda()">+ Domanda</button>
         </div>
         <div id="test-editor"></div>
@@ -2010,13 +2015,22 @@ function sezToFlat(sez){
 // ══ TEST EDITOR ══
 function renderTestEditor(domande){
   const ed=document.getElementById('test-editor');
-  if(!domande||!domande.length){ ed.innerHTML='<p class="text-xs text-muted" style="padding:8px">Nessuna domanda. Clicca "+ Domanda" per aggiungerne una.</p>'; return }
-  ed.innerHTML=domande.map((d,di)=>`
-    <div class="q-block" id="q-${di}">
+  if(!domande||!domande.length){
+    ed.innerHTML='<p class="text-xs text-muted" style="padding:8px">Nessuna domanda. Clicca "+ Domanda" per aggiungerne una oppure usa ✨ Genera con AI.</p>';
+    return;
+  }
+  let qNum=0;
+  ed.innerHTML=domande.map((d,di)=>{
+    // Separatore Pre/Post
+    if(d._separatore){
+      return `<div id="q-${di}" data-sep="1" style="background:#484F54;color:white;padding:8px 12px;margin:8px 0;border-radius:4px;font-size:11px;font-weight:700">${esc(d.domanda||'')}</div>`;
+    }
+    qNum++;
+    return `<div class="q-block" id="q-${di}">
       <div class="q-head">
-        <span class="q-num">${di+1}.</span>
+        <span class="q-num">${qNum}.</span>
         <input class="q-text" id="q-d-${di}" value="${esc(d.domanda||'')}" placeholder="Testo della domanda...">
-        <button class="btn btn-xs btn-danger" onclick="removeD(${di})">✕ domanda</button>
+        <button class="btn btn-xs btn-danger" onclick="removeD(${di})">✕</button>
       </div>
       <div class="q-body">
         ${['A','B','C','D'].map((letter,oi)=>`
@@ -2025,10 +2039,128 @@ function renderTestEditor(domande){
             <input type="text" id="q-${di}-o-${oi}" value="${esc((d.opzioni||[])[oi]||'')}" placeholder="Risposta ${letter}..." oninput="">
             <input type="checkbox" class="q-opt-check" ${d.corretta===oi?'checked':''} title="Risposta corretta" onchange="setCorretta(${di},${oi},this.checked)">
           </div>`).join('')}
-        <p class="text-xs text-muted" style="margin-top:5px">☑ Spunta la risposta corretta</p>
+        <p class="text-xs text-muted" style="margin-top:4px">☑ Spunta la risposta corretta (verde)</p>
       </div>
-    </div>`).join('')
+    </div>`;
+  }).join('');
 }
+
+// ══ GENERATORE DOMANDE AI + PRE/POST ══
+
+async function generaDomandeAI(){
+  const titolo = document.getElementById('corso-titolo')?.value || v('corso-titolo') || '';
+  const norma  = document.getElementById('corso-norma')?.value  || v('corso-norma')  || '';
+
+  // Raccoglie argomenti dal sez-editor
+  const sez = getSez();
+  const argomenti = sez.flatMap(s=>[s.titolo,...(s.punti||[])]).filter(Boolean).join(', ');
+
+  if(!titolo && !argomenti){
+    toast('Inserisci prima il titolo del corso e gli argomenti','⚠️');
+    return;
+  }
+
+  const ed = document.getElementById('test-editor');
+  ed.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2)">✨ Generazione domande in corso...</div>';
+  toast('Generazione domande AI...','✨');
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: `Sei un esperto di formazione sulla sicurezza sul lavoro (D.Lgs. 81/2008).
+Crea 20 domande a scelta multipla per il test di verifica di un corso di formazione.
+
+Corso: "${titolo}"
+${norma?'Normativa: '+norma:''}
+${argomenti?'Argomenti: '+argomenti:''}
+
+REGOLE IMPORTANTI:
+- Le domande devono essere pratiche e verificare la comprensione reale
+- 4 opzioni di risposta (A, B, C, D) per ogni domanda
+- Una sola risposta corretta per domanda
+- Linguaggio semplice e chiaro per lavoratori
+- Le stesse domande vengono poste PRE e POST corso per misurare l'apprendimento
+
+Rispondi SOLO con JSON valido, nessun testo aggiuntivo:
+[
+  {
+    "domanda": "testo domanda",
+    "opzioni": ["risposta A", "risposta B", "risposta C", "risposta D"],
+    "corretta": 0
+  }
+]
+Dove "corretta" è l'indice (0=A, 1=B, 2=C, 3=D) della risposta corretta.`
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/\`\`\`json|\`\`\`/g,'').trim();
+    const domande = JSON.parse(clean);
+
+    if(!Array.isArray(domande) || !domande.length) throw new Error('Risposta non valida');
+
+    renderTestEditor(domande);
+    toast(domande.length+' domande generate — clicca 🔄 Pre+Post per duplicarle','✨');
+
+  } catch(e) {
+    console.error('AI error:', e);
+    // Fallback: domande standard basate sul titolo
+    toast('AI non disponibile — aggiungo domande template','ℹ️');
+    renderTestEditor(getDomandeTemplate(titolo, argomenti));
+  }
+}
+
+function getDomandeTemplate(titolo, argomenti){
+  return [
+    {domanda:'Cosa si intende per "rischio" nella sicurezza sul lavoro?',opzioni:['La probabilit\u00e0 che si verifichi un evento dannoso','Il danno gi\u00e0 avvenuto','Le norme da rispettare','Il compenso per infortuni'],corretta:0},
+    {domanda:'Chi ha la responsabilit\u00e0 principale della sicurezza in azienda?',opzioni:['Il dirigente pi\u00f9 anziano','Il datore di lavoro','Il RSPP','Il medico competente'],corretta:1},
+    {domanda:'Cosa deve fare un lavoratore in caso di pericolo grave e immediato?',opzioni:['Continuare il lavoro con prudenza','Allontanarsi e informare il preposto','Aspettare istruzioni','Chiamare i colleghi'],corretta:1},
+    {domanda:'Cosa sono i DPI?',opzioni:['Documenti di Prevenzione Infortuni','Dispositivi di Protezione Individuale','Direttive per la Prevenzione degli Infortuni','Disposizioni per i Preposti Interni'],corretta:1},
+    {domanda:'Il DVR \u00e8 obbligatorio per:',opzioni:['Solo aziende con pi\u00f9 di 50 dipendenti','Tutte le aziende con almeno un lavoratore','Solo aziende industriali','Solo se richiesto dalla ASL'],corretta:1},
+    {domanda:'Qual \u00e8 la principale normativa sulla sicurezza sul lavoro in Italia?',opzioni:['Legge 626/94','D.Lgs. 81/2008','D.Lgs. 626/2008','Legge 81/1994'],corretta:1},
+    {domanda:'Chi \u00e8 il preposto?',opzioni:['Il lavoratore pi\u00f9 esperto','Chi sovrintende l\u2019attivit\u00e0 e vigila sulla sicurezza','Il responsabile HR','Il coordinatore della formazione'],corretta:1},
+    {domanda:'Cosa si intende per misura preventiva?',opzioni:['Un intervento dopo l\u2019infortunio','Un\u2019azione per eliminare i rischi prima che causino danni','Una polizza assicurativa','Un corso di primo soccorso'],corretta:1},
+    {domanda:'Il lavoratore ha l\u2019obbligo di:',opzioni:['Scegliere autonomamente i DPI','Partecipare alla formazione solo se retribuito','Prendersi cura della propria sicurezza e di quella degli altri','Ignorare le istruzioni se ha pi\u00f9 esperienza'],corretta:2},
+    {domanda:'La segnaletica con sfondo ROSSO indica:',opzioni:['Obbligo','Avvertimento','Divieto o pericolo','Salvataggio'],corretta:2},
+    {domanda:'In caso di incendio la prima cosa da fare \u00e8:',opzioni:['Cercare di spegnere da soli','Dare l\u2019allarme e attivare la procedura di emergenza','Raccogliere i propri effetti','Aspettare istruzioni'],corretta:1},
+    {domanda:'La verifica dell\u2019impianto di messa a terra va eseguita ogni:',opzioni:['Anno','2 anni','5 anni','Non \u00e8 obbligatoria'],corretta:1},
+    {domanda:'La movimentazione manuale dei carichi pu\u00f2 causare:',opzioni:['Solo affaticamento temporaneo','Danni alla colonna vertebrale e lombalgie','Solo problemi alle braccia','Nessun danno sotto i 30 kg'],corretta:1},
+    {domanda:'I DPI devono essere forniti dal datore di lavoro:',opzioni:['A pagamento','Gratuitamente','Solo su richiesta','Solo in caso di ispezione'],corretta:1},
+    {domanda:'Cosa significa RSPP?',opzioni:['Responsabile del Servizio di Produzione e Programmazione','Responsabile del Servizio di Prevenzione e Protezione','Registro di Sicurezza del Personale','Responsabile della Supervisione dei Piani di Prevenzione'],corretta:1},
+    {domanda:'Con quale frequenza si rinnova la formazione obbligatoria dei lavoratori (ASR 2025)?',opzioni:['Ogni anno','Ogni 3 anni','Ogni 5 anni','Solo al cambio mansione'],corretta:2},
+    {domanda:'Il Piano di Emergenza deve essere:',opzioni:['Custodito solo in archivio','Portato a conoscenza di tutti i lavoratori e periodicamente esercitato','Redatto solo per aziende con oltre 100 dipendenti','Aggiornato solo dopo un incidente'],corretta:1},
+    {domanda:'Cosa si intende per valutazione dei rischi?',opzioni:['Un\u2019attivit\u00e0 occasionale','Il processo sistematico di identificazione e analisi dei rischi aziendali','La sola compilazione del modulo INAIL','Un\u2019attivit\u00e0 riservata alle grandi aziende'],corretta:1},
+    {domanda:'Il lavoratore pu\u00f2 rifiutarsi di lavorare se:',opzioni:['Non gli piace il compito','Vi \u00e8 un pericolo grave e immediato','Il preposto non \u00e8 presente','Non ha ancora ricevuto la busta paga'],corretta:1},
+    {domanda:'La formazione sulla sicurezza deve avvenire:',opzioni:['Solo fuori orario di lavoro','In orario di lavoro e senza oneri per il lavoratore','A spese del lavoratore','Una volta sola, senza rinnovi'],corretta:1},
+  ];
+}
+
+function duplicaDomandePrePost(){
+  const dd = getTest();
+  if(!dd.length){
+    toast('Aggiungi prima le domande del corso','⚠️');
+    return;
+  }
+  if(!confirm('Questa funzione duplica le domande esistenti in formato PRE+POST:\n\n• Parte 1 — Test PRE corso (stesse domande, da compilare all\'inizio)\n• Parte 2 — Test POST corso (stesse domande, da compilare alla fine)\n\nContinuare?')) return;
+
+  // Aggiungi separatori e duplica
+  const preLabel  = {domanda:'━━━ TEST PRE-CORSO — Compilare PRIMA dell\'inizio delle lezioni ━━━', opzioni:['','','',''], corretta:0, _separatore:true};
+  const postLabel = {domanda:'━━━ TEST POST-CORSO — Compilare DOPO la fine delle lezioni ━━━',     opzioni:['','','',''], corretta:0, _separatore:true};
+
+  const nuove = [preLabel, ...dd, postLabel, ...dd.map(d=>({...d, opzioni:[...d.opzioni]}))];
+  renderTestEditor(nuove);
+  toast('Domande duplicate in formato Pre+Post ✓','🔄');
+}
+
+
 function addDomanda(){ const dd=getTest(); dd.push({domanda:'',opzioni:['','','',''],corretta:0}); renderTestEditor(dd) }
 function removeD(di){ const dd=getTest(); dd.splice(di,1); renderTestEditor(dd) }
 function setCorretta(di,oi,checked){
@@ -2934,70 +3066,133 @@ function tdRow(l1,v1,l2,v2){ return`<tr><td style="padding:5px 10px;border:1px s
 
 function generaRegistro(){
   const s=gSess(); if(!s) return;
-  const corso=db.corsi().find(c=>c.id===s.corsoId)||{}, az=db.aziende().find(a=>a.id===s.aziendaId)||{}, doc=db.docenti().find(d=>d.id===s.docenteId)||{};
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
+  const az=db.aziende().find(a=>a.id===s.aziendaId)||{};
+  const doc=db.docenti().find(d=>d.id===s.docenteId)||{};
   const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
-  const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:22px;font-size:12px;color:#222;background:white">
-<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tr>
-<td style="padding:10px 14px;border:1px solid #484F54;border-bottom:3px solid #FDC400;vertical-align:top">
-  <div style="font-size:17px;font-weight:700">REGISTRO DI FORMAZIONE</div>
-  <div style="font-size:11px;color:#888;font-style:italic">Master template — compilare per ogni sessione formativa</div>
-</td>
-<td style="padding:10px 14px;border:1px solid #484F54;border-bottom:3px solid #FDC400;text-align:right;background:#F5F5F5">
-  <div style="font-weight:700;font-size:13px">FR-FOR-01 Rev. 01</div><div style="color:#888;font-size:11px">Framyx Srl SB</div>
-</td></tr></table>
-<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px;padding:10px 14px;background:#FAFAFA">
-<div style="font-weight:700;font-size:11px;color:#484F54;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dati identificativi della sessione</div>
-<table style="width:100%;border-collapse:collapse">
-${tdRow('Titolo corso / argomento',corso.titolo||'','Data',fmt(s.data))}
-${tdRow('Orario (inizio – fine)',(s.oraInizio||'')+' – '+(s.oraFine||''),'Sede / luogo di svolgimento',s.sede||'')}
-${tdRow('Docente / Formatore',doc.nome?doc.nome+' '+doc.cognome:'','Azienda / Ente committente',az.nome||'')}
-<tr><td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280">Modalità</td>
-<td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${['In presenza','Videoconferenza sincrona','E-learning','Mista'].map(m=>`<span style="margin-right:8px">${m===s.modalita?'☑':'☐'} ${m}</span>`).join('')}</td>
-<td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280">Rif. normativo</td>
-<td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${corso.norma||''}</td></tr>
-</table></div>
-<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px;padding:10px 14px">
-<div style="font-weight:700;font-size:11px;color:#484F54;text-transform:uppercase;margin-bottom:8px">Contenuti della sessione formativa</div>
-${argHTML(s.argomenti||[])}</div>
-<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px">
-<div style="background:#484F54;color:white;font-weight:700;font-size:11px;text-transform:uppercase;padding:6px 14px">Firme di chiusura sessione</div>
-<table style="width:100%;border-collapse:collapse">
-<tr>
-  <td style="padding:5px 14px;border:1px solid #ddd;font-size:11px;font-weight:700;color:#6B7280;width:50%">Docente / Formatore</td>
-  <td style="padding:5px 14px;border:1px solid #ddd;font-size:11px;font-weight:700;color:#6B7280;width:50%">Per la Direzione Aziendale — ${az.referente||az.nome||'Referente'}</td>
-</tr>
-<tr>
-  <td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
-  <td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${az.referente||''}</td>
-</tr>
-<tr>
-  <td style="border:1px solid #ddd;height:64px;padding:4px 14px;vertical-align:bottom">
-    ${doc.firma?`<img src="${doc.firma}" style="max-height:54px;max-width:180px;display:block">`:``}
-  </td>
-  <td style="border:1px solid #ddd;height:64px"></td>
-</tr>
-<tr>
-  <td style="padding:4px 14px;border:1px solid #ddd;font-size:10px;color:#aaa">Firma</td>
-  <td style="padding:4px 14px;border:1px solid #ddd;font-size:10px;color:#aaa">Firma</td>
-</tr>
-</table></div>
-<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px">
-<div style="background:#484F54;padding:5px 14px"><table style="width:100%"><tr>
-<td style="color:white;font-size:11px;font-weight:700">Data: ${fmt(s.data)}</td>
-<td style="color:white;font-size:11px;font-weight:700">Titolo: ${corso.titolo||''}</td>
-<td style="color:white;font-size:11px;font-weight:700">Orario: ${s.oraInizio||''}–${s.oraFine||''}</td>
-<td style="color:white;font-size:11px;font-weight:700">Docente: ${doc.nome?doc.nome+' '+doc.cognome:''}</td>
-</tr></table></div>
-<table style="width:100%;border-collapse:collapse">
-<thead><tr style="background:#484F54;color:white"><th style="padding:6px 10px;font-size:11px;width:32px">N°</th><th style="padding:6px 10px;font-size:11px;text-align:left">Cognome e Nome</th><th style="padding:6px 10px;font-size:11px;width:50px;text-align:center">Ora<br>ingresso</th><th style="padding:6px 10px;font-size:11px;width:100px">Firma<br>entrata</th><th style="padding:6px 10px;font-size:11px;width:50px;text-align:center">Ora<br>uscita</th><th style="padding:6px 10px;font-size:11px;width:100px">Firma<br>uscita</th><th style="padding:6px 10px;font-size:11px;width:80px">Note</th></tr></thead>
-<tbody>
-${pp.map((l,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}"><td style="padding:7px 8px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td><td style="padding:7px 8px;border:1px solid #ddd;font-weight:600">${(l.cognome||'').toUpperCase()} ${(l.nome||'').toUpperCase()}</td><td style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px">${s.oraInizio||''}</td><td style="border:1px solid #ddd;height:28px"></td><td style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px">${s.oraFine||''}</td><td style="border:1px solid #ddd;height:28px"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
-${Array.from({length:Math.max(0,12-pp.length)},(_,i)=>`<tr style="background:${(pp.length+i)%2?'#f9f9f9':'white'}"><td style="padding:7px 8px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td><td style="border:1px solid #ddd;height:28px"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
-</tbody></table></div>
-<div style="border:1px solid #ddd;border-top:3px solid #FDC400;background:#FFFBE6;padding:9px 14px;font-size:11px;color:#666">
-È allegata al presente registro la lista completa di firma dei partecipanti; tale lista costituisce parte integrante del registro e deve essere conservata ai sensi dell'art. 37 D.Lgs. 81/08.</div></div>`;
-  preview(html);
+
+  // Una pagina per ogni giornata
+  const giornate=s.giornate&&s.giornate.length>0
+    ? s.giornate
+    : [{data:s.data||'',ini:s.oraInizio||'',fine:s.oraFine||''}];
+
+  const paginaGiornata=(g,idx)=>`
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;padding:18px 22px;font-size:11px;color:#222;background:white;${idx>0?'page-break-before:always':''}">
+
+  <!-- Header -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
+    <td style="padding:8px 12px;border:1px solid #484F54;border-bottom:3px solid #FDC400;vertical-align:top">
+      <div style="font-size:15px;font-weight:700">REGISTRO DI FORMAZIONE</div>
+      <div style="font-size:10px;color:#888">Giornata ${idx+1} di ${giornate.length}</div>
+    </td>
+    <td style="padding:8px 12px;border:1px solid #484F54;border-bottom:3px solid #FDC400;text-align:right;background:#F5F5F5;width:160px">
+      <div style="font-weight:700;font-size:12px">FR-FOR-01 Rev. 01</div>
+      <div style="color:#888;font-size:10px">Framyx Srl SB</div>
+    </td>
+  </tr></table>
+
+  <!-- Dati sessione -->
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:10px;padding:8px 12px;background:#FAFAFA">
+    <table style="width:100%;border-collapse:collapse">
+      ${tdRow('Titolo corso',corso.titolo||'—','Data',fmt(g.data))}
+      ${tdRow('Orario (inizio – fine)',(g.ini||s.oraInizio||'')+' – '+(g.fine||s.oraFine||''),'Sede / luogo',s.sede||az.comune||'')}
+      ${tdRow('Docente / Formatore',doc.cognome?(doc.cognome+' '+doc.nome):'—','Azienda committente',az.nome||'')}
+      <tr>
+        <td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280">Modalità</td>
+        <td style="padding:5px 10px;border:1px solid #ddd;background:#fff">
+          ${['In presenza','Videoconferenza sincrona','E-learning','Mista'].map(m=>`<span style="margin-right:8px">${m===s.modalita?'☑':'☐'} ${m}</span>`).join('')}
+        </td>
+        <td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280">Rif. normativo</td>
+        <td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${corso.norma||''}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Argomenti -->
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:10px;padding:8px 12px">
+    <div style="font-weight:700;font-size:10px;color:#484F54;text-transform:uppercase;margin-bottom:6px">Contenuti della sessione</div>
+    ${argHTML(s.argomenti||[])}
+  </div>
+
+  <!-- Lista presenze -->
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:10px">
+    <div style="background:#484F54;color:white;padding:5px 12px">
+      <table style="width:100%"><tr>
+        <td style="font-size:10px;font-weight:700">Data: ${fmt(g.data)}</td>
+        <td style="font-size:10px;font-weight:700">Corso: ${corso.titolo||''}</td>
+        <td style="font-size:10px;font-weight:700">Orario: ${g.ini||s.oraInizio||''}–${g.fine||s.oraFine||''}</td>
+        <td style="font-size:10px;font-weight:700">Docente: ${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
+      </tr></table>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#484F54;color:white">
+        <th style="padding:5px 8px;font-size:10px;width:28px">N°</th>
+        <th style="padding:5px 8px;font-size:10px;text-align:left">Cognome e Nome</th>
+        <th style="padding:5px 8px;font-size:10px;width:44px;text-align:center">Ora<br>ingresso</th>
+        <th style="padding:5px 8px;font-size:10px;width:90px">Firma<br>entrata</th>
+        <th style="padding:5px 8px;font-size:10px;width:44px;text-align:center">Ora<br>uscita</th>
+        <th style="padding:5px 8px;font-size:10px;width:90px">Firma<br>uscita</th>
+        <th style="padding:5px 8px;font-size:10px;width:70px">Note</th>
+      </tr></thead>
+      <tbody>
+        ${pp.map((l,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}">
+          <td style="padding:6px 8px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600">${(l.cognome||'').toUpperCase()} ${(l.nome||'').toUpperCase()}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:10px">${g.ini||s.oraInizio||''}</td>
+          <td style="border:1px solid #ddd;height:26px"></td>
+          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:10px">${g.fine||s.oraFine||''}</td>
+          <td style="border:1px solid #ddd;height:26px"></td>
+          <td style="border:1px solid #ddd"></td>
+        </tr>`).join('')}
+        ${Array.from({length:Math.max(0,12-pp.length)},(_,i)=>`<tr style="background:${(pp.length+i)%2?'#f9f9f9':'white'}">
+          <td style="padding:6px 8px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td>
+          <td style="border:1px solid #ddd;height:26px"></td>
+          <td style="border:1px solid #ddd"></td>
+          <td style="border:1px solid #ddd"></td>
+          <td style="border:1px solid #ddd"></td>
+          <td style="border:1px solid #ddd"></td>
+          <td style="border:1px solid #ddd"></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Firme chiusura -->
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:10px">
+    <div style="background:#484F54;color:white;font-weight:700;font-size:10px;text-transform:uppercase;padding:5px 12px">Firme di chiusura giornata</div>
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <td style="padding:5px 12px;border:1px solid #ddd;font-size:10px;font-weight:700;color:#6B7280;width:50%">Docente / Formatore</td>
+        <td style="padding:5px 12px;border:1px solid #ddd;font-size:10px;font-weight:700;color:#6B7280">Per la Direzione — ${az.referente||az.nome||'Referente'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 12px;border:1px solid #ddd;font-size:10px;color:#888">${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
+        <td style="padding:4px 12px;border:1px solid #ddd;font-size:10px;color:#888">${az.referente||''}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #ddd;height:56px;padding:4px 12px;vertical-align:bottom">
+          ${doc.firma?`<img src="${doc.firma}" style="max-height:46px;max-width:160px;display:block">`:``}
+        </td>
+        <td style="border:1px solid #ddd;height:56px"></td>
+      </tr>
+      <tr>
+        <td style="padding:3px 12px;border:1px solid #ddd;font-size:9px;color:#aaa">Firma</td>
+        <td style="padding:3px 12px;border:1px solid #ddd;font-size:9px;color:#aaa">Firma</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;background:#FFFBE6;padding:7px 12px;font-size:10px;color:#666">
+    È allegata al presente registro la lista completa di firma dei partecipanti — conservare ai sensi dell'art. 37 D.Lgs. 81/08.
+  </div>
+
+</div>`;
+
+  const html = giornate.map((g,i) => paginaGiornata(g,i)).join('');
+  stampaPDF(html, 'Registro_'+( az.nome||'').replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)+'_'+fmt(s.data)+'.pdf', true);
+  toast('Registro generato ('+giornate.length+' giornate)','📋');
 }
+
 
 function generaAttestati(){
   const s=gSess(); if(!s) return;
@@ -6370,28 +6565,79 @@ async function inviaAvvisiScadenze(){
 // ══ FASCICOLO AZIENDALE ══
 
 const DOCS_SICUREZZA = [
-  // Documento, scadenza default (mesi), obbligatorio, categoria
-  {id:'dvr',          label:'DVR — Documento di Valutazione dei Rischi',          cat:'Valutazioni rischio', mesi:36,  obbl:true,  norma:'Art. 28 D.Lgs. 81/08'},
-  {id:'dvr_rumore',   label:'Valutazione rischio rumore',                          cat:'Valutazioni rischio', mesi:36,  obbl:false, norma:'Tit. VIII D.Lgs. 81/08'},
-  {id:'dvr_vibr',     label:'Valutazione rischio vibrazioni',                      cat:'Valutazioni rischio', mesi:36,  obbl:false, norma:'Tit. VIII D.Lgs. 81/08'},
-  {id:'dvr_chimico',  label:'Valutazione rischio chimico',                         cat:'Valutazioni rischio', mesi:36,  obbl:false, norma:'Tit. IX D.Lgs. 81/08'},
-  {id:'dvr_slc',      label:'Valutazione stress lavoro-correlato (SLC)',           cat:'Valutazioni rischio', mesi:24,  obbl:true,  norma:'Art. 28 D.Lgs. 81/08'},
-  {id:'dvr_mmc',      label:'Valutazione MMC (movimentazione manuale carichi)',    cat:'Valutazioni rischio', mesi:36,  obbl:false, norma:'Tit. VI D.Lgs. 81/08'},
-  {id:'dvr_incendio', label:'Documento valutazione rischio incendio',              cat:'Valutazioni rischio', mesi:36,  obbl:true,  norma:'D.M. 02/09/2021'},
-  {id:'piano_em',     label:'Piano di emergenza ed evacuazione',                   cat:'Emergenza',           mesi:36,  obbl:true,  norma:'Art. 43 D.Lgs. 81/08'},
-  {id:'planimetrie',  label:'Planimetrie vie di esodo aggiornate',                 cat:'Emergenza',           mesi:60,  obbl:true,  norma:'Art. 43 D.Lgs. 81/08'},
-  {id:'rspp',         label:'Nomina RSPP',                                         cat:'Nomine e incarichi',  mesi:0,   obbl:true,  norma:'Art. 17 D.Lgs. 81/08'},
-  {id:'aspp',         label:'Nomina ASPP',                                         cat:'Nomine e incarichi',  mesi:0,   obbl:false, norma:'Art. 32 D.Lgs. 81/08'},
-  {id:'rls',          label:'Elezione/designazione RLS',                           cat:'Nomine e incarichi',  mesi:36,  obbl:true,  norma:'Art. 47 D.Lgs. 81/08'},
-  {id:'medico',       label:'Nomina Medico Competente',                            cat:'Nomine e incarichi',  mesi:0,   obbl:false, norma:'Art. 39 D.Lgs. 81/08'},
-  {id:'sorveglianza', label:'Programma sorveglianza sanitaria',                    cat:'Salute',              mesi:12,  obbl:false, norma:'Art. 41 D.Lgs. 81/08'},
-  {id:'protocollo',   label:'Protocollo sanitario',                                cat:'Salute',              mesi:12,  obbl:false, norma:'Art. 25 D.Lgs. 81/08'},
-  {id:'reg_infortuni',label:'Registro infortuni (aggiornato)',                     cat:'Registri',            mesi:12,  obbl:true,  norma:'Art. 18 D.Lgs. 81/08'},
-  {id:'reg_esp',      label:'Registro degli esposti (se applicabile)',             cat:'Registri',            mesi:12,  obbl:false, norma:'Art. 243 D.Lgs. 81/08'},
-  {id:'manutenzione', label:'Piano di manutenzione attrezzature/impianti',        cat:'Attrezzature',        mesi:12,  obbl:false, norma:'Art. 71 D.Lgs. 81/08'},
-  {id:'verifiche',    label:'Verifiche periodiche attrezzature (PES/PAV/CEI)',     cat:'Attrezzature',        mesi:12,  obbl:false, norma:'Art. 71 D.Lgs. 81/08'},
-  {id:'dpi_registro', label:'Registro consegna DPI ai lavoratori',                cat:'DPI',                 mesi:12,  obbl:true,  norma:'Art. 77 D.Lgs. 81/08'},
-  {id:'riunione',     label:'Verbale riunione periodica (art. 35)',                cat:'Riunioni',            mesi:12,  obbl:false, norma:'Art. 35 D.Lgs. 81/08'},
+  // ── DOCUMENTI BASE ──
+  {id:'dvr',             label:'DVR – Documento di Valutazione dei Rischi',               cat:'Documenti base',         mesi:36, obbl:true,  antisosp:true,  norma:'Art. 28 D.Lgs. 81/08'},
+  {id:'dvr_slc',         label:'Valutazione stress lavoro-correlato',                      cat:'Documenti base',         mesi:36, obbl:true,  antisosp:false, norma:'Art. 28 D.Lgs. 81/08'},
+  {id:'dvr_incendio',    label:'Documento valutazione rischio incendio',                   cat:'Documenti base',         mesi:36, obbl:true,  antisosp:true,  norma:'DM 02/09/2021'},
+
+  // ── RISCHI FISICI ──
+  {id:'r_rumore',        label:'Valutazione rischio rumore',                               cat:'Rischi fisici',          mesi:36, obbl:false, antisosp:false, norma:'Tit. VIII Capo II D.Lgs. 81/08'},
+  {id:'r_vibr',          label:'Valutazione rischio vibrazioni',                           cat:'Rischi fisici',          mesi:36, obbl:false, antisosp:false, norma:'Tit. VIII Capo III D.Lgs. 81/08'},
+  {id:'r_cem',           label:'Valutazione campi elettromagnetici',                       cat:'Rischi fisici',          mesi:36, obbl:false, antisosp:false, norma:'Tit. VIII Capo IV D.Lgs. 81/08'},
+  {id:'r_roa',           label:'Valutazione radiazioni ottiche artificiali',               cat:'Rischi fisici',          mesi:36, obbl:false, antisosp:false, norma:'Tit. VIII Capo V D.Lgs. 81/08'},
+
+  // ── RISCHI CHIMICI E BIOLOGICI ──
+  {id:'r_chimico',       label:'Valutazione rischio chimico',                              cat:'Rischi chimici e biologici', mesi:36, obbl:false, antisosp:false, norma:'Tit. IX Capo I D.Lgs. 81/08'},
+  {id:'r_cancero',       label:'Valutazione agenti cancerogeni/mutageni',                  cat:'Rischi chimici e biologici', mesi:36, obbl:false, antisosp:false, norma:'Tit. IX Capo II D.Lgs. 81/08'},
+  {id:'r_biologico',     label:'Valutazione rischio biologico',                            cat:'Rischi chimici e biologici', mesi:36, obbl:false, antisosp:false, norma:'Tit. X D.Lgs. 81/08'},
+
+  // ── RISCHI ERGONOMICI ──
+  {id:'r_mmc',           label:'Valutazione MMC – movimentazione manuale carichi',        cat:'Rischi ergonomici',      mesi:36, obbl:false, antisosp:false, norma:'Tit. VI D.Lgs. 81/08'},
+  {id:'r_movripet',      label:'Valutazione movimenti ripetitivi',                         cat:'Rischi ergonomici',      mesi:36, obbl:false, antisosp:false, norma:'ISO 11228 / OCRA'},
+  {id:'r_vdt',           label:'Valutazione rischio videoterminali',                       cat:'Rischi ergonomici',      mesi:36, obbl:false, antisosp:false, norma:'Tit. VII D.Lgs. 81/08'},
+
+  // ── RISCHIO ELETTRICO ──
+  {id:'r_elettrico',     label:'Valutazione rischio elettrico',                            cat:'Rischio elettrico',      mesi:36, obbl:true,  antisosp:true,  norma:'Art. 80 D.Lgs. 81/08'},
+  {id:'dich_impianto',   label:'Dichiarazione conformità impianto elettrico',         cat:'Rischio elettrico',      mesi:0,  obbl:true,  antisosp:false, norma:'DM 37/08'},
+  {id:'verif_terra',     label:'Verifica impianto di messa a terra',                       cat:'Rischio elettrico',      mesi:24, obbl:true,  antisosp:true,  norma:'DPR 462/01'},
+  {id:'r_fulmine',       label:'Valutazione rischio fulminazione',                         cat:'Rischio elettrico',      mesi:36, obbl:false, antisosp:false, norma:'CEI EN 62305'},
+
+  // ── RISCHIO INCENDIO / ESPLOSIONE ──
+  {id:'r_incendio2',     label:'Valutazione rischio incendio',                             cat:'Rischio incendio / esplosione', mesi:36, obbl:true, antisosp:true, norma:'DM 02/09/2021'},
+  {id:'piano_em',        label:'Piano emergenza ed evacuazione',                           cat:'Rischio incendio / esplosione', mesi:36, obbl:true, antisosp:true, norma:'Art. 43 D.Lgs. 81/08'},
+  {id:'r_atex',          label:'Valutazione ATEX',                                         cat:'Rischio incendio / esplosione', mesi:36, obbl:false, antisosp:false, norma:'Tit. XI D.Lgs. 81/08'},
+
+  // ── MACCHINE E ATTREZZATURE ──
+  {id:'m_attrezzature',  label:'Valutazione sicurezza attrezzature di lavoro',             cat:'Macchine e attrezzature', mesi:36, obbl:true,  antisosp:true,  norma:'Art. 71 D.Lgs. 81/08'},
+  {id:'m_ce',            label:'Dichiarazioni CE macchine',                                cat:'Macchine e attrezzature', mesi:0,  obbl:false, antisosp:false, norma:'Dir. Macchine 2006/42/CE'},
+  {id:'m_manuali',       label:'Manuali uso e manutenzione',                               cat:'Macchine e attrezzature', mesi:0,  obbl:false, antisosp:false, norma:'Art. 71 D.Lgs. 81/08'},
+  {id:'m_adeguamento',   label:'Adeguamento macchine ante CE',                             cat:'Macchine e attrezzature', mesi:0,  obbl:false, antisosp:true,  norma:'Allegato V D.Lgs. 81/08'},
+  {id:'m_registro',      label:'Registro manutenzioni',                                    cat:'Macchine e attrezzature', mesi:12, obbl:false, antisosp:false, norma:'Art. 71 D.Lgs. 81/08'},
+
+  // ── AMBIENTI DI LAVORO ──
+  {id:'amb_microclima',  label:'Valutazione microclima',                                   cat:'Ambienti di lavoro',     mesi:36, obbl:false, antisosp:false, norma:'Art. 63 D.Lgs. 81/08'},
+  {id:'amb_illuminaz',   label:'Valutazione illuminazione',                                cat:'Ambienti di lavoro',     mesi:36, obbl:false, antisosp:false, norma:'All. IV D.Lgs. 81/08'},
+  {id:'amb_aria',        label:'Valutazione aerazione / qualità aria',                cat:'Ambienti di lavoro',     mesi:36, obbl:false, antisosp:false, norma:'All. IV D.Lgs. 81/08'},
+  {id:'amb_esodo',       label:'Verifica vie di esodo',                                    cat:'Ambienti di lavoro',     mesi:12, obbl:false, antisosp:false, norma:'All. IV D.Lgs. 81/08'},
+
+  // ── EMERGENZA ──
+  {id:'em_piano',        label:'Piano di emergenza',                                       cat:'Emergenza',              mesi:36, obbl:true,  antisosp:true,  norma:'Art. 43 D.Lgs. 81/08'},
+  {id:'em_planimetrie',  label:'Planimetrie di evacuazione',                               cat:'Emergenza',              mesi:36, obbl:true,  antisosp:false, norma:'Art. 43 D.Lgs. 81/08'},
+  {id:'em_registroant',  label:'Registro controlli antincendio',                           cat:'Emergenza',              mesi:12, obbl:true,  antisosp:false, norma:'DM 02/09/2021'},
+  {id:'em_estintori',    label:'Verifica estintori',                                       cat:'Emergenza',              mesi:6,  obbl:true,  antisosp:true,  norma:'DM 02/09/2021'},
+
+  // ── DPI ──
+  {id:'dpi_valut',       label:'Valutazione DPI',                                          cat:'DPI',                    mesi:36, obbl:true,  antisosp:true,  norma:'Art. 74-79 D.Lgs. 81/08'},
+  {id:'dpi_registro',    label:'Registro consegna DPI',                                   cat:'DPI',                    mesi:12, obbl:true,  antisosp:false, norma:'Art. 77 D.Lgs. 81/08'},
+  {id:'dpi_verifica',    label:'Verifica utilizzo DPI',                                   cat:'DPI',                    mesi:12, obbl:true,  antisosp:true,  norma:'Art. 77 D.Lgs. 81/08'},
+
+  // ── SORVEGLIANZA SANITARIA ──
+  {id:'san_medico',      label:'Nomina medico competente',                                 cat:'Sorveglianza sanitaria', mesi:0,  obbl:false, antisosp:false, norma:'Art. 39 D.Lgs. 81/08'},
+  {id:'san_protocollo',  label:'Protocollo sanitario',                                     cat:'Sorveglianza sanitaria', mesi:12, obbl:false, antisosp:false, norma:'Art. 25 D.Lgs. 81/08'},
+  {id:'san_idoneita',    label:'Giudizi di idoneità',                                 cat:'Sorveglianza sanitaria', mesi:12, obbl:false, antisosp:true,  norma:'Art. 41 D.Lgs. 81/08'},
+
+  // ── FORMAZIONE ──
+  {id:'form_lav',        label:'Formazione lavoratori',                                    cat:'Formazione',             mesi:60, obbl:true,  antisosp:true,  norma:'Art. 37 D.Lgs. 81/08'},
+  {id:'form_prep',       label:'Formazione preposti',                                      cat:'Formazione',             mesi:60, obbl:true,  antisosp:true,  norma:'Art. 37 D.Lgs. 81/08'},
+  {id:'form_dir',        label:'Formazione dirigenti',                                     cat:'Formazione',             mesi:60, obbl:false, antisosp:false, norma:'Art. 37 D.Lgs. 81/08'},
+  {id:'form_attrezzat',  label:'Addestramento attrezzature',                               cat:'Formazione',             mesi:60, obbl:true,  antisosp:true,  norma:'Art. 73 D.Lgs. 81/08'},
+  {id:'form_antinc',     label:'Formazione antincendio',                                   cat:'Formazione',             mesi:60, obbl:true,  antisosp:true,  norma:'Art. 37 / DM 02/09/2021'},
+  {id:'form_ps',         label:'Formazione primo soccorso',                                cat:'Formazione',             mesi:36, obbl:true,  antisosp:true,  norma:'Art. 37 / DM 388/03'},
+
+  // ── APPALTI ──
+  {id:'app_duvri',       label:'DUVRI',                                                    cat:'Appalti',                mesi:0,  obbl:false, antisosp:false, norma:'Art. 26 D.Lgs. 81/08'},
+  {id:'app_itp',         label:'Verifica idoneità tecnico-professionale',             cat:'Appalti',                mesi:0,  obbl:false, antisosp:false, norma:'Art. 26 D.Lgs. 81/08'},
+  {id:'app_coord',       label:'Coordinamento imprese',                                    cat:'Appalti',                mesi:0,  obbl:false, antisosp:false, norma:'Art. 26 D.Lgs. 81/08'},
 ];
 
 function getFascicoloAz(azId){
@@ -6659,7 +6905,7 @@ function generaReportAzienda(azId){
           <th style="padding:4pt 7pt;border:0.75pt solid #E0E0E0;text-align:left;font-size:8.5pt">Note</th>
         </tr>
         ${docs.map((d,i)=>`<tr style="background:${i%2?'#FAFAFA':'white'}${d.stato==='scaduto'?';background:#FFF5F5':d.stato==='mancante'&&d.obbl?';background:#FFF5F5':''}">
-          <td style="padding:4pt 7pt;border:0.75pt solid #E0E0E0;font-size:9pt">${d.label}${d.obbl?' <span style=color:#C0392B;font-size:8pt>*</span>':''}</td>
+          <td style="padding:4pt 7pt;border:0.75pt solid #E0E0E0;font-size:9pt">${d.label}${d.obbl?' <span style="color:#C0392B;font-size:8pt">*</span>':''}${d.antisosp?' <span style="background:#C0392B;color:white;font-size:7pt;padding:1px 4px;border-radius:3px;font-weight:700;vertical-align:middle">ANTISOSP.</span>':''}</td>
           <td style="padding:4pt 7pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8.5pt;font-weight:bold;color:${statoColors[d.stato]}">${statoLabels[d.stato]}</td>
           <td style="padding:4pt 7pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8.5pt">${d.f.dataRed?fmt(d.f.dataRed):'—'}</td>
           <td style="padding:4pt 7pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8.5pt">${d.f.dataRev?fmt(d.f.dataRev):'—'}</td>
