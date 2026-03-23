@@ -3064,23 +3064,41 @@ function argHTML(argomenti){
 
 function tdRow(l1,v1,l2,v2){ return`<tr><td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280;width:25%">${l1}</td><td style="padding:5px 10px;border:1px solid #ddd;background:#fff;width:25%">${v1}</td><td style="padding:5px 10px;border:1px solid #FDC400;border-left:3px solid #FDC400;background:#fff;font-size:11px;font-weight:700;color:#6B7280;width:25%">${l2}</td><td style="padding:5px 10px;border:1px solid #ddd;background:#fff">${v2||'&nbsp;'}</td></tr>` }
 
-function generaRegistro(){
+async function generaRegistro(){
   const s=gSess(); if(!s) return;
+  // Ricarica lavoratori da Supabase per assicurarsi di avere tutti i dati
+  if(supa){
+    try{
+      const {data} = await supa.from('lavoratori').select('data');
+      if(data&&data.length){
+        const records=(data||[]).map(r=>r.data).filter(Boolean);
+        cache.lavoratori=records;
+        LS.s('lavoratori',records);
+      }
+    }catch(e){ console.warn('Reload lav:',e); }
+  }
   const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
   const az=db.aziende().find(a=>a.id===s.aziendaId)||{};
   const doc=db.docenti().find(d=>d.id===s.docenteId)||{};
-  const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
+  const tuttiLav = db.lavoratori();
+  const pp = (s.partecipanti||[]).map(id => tuttiLav.find(l=>l.id===id)).filter(Boolean);
+  const idMancanti = (s.partecipanti||[]).filter(id => !tuttiLav.find(l=>l.id===id));
 
   // ── Verifica partecipanti ──
-  if(!pp.length){
+  if(!s.partecipanti||!s.partecipanti.length){
     toast('Nessun partecipante nella sessione — aggiungili prima di generare il registro','⚠️');
     return;
   }
-
-  // Avvisa se qualche partecipante non trovato in anagrafica
-  const idMancanti=(s.partecipanti||[]).filter(id=>!db.lavoratori().find(l=>l.id===id));
+  if(!pp.length){
+    toast('I partecipanti non sono stati trovati in anagrafica ('+s.partecipanti.length+' ID nella sessione ma 0 trovati). Verifica che i lavoratori esistano ancora.','⚠️');
+    return;
+  }
   if(idMancanti.length){
-    toast(idMancanti.length+' partecipanti non trovati in anagrafica — verifica i lavoratori','⚠️');
+    const msg = pp.length+' trovati su '+s.partecipanti.length+' totali — '+idMancanti.length+' non trovati in anagrafica';
+    toast('⚠️ '+msg,'⚠️');
+    console.warn('Partecipanti mancanti:', idMancanti);
+  } else {
+    toast('Generazione registro: '+pp.length+' partecipanti','📋');
   }
 
   const giornate=s.giornate&&s.giornate.length>0
@@ -3272,8 +3290,9 @@ ${(d.opzioni||[]).map((o,oi)=>`<tr><td style="padding:5px 10px;border:1px solid 
 }
 
 
-function generaGradimento(){
+async function generaGradimento(){
   const s=gSess(); if(!s) return;
+  if(supa){ try{ const {data}=await supa.from('lavoratori').select('data'); if(data&&data.length){ const r=(data||[]).map(x=>x.data).filter(Boolean); cache.lavoratori=r; LS.s('lavoratori',r); } }catch(e){} }
   const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
   const az=db.aziende().find(a=>a.id===s.aziendaId)||{};
   const doc=db.docenti().find(d=>d.id===s.docenteId)||{};
