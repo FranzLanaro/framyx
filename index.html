@@ -4,394 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestionale Formazione — Framyx</title>
-<script src="https://accounts.google.com/gsi/client" async defer>
-
-function generaAttestati(){
-  try{
-    const s = (typeof gSess === 'function') ? gSess() : (db.sessioni()||[]).find(x=>x.id===((document.getElementById('fd-sess')||{}).value||''));
-    if(!s){
-      (typeof toast === 'function') ? toast('Seleziona una sessione','⚠️') : alert('Seleziona una sessione');
-      return;
-    }
-
-    const corso = (db.corsi()||[]).find(c=>c.id===s.corsoId) || {};
-    const az = (db.aziende()||[]).find(a=>a.id===s.aziendaId) || {};
-    const doc = (db.docenti()||[]).find(d=>d.id===s.docenteId) || {};
-    const cfg = (typeof getAttConfig === 'function') ? getAttConfig() : {};
-
-    const allLav = db.lavoratori() || [];
-    const partUniq = [...new Set(s.partecipanti || [])];
-    const partecipanti = partUniq.map(id => allLav.find(l=>l.id===id)).filter(Boolean);
-
-    if(!partecipanti.length){
-      (typeof toast === 'function') ? toast('Nessun partecipante trovato nella sessione','⚠️') : alert('Nessun partecipante trovato nella sessione');
-      return;
-    }
-
-    const escHtml = (str='') => String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#39;');
-
-    const cleanText = (v) => (v==null ? '' : String(v).trim());
-    const firstNonEmpty = (...vals) => vals.find(x => cleanText(x)) || '';
-    const upper = (v) => cleanText(v).toUpperCase();
-
-    const fmtDate = (val) => {
-      if(!val) return '';
-      const s = String(val).trim();
-      if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-        const [y,m,d] = s.split('-');
-        return `${d}/${m}/${y}`;
-      }
-      const d = new Date(s);
-      if(isNaN(d)) return '';
-      return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-    };
-
-    const plusYears = (val, years) => {
-      if(!val) return '';
-      const s = String(val).trim();
-      let d;
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-        const [y,m,dd] = s.split('-').map(Number);
-        d = new Date(y, m-1, dd);
-      } else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
-        const [dd,m,y] = s.split('/').map(Number);
-        d = new Date(y, m-1, dd);
-      } else {
-        d = new Date(s);
-      }
-      if(isNaN(d)) return '';
-      d.setFullYear(d.getFullYear() + (parseInt(years,10) || 0));
-      return d.toISOString().slice(0,10);
-    };
-
-    const giornate = Array.isArray(s.giornate) && s.giornate.length
-      ? s.giornate.filter(g=>g && g.data).sort((a,b)=>String(a.data).localeCompare(String(b.data)))
-      : (s.data ? [{data:s.data, ini:s.oraInizio||'', fine:s.oraFine||''}] : []);
-    const dateCorso = giornate.map(g => fmtDate(g.data)).filter(Boolean);
-    const primaData = giornate[0]?.data || s.data || '';
-    const validitaAnni = parseInt(corso.validita,10) || 5;
-    const scadenza = plusYears(primaData, validitaAnni);
-    const luogoAtt = firstNonEmpty(s.cittaAttestato, cfg.cittaDefault, 'Valbrenta (VI)');
-    const dataAtt = fmtDate(primaData);
-    const nomeDoc = cleanText(((doc.cognome||'') + ' ' + (doc.nome||'')).trim()) || cleanText(s.docenteNome) || '';
-    const respFormativo = cleanText(doc.resp) || 'Franz Lanaro';
-    const aziendaNomeHeader = upper(firstNonEmpty(cfg.aziendaNome, 'Framyx Srl SB'));
-    const titoloAtt = upper(firstNonEmpty(cfg.intestazione, 'ATTESTATO DI PARTECIPAZIONE'));
-    const sottotitoloAtt = upper(firstNonEmpty(cfg.sottotitolo, "CON VERIFICA DELL'APPRENDIMENTO"));
-    const titoloCorso = cleanText(corso.titolo || s.corsoTitolo || s.corso || '');
-    const normaCorso = cleanText(corso.norma || corso.normativa || s.norma || '');
-    const durataCorso = cleanText(corso.durata || s.durata || '');
-    const sedeCorso = cleanText(s.sede || az.indirizzo || '');
-    const modalitaCorso = cleanText(s.modalita || 'In presenza');
-    const testoFooter = cleanText(cfg.footer || '');
-
-    const righeContenuti = [];
-    const pushRiga = (arg, rif) => {
-      const a = cleanText(arg);
-      if(!a) return;
-      righeContenuti.push({argomento:a, riferimento: cleanText(rif || normaCorso)});
-    };
-
-    if(Array.isArray(corso.sezioni) && corso.sezioni.length){
-      corso.sezioni.forEach(sez => {
-        const titoloSez = cleanText(sez.titolo);
-        if(titoloSez) pushRiga(titoloSez, normaCorso);
-        (sez.punti || []).forEach(p => pushRiga('- ' + cleanText(p).replace(/^[-•]\s*/,''), normaCorso));
-      });
-    } else if(Array.isArray(s.argomenti) && s.argomenti.length){
-      pushRiga('Contenuti del corso', normaCorso);
-      s.argomenti.forEach(a => pushRiga((/^[\-•]/.test(cleanText(a)) ? cleanText(a) : '- ' + cleanText(a)), normaCorso));
-    } else if(Array.isArray(corso.argomenti) && corso.argomenti.length){
-      pushRiga('Contenuti del corso', normaCorso);
-      corso.argomenti.forEach(a => pushRiga((/^[\-•]/.test(cleanText(a)) ? cleanText(a) : '- ' + cleanText(a)), normaCorso));
-    } else {
-      pushRiga('Contenuti del corso', normaCorso);
-    }
-
-    const LOGO_B64 = cfg.logo || '';
-    const logoHtml = LOGO_B64
-      ? `<img src="${LOGO_B64}" style="max-height:55px; max-width:200px; object-fit:contain;">`
-      : `<div style="font-size:13px; font-weight:700; color:#484F54; letter-spacing:1px;">FRAMYX SRL SB</div>`;
-    const logoSmall = LOGO_B64
-      ? `<img src="${LOGO_B64}" style="max-height:36px; max-width:140px; object-fit:contain;">`
-      : `<div style="font-size:11px; font-weight:700; color:#484F54;">FRAMYX SRL SB</div>`;
-
-    const pages = partecipanti.map((lav, idx) => {
-      const nomeCompleto = upper(((lav.cognome||'') + ' ' + (lav.nome||'')).replace(/\s+/g,' ').trim());
-      const dataNascita = fmtDate(lav.dataNascita || lav.nascita || lav.data_di_nascita || lav.datanascita);
-      const cf = cleanText(lav.cf || lav.codiceFiscale || lav.cod_fisc || '');
-      const mansione = cleanText(lav.mansione || lav.qualifica || 'Lavoratore');
-      const aziendaLav = cleanText(az.nome || lav.aziendaNome || '');
-      const rigaPersona = [dataNascita ? `nato/a il ${dataNascita}` : '', cf ? `C.F. ${cf}` : ''].filter(Boolean).join(' · ');
-      const qrText = `Attestato emesso da: ${aziendaNomeHeader} | Lavoratore: ${nomeCompleto} | Corso: ${titoloCorso} | Data: ${dataAtt} | Scadenza: ${fmtDate(scadenza)}`;
-      const qrId = `qr_att_${idx}_${Date.now()}`;
-
-      const pagina1 = `
-      <section class="att-page att-first">
-
-        <!-- HEADER FRAMYX -->
-        <div class="att-header">
-          <div class="att-header-logo">${logoHtml}</div>
-          <div class="att-header-info">
-            <div class="att-header-cod">FR-ATT-01</div>
-            <div class="att-header-sub">Framyx Srl SB</div>
-          </div>
-        </div>
-        <div class="att-header-line"></div>
-
-        <!-- TITOLO CENTRALE -->
-        <div class="att-center-block">
-          <div class="att-azienda-nome">${escHtml(aziendaNomeHeader)}</div>
-          <div class="att-title-big">ATTESTATO</div>
-          <div class="att-title-sub">DI PARTECIPAZIONE</div>
-          <div class="att-verifica-label">CON VERIFICA DELL'APPRENDIMENTO</div>
-        </div>
-
-        <!-- NOME LAVORATORE -->
-        <div class="att-si-certifica">Si certifica che</div>
-        <div class="att-nome-lav">${nomeCompleto}</div>
-        ${rigaPersona ? `<div class="att-dati-lav">${escHtml(rigaPersona)}</div>` : ''}
-        ${mansione ? `<div class="att-mansione">${escHtml(mansione)}${aziendaLav ? ' — ' + escHtml(aziendaLav) : ''}</div>` : ''}
-
-        <!-- CORSO — BANDA GIALLA -->
-        <div class="att-corso-band">
-          <div class="att-corso-label">HA FREQUENTATO IL CORSO</div>
-          <div class="att-corso-titolo">${escHtml(titoloCorso)}</div>
-          ${normaCorso ? `<div class="att-corso-norma">${escHtml(normaCorso)}</div>` : ''}
-        </div>
-
-        <!-- DETTAGLI -->
-        <div class="att-dettagli">
-          <span><strong>Durata:</strong> ${escHtml(durataCorso)} ore</span>
-          <span class="att-sep">·</span>
-          <span><strong>${dateCorso.length > 1 ? 'Date' : 'Data'}:</strong> ${escHtml(dateCorso.join(', '))}</span>
-          <span class="att-sep">·</span>
-          <span><strong>Sede:</strong> ${escHtml(sedeCorso || luogoAtt)}</span>
-        </div>
-
-        <!-- SCADENZA -->
-        ${scadenza ? `<div class="att-scadenza">Validità: <strong>${escHtml(String(validitaAnni))} anni</strong> &nbsp;·&nbsp; Scadenza rinnovo: <strong>${escHtml(fmtDate(scadenza))}</strong></div>` : ''}
-
-        <!-- FIRME -->
-        <div class="att-firme">
-          <div class="att-firma-col">
-            <div class="att-firma-ruolo">Il Docente</div>
-            <div class="att-firma-nome">${escHtml(nomeDoc)}</div>
-            <div class="att-firma-linea"></div>
-            <div class="att-firma-label">Firma</div>
-          </div>
-          <div class="att-firma-centro">
-            <div class="att-luogo-data">${escHtml(luogoAtt)}, ${escHtml(dataAtt)}</div>
-          </div>
-          <div class="att-firma-col att-firma-col-r">
-            <div class="att-firma-ruolo">Il Resp. Progetto Formativo</div>
-            <div class="att-firma-nome">${escHtml(respFormativo)}</div>
-            <div class="att-firma-linea"></div>
-            <div class="att-firma-label">Firma</div>
-          </div>
-        </div>
-
-        <!-- QR + FOOTER -->
-        <div class="att-bottom">
-          <div class="att-qr-wrap">
-            <div id="${qrId}" class="att-qr-box" data-qr="${escHtml(qrText)}"></div>
-            <div class="att-qr-caption">Verifica attestato</div>
-            <div class="att-qr-data">Emesso il ${escHtml(dataAtt)}</div>
-          </div>
-          ${testoFooter ? `<div class="att-footer-note">${escHtml(testoFooter)}</div>` : ''}
-        </div>
-
-      </section>`;
-
-      const righeTabella = righeContenuti.map(r => `
-        <tr>
-          <td>${escHtml(r.argomento)}</td>
-          <td>${escHtml(r.riferimento)}</td>
-        </tr>
-      `).join('');
-
-      const pagina2 = `
-      <section class="att-page att-second">
-        <div class="att-mini-top">
-          <div class="att-mini-left">${logoHtml}</div>
-          <div class="att-mini-right">
-            <div class="att-mini-name">${nomeCompleto}</div>
-            <div class="att-mini-course">${escHtml(titoloCorso)}</div>
-          </div>
-        </div>
-        <div class="att-yellow-line"></div>
-
-        <div class="att-section-title">CONTENUTI DEL CORSO</div>
-
-        <table class="att-table">
-          <thead>
-            <tr>
-              <th>Argomento</th>
-              <th>Riferimento normativo</th>
-            </tr>
-          </thead>
-          <tbody>${righeTabella}</tbody>
-        </table>
-
-        <div class="att-session-box">
-          <div class="att-session-title">Informazioni sulla sessione</div>
-          <div class="att-session-grid">
-            <div><strong>Data:</strong> ${escHtml(dateCorso.join(', '))}</div>
-            <div><strong>Durata:</strong> ${escHtml(durataCorso)} ore</div>
-            <div><strong>Sede:</strong> ${escHtml(sedeCorso)}</div>
-            <div><strong>Docente:</strong> ${escHtml(nomeDoc)}</div>
-            <div class="full"><strong>Modalità:</strong> ${escHtml(modalitaCorso)}</div>
-          </div>
-        </div>
-      </section>`;
-
-      return pagina1 + pagina2;
-    }).join('');
-
-    const html = `<!doctype html>
-<html lang="it">
-<head>
-<meta charset="utf-8">
-<title>Attestati_${escHtml(titoloCorso || 'corso')}</title>
-<style>
-  /* ═══ FRAMYX ATTESTATO STYLE ═══ */
-  @page { size:A4 portrait; margin:0; }
-  *, *::before, *::after { box-sizing:border-box; }
-  html, body { margin:0; padding:0; background:#F0F0F0; font-family:Helvetica,Arial,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-
-  .att-page { width:210mm; min-height:297mm; margin:0 auto 8mm; background:white; position:relative; page-break-after:always; }
-
-  /* ── Pagina 1 ── */
-  .att-first { padding:14mm 16mm 10mm 16mm; display:flex; flex-direction:column; min-height:297mm; }
-
-  /* Header */
-  .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0; }
-  .att-header-logo {}
-  .att-header-info { text-align:right; }
-  .att-header-cod { font-size:11px; font-weight:700; color:#484F54; }
-  .att-header-sub { font-size:10px; color:#888; }
-  .att-header-line { height:3px; background:#FDC400; margin:4mm 0 8mm 0; }
-
-  /* Titolo */
-  .att-center-block { text-align:center; margin-bottom:6mm; }
-  .att-azienda-nome { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#484F54; margin-bottom:4mm; }
-  .att-title-big { font-size:42px; font-weight:900; letter-spacing:3px; color:#1A1916; line-height:1; }
-  .att-title-sub { font-size:18px; font-weight:700; letter-spacing:2px; color:#484F54; margin-top:2mm; }
-  .att-verifica-label { font-size:11px; color:#888; margin-top:2mm; letter-spacing:1px; }
-
-  /* Nome lavoratore */
-  .att-si-certifica { text-align:center; font-size:13px; color:#666; margin:7mm 0 3mm; }
-  .att-nome-lav { text-align:center; font-size:30px; font-weight:900; color:#1A1916; letter-spacing:1px; border-bottom:3px solid #FDC400; display:inline-block; padding-bottom:2mm; width:100%; }
-  .att-dati-lav { text-align:center; font-size:12px; color:#555; margin-top:2mm; }
-  .att-mansione { text-align:center; font-size:12px; color:#555; margin-top:1mm; }
-
-  /* Corso banda gialla */
-  .att-corso-band { background:#FDC400; padding:5mm 10mm; text-align:center; margin:6mm 0 4mm; border-radius:3px; }
-  .att-corso-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#484F54; margin-bottom:2mm; }
-  .att-corso-titolo { font-size:17px; font-weight:900; color:#1A1916; line-height:1.3; }
-  .att-corso-norma { font-size:10px; color:#484F54; margin-top:1mm; }
-
-  /* Dettagli */
-  .att-dettagli { text-align:center; font-size:11px; color:#555; margin:3mm 0; }
-  .att-sep { margin:0 4px; color:#CCC; }
-  .att-scadenza { text-align:center; font-size:11px; color:#484F54; background:#FFFBE6; border:1px solid #FDC400; border-radius:3px; padding:2mm 6mm; display:inline-block; margin:2mm auto; width:auto; }
-
-  /* Firme */
-  .att-firme { display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto; padding-top:8mm; gap:4mm; }
-  .att-firma-col { width:38%; }
-  .att-firma-col-r { text-align:right; }
-  .att-firma-centro { flex:1; text-align:center; }
-  .att-firma-ruolo { font-size:11px; color:#888; }
-  .att-firma-nome { font-size:13px; font-weight:700; color:#1A1916; margin:2mm 0; }
-  .att-firma-linea { border-top:1px solid #CCC; margin:8mm 0 2mm; }
-  .att-firma-label { font-size:10px; color:#AAA; }
-  .att-luogo-data { font-size:11px; color:#666; }
-
-  /* QR bottom */
-  .att-bottom { display:flex; justify-content:space-between; align-items:flex-end; margin-top:6mm; border-top:1px solid #EEE; padding-top:4mm; }
-  .att-qr-wrap { display:flex; flex-direction:column; align-items:center; gap:1mm; }
-  .att-qr-box { width:22mm; height:22mm; background:#fff; border:1px solid #DDD; padding:1.5mm; }
-  .att-qr-box img, .att-qr-box canvas { width:100% !important; height:100% !important; display:block; }
-  .att-qr-caption { font-size:9px; color:#888; }
-  .att-qr-data { font-size:9px; color:#888; }
-  .att-footer-note { font-size:9px; color:#888; text-align:right; flex:1; padding-left:8mm; }
-
-  /* ── Pagina 2 ── */
-  .att-second { padding:14mm 16mm; }
-  .att-mini-top { display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid #FDC400; padding-bottom:4mm; margin-bottom:6mm; }
-  .att-mini-left {}
-  .att-mini-right { text-align:right; }
-  .att-mini-name { font-size:13px; font-weight:700; color:#484F54; text-transform:uppercase; }
-  .att-mini-course { font-size:11px; color:#888; margin-top:1mm; }
-  .att-section-title { font-size:22px; font-weight:900; color:#1A1916; margin-bottom:6mm; text-transform:uppercase; letter-spacing:1px; }
-  .att-table { width:100%; border-collapse:collapse; font-size:11px; }
-  .att-table th { text-align:left; font-size:10px; color:#888; font-weight:700; padding:0 8px 5px; border-bottom:2px solid #FDC400; }
-  .att-table td { border:1px solid #E0E0E0; padding:6px 8px; vertical-align:top; line-height:1.3; }
-  .att-table td:nth-child(1) { width:62%; }
-  .att-table td:nth-child(2) { width:38%; color:#666; }
-  .att-table tr:nth-child(even) td { background:#FAFAFA; }
-  .att-session-box { margin-top:8mm; border:1.5px solid #FDC400; border-radius:4px; padding:5mm 7mm; background:#FFFBE6; }
-  .att-session-title { font-size:11px; font-weight:700; color:#484F54; margin-bottom:4mm; text-transform:uppercase; letter-spacing:.5px; }
-  .att-session-grid { display:grid; grid-template-columns:1fr 1fr; gap:3mm 8mm; font-size:11px; color:#555; }
-  .att-session-grid .full { grid-column:1/span 2; }
-
-  @media print {
-    html, body { background:white; }
-    .att-page { margin:0; box-shadow:none; }
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-</head>
-<body>${pages}
-<script>
-(function(){
-  function renderQrs(){
-    try{
-      var QR = window.QRCode || (window.opener && window.opener.QRCode);
-      if(!QR) return;
-      document.querySelectorAll('.att-qr-box[data-qr]').forEach(function(el){
-        if(el.dataset.done === '1') return;
-        el.innerHTML = '';
-        new QR(el, {
-          text: el.getAttribute('data-qr') || '',
-          width: 76,
-          height: 76
-        });
-        el.dataset.done = '1';
-      });
-    }catch(err){ console.warn('QR render', err); }
-  }
-  setTimeout(renderQrs, 200);
-  setTimeout(renderQrs, 600);
-  setTimeout(renderQrs, 1000);
-  setTimeout(function(){ try{ window.print(); }catch(e){} }, 2000);
-})();
-<\/script>
-</body></html>`;
-
-    const win = window.open('', '_blank');
-    if(!win){
-      (typeof toast === 'function') ? toast('Popup bloccato dal browser','⚠️') : alert('Popup bloccato dal browser');
-      return;
-    }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-  }catch(e){
-    console.error('Errore generaAttestati:', e);
-    (typeof toast === 'function') ? toast('Errore nella generazione attestati','❌') : alert('Errore nella generazione attestati');
-  }
-}
-
-
-</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -618,189 +231,9 @@ textarea.fc{min-height:68px;resize:vertical}
 .login-error { color: #C0392B; font-size: 12px; margin-top: 8px; display: none; text-align: center; }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-function generaAttestati(){
-  try{
-    const sel = document.getElementById('fd-sess');
-    if(!sel || !sel.value){
-      alert('Seleziona una sessione');
-      return;
-    }
-
-    const sessioni = db.sessioni();
-    const lavoratori = db.lavoratori();
-
-    const sess = sessioni.find(s => s.id === sel.value);
-    if(!sess){
-      alert('Sessione non trovata');
-      return;
-    }
-
-    if(!sess.partecipanti || !sess.partecipanti.length){
-      alert('Nessun partecipante nella sessione');
-      return;
-    }
-
-    let html = '';
-
-    sess.partecipanti.forEach(id => {
-      const lav = lavoratori.find(l => l.id === id);
-      if(!lav) return;
-
-      html += `
-        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
-          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
-          <p style="text-align:center">Si certifica che</p>
-          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
-          <p style="text-align:center">ha partecipato al corso</p>
-          <h3 style="text-align:center">${sess.corso || ''}</h3>
-          <p style="text-align:center">Data: ${sess.data || ''}</p>
-        </div>
-      `;
-    });
-
-    const win = window.open('', '_blank');
-    if(!win){
-      alert('Popup bloccato dal browser');
-      return;
-    }
-
-    win.document.write(html);
-    win.document.close();
-
-    setTimeout(()=>{
-      win.print();
-    }, 500);
-
-  }catch(e){
-    console.error('Errore generaAttestati:', e);
-    alert('Errore nella generazione attestati');
-  }
-}
-
-</script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
-function generaAttestati(){
-  try{
-    const sel = document.getElementById('fd-sess');
-    if(!sel || !sel.value){
-      alert('Seleziona una sessione');
-      return;
-    }
-
-    const sessioni = db.sessioni();
-    const lavoratori = db.lavoratori();
-
-    const sess = sessioni.find(s => s.id === sel.value);
-    if(!sess){
-      alert('Sessione non trovata');
-      return;
-    }
-
-    if(!sess.partecipanti || !sess.partecipanti.length){
-      alert('Nessun partecipante nella sessione');
-      return;
-    }
-
-    let html = '';
-
-    sess.partecipanti.forEach(id => {
-      const lav = lavoratori.find(l => l.id === id);
-      if(!lav) return;
-
-      html += `
-        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
-          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
-          <p style="text-align:center">Si certifica che</p>
-          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
-          <p style="text-align:center">ha partecipato al corso</p>
-          <h3 style="text-align:center">${sess.corso || ''}</h3>
-          <p style="text-align:center">Data: ${sess.data || ''}</p>
-        </div>
-      `;
-    });
-
-    const win = window.open('', '_blank');
-    if(!win){
-      alert('Popup bloccato dal browser');
-      return;
-    }
-
-    win.document.write(html);
-    win.document.close();
-
-    setTimeout(()=>{
-      win.print();
-    }, 500);
-
-  }catch(e){
-    console.error('Errore generaAttestati:', e);
-    alert('Errore nella generazione attestati');
-  }
-}
-
-</script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
-function generaAttestati(){
-  try{
-    const sel = document.getElementById('fd-sess');
-    if(!sel || !sel.value){
-      alert('Seleziona una sessione');
-      return;
-    }
-
-    const sessioni = db.sessioni();
-    const lavoratori = db.lavoratori();
-
-    const sess = sessioni.find(s => s.id === sel.value);
-    if(!sess){
-      alert('Sessione non trovata');
-      return;
-    }
-
-    if(!sess.partecipanti || !sess.partecipanti.length){
-      alert('Nessun partecipante nella sessione');
-      return;
-    }
-
-    let html = '';
-
-    sess.partecipanti.forEach(id => {
-      const lav = lavoratori.find(l => l.id === id);
-      if(!lav) return;
-
-      html += `
-        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
-          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
-          <p style="text-align:center">Si certifica che</p>
-          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
-          <p style="text-align:center">ha partecipato al corso</p>
-          <h3 style="text-align:center">${sess.corso || ''}</h3>
-          <p style="text-align:center">Data: ${sess.data || ''}</p>
-        </div>
-      `;
-    });
-
-    const win = window.open('', '_blank');
-    if(!win){
-      alert('Popup bloccato dal browser');
-      return;
-    }
-
-    win.document.write(html);
-    win.document.close();
-
-    setTimeout(()=>{
-      win.print();
-    }, 500);
-
-  }catch(e){
-    console.error('Errore generaAttestati:', e);
-    alert('Errore nella generazione attestati');
-  }
-}
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -4058,6 +3491,314 @@ async function generaRegistro(){
   toast('Registro generato: '+pp.length+' partecipanti · '+giornate.length+' giornate · '+totPagine+' pagine','📋');
 }
 
+
+
+function generaAttestati(){
+  try{
+    const s = (typeof gSess === 'function') ? gSess() : (db.sessioni()||[]).find(x=>x.id===((document.getElementById('fd-sess')||{}).value||''));
+    if(!s){
+      (typeof toast === 'function') ? toast('Seleziona una sessione','⚠️') : alert('Seleziona una sessione');
+      return;
+    }
+
+    const corso = (db.corsi()||[]).find(c=>c.id===s.corsoId) || {};
+    const az = (db.aziende()||[]).find(a=>a.id===s.aziendaId) || {};
+    const doc = (db.docenti()||[]).find(d=>d.id===s.docenteId) || {};
+    const cfg = (typeof getAttConfig === 'function') ? getAttConfig() : {};
+
+    const allLav = db.lavoratori() || [];
+    const partUniq = [...new Set(s.partecipanti || [])];
+    const partecipanti = partUniq.map(id => allLav.find(l=>l.id===id)).filter(Boolean);
+
+    if(!partecipanti.length){
+      (typeof toast === 'function') ? toast('Nessun partecipante trovato nella sessione','⚠️') : alert('Nessun partecipante trovato nella sessione');
+      return;
+    }
+
+    const escHtml = (str='') => String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+
+    const cleanText = (v) => (v==null ? '' : String(v).trim());
+    const firstNonEmpty = (...vals) => vals.find(x => cleanText(x)) || '';
+    const upper = (v) => cleanText(v).toUpperCase();
+
+    const fmtDate = (val) => {
+      if(!val) return '';
+      const s = String(val).trim();
+      if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+        const [y,m,d] = s.split('-');
+        return `${d}/${m}/${y}`;
+      }
+      const d = new Date(s);
+      if(isNaN(d)) return '';
+      return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+    };
+
+    const plusYears = (val, years) => {
+      if(!val) return '';
+      const s = String(val).trim();
+      let d;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+        const [y,m,dd] = s.split('-').map(Number);
+        d = new Date(y, m-1, dd);
+      } else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+        const [dd,m,y] = s.split('/').map(Number);
+        d = new Date(y, m-1, dd);
+      } else {
+        d = new Date(s);
+      }
+      if(isNaN(d)) return '';
+      d.setFullYear(d.getFullYear() + (parseInt(years,10) || 0));
+      return d.toISOString().slice(0,10);
+    };
+
+    const giornate = Array.isArray(s.giornate) && s.giornate.length
+      ? s.giornate.filter(g=>g && g.data).sort((a,b)=>String(a.data).localeCompare(String(b.data)))
+      : (s.data ? [{data:s.data, ini:s.oraInizio||'', fine:s.oraFine||''}] : []);
+    const dateCorso = giornate.map(g => fmtDate(g.data)).filter(Boolean);
+    const primaData = giornate[0]?.data || s.data || '';
+    const validitaAnni = parseInt(corso.validita,10) || 5;
+    const scadenza = plusYears(primaData, validitaAnni);
+    const luogoAtt = firstNonEmpty(s.cittaAttestato, cfg.cittaDefault, 'Valbrenta (VI)');
+    const dataAtt = fmtDate(primaData);
+    const nomeDoc = cleanText(((doc.cognome||'') + ' ' + (doc.nome||'')).trim()) || cleanText(s.docenteNome) || '';
+    const respFormativo = cleanText(doc.resp) || 'Franz Lanaro';
+    const aziendaNomeHeader = upper(firstNonEmpty(cfg.aziendaNome, 'Framyx Srl SB'));
+    const titoloAtt = upper(firstNonEmpty(cfg.intestazione, 'ATTESTATO DI PARTECIPAZIONE'));
+    const sottotitoloAtt = upper(firstNonEmpty(cfg.sottotitolo, "CON VERIFICA DELL'APPRENDIMENTO"));
+    const titoloCorso = cleanText(corso.titolo || s.corsoTitolo || s.corso || '');
+    const normaCorso = cleanText(corso.norma || corso.normativa || s.norma || '');
+    const durataCorso = cleanText(corso.durata || s.durata || '');
+    const sedeCorso = cleanText(s.sede || az.indirizzo || '');
+    const modalitaCorso = cleanText(s.modalita || 'In presenza');
+    const testoFooter = cleanText(cfg.footer || '');
+
+    const righeContenuti = [];
+    const pushRiga = (arg, rif) => {
+      const a = cleanText(arg);
+      if(!a) return;
+      righeContenuti.push({argomento:a, riferimento: cleanText(rif || normaCorso)});
+    };
+
+    if(Array.isArray(corso.sezioni) && corso.sezioni.length){
+      corso.sezioni.forEach(sez => {
+        const titoloSez = cleanText(sez.titolo);
+        if(titoloSez) pushRiga(titoloSez, normaCorso);
+        (sez.punti || []).forEach(p => pushRiga('- ' + cleanText(p).replace(/^[-•]\s*/,''), normaCorso));
+      });
+    } else if(Array.isArray(s.argomenti) && s.argomenti.length){
+      pushRiga('Contenuti del corso', normaCorso);
+      s.argomenti.forEach(a => pushRiga((/^[\-•]/.test(cleanText(a)) ? cleanText(a) : '- ' + cleanText(a)), normaCorso));
+    } else if(Array.isArray(corso.argomenti) && corso.argomenti.length){
+      pushRiga('Contenuti del corso', normaCorso);
+      corso.argomenti.forEach(a => pushRiga((/^[\-•]/.test(cleanText(a)) ? cleanText(a) : '- ' + cleanText(a)), normaCorso));
+    } else {
+      pushRiga('Contenuti del corso', normaCorso);
+    }
+
+    const logoHtml = cfg.logo
+      ? `<img src="${cfg.logo}" style="max-height:34px; max-width:180px; object-fit:contain; opacity:.18;">`
+      : `<div style="font-size:14px; color:#d7d7d7; font-weight:500;">Framyx Srl SB</div>`;
+
+    const pages = partecipanti.map((lav, idx) => {
+      const nomeCompleto = upper(((lav.cognome||'') + ' ' + (lav.nome||'')).replace(/\s+/g,' ').trim());
+      const dataNascita = fmtDate(lav.dataNascita || lav.nascita || lav.data_di_nascita || lav.datanascita);
+      const cf = cleanText(lav.cf || lav.codiceFiscale || lav.cod_fisc || '');
+      const mansione = cleanText(lav.mansione || lav.qualifica || 'Lavoratore');
+      const aziendaLav = cleanText(az.nome || lav.aziendaNome || '');
+      const rigaPersona = [dataNascita ? `nato/a il ${dataNascita}` : '', cf ? `C.F. ${cf}` : ''].filter(Boolean).join(' · ');
+      const qrText = `Generato da Framyx Srl SB in data ${dataAtt}`;
+      const qrId = `qr_att_${idx}_${Date.now()}`;
+
+      const pagina1 = `
+      <section class="att-page att-first">
+        <div class="att-company">${aziendaNomeHeader}</div>
+        <div class="att-title">${titoloAtt.replace(' DI PARTECIPAZIONE','<br>DI PARTECIPAZIONE')}</div>
+        <div class="att-subtitle">${sottotitoloAtt}</div>
+
+        <div class="att-certifica">Si certifica che</div>
+        <div class="att-name">${nomeCompleto}</div>
+        <div class="att-meta-person">${escHtml(rigaPersona)}</div>
+        <div class="att-role">${escHtml(mansione)}${aziendaLav ? ` presso ${escHtml(aziendaLav)}` : ''}</div>
+
+        <div class="att-course-label">HA PARTECIPATO AL CORSO</div>
+        <div class="att-course-title">${escHtml(titoloCorso)}</div>
+        <div class="att-course-law">${escHtml(normaCorso)}</div>
+        <div class="att-course-info">Durata: ${escHtml(durataCorso)} ore · Date: ${escHtml(dateCorso.join(', '))} · Sede: ${escHtml(sedeCorso)}</div>
+        <div class="att-course-info">Validità: ${escHtml(String(validitaAnni))} anni · Scadenza rinnovo: ${escHtml(fmtDate(scadenza))}</div>
+
+        <div class="att-sign-wrap">
+          <div class="att-sign-col">
+            <div class="att-sign-label">Il Docente</div>
+            <div class="att-sign-name">${escHtml(nomeDoc)}</div>
+          </div>
+          <div class="att-sign-col att-sign-col-right">
+            <div class="att-sign-label">${escHtml(luogoAtt)}, ${escHtml(dataAtt)}</div>
+            <div class="att-sign-label" style="margin-top:14px;">Il Resp. Progetto Formativo</div>
+            <div class="att-sign-name">${escHtml(respFormativo)}</div>
+            <div class="att-sign-firma">Firma</div>
+          </div>
+        </div>
+
+        <div class="att-qr-wrap">
+          <div id="${qrId}" class="att-qr-box" data-qr="${escHtml(qrText)}"></div>
+          <div class="att-qr-caption">QR attestato</div>
+        </div>
+
+        ${testoFooter ? `<div class="att-footer-note">${escHtml(testoFooter)}</div>` : ''}
+      </section>`;
+
+      const righeTabella = righeContenuti.map(r => `
+        <tr>
+          <td>${escHtml(r.argomento)}</td>
+          <td>${escHtml(r.riferimento)}</td>
+        </tr>
+      `).join('');
+
+      const pagina2 = `
+      <section class="att-page att-second">
+        <div class="att-mini-top">
+          <div class="att-mini-left">${logoHtml}</div>
+          <div class="att-mini-right">
+            <div class="att-mini-name">${nomeCompleto}</div>
+            <div class="att-mini-course">${escHtml(titoloCorso)}</div>
+          </div>
+        </div>
+        <div class="att-yellow-line"></div>
+
+        <div class="att-section-title">CONTENUTI DEL CORSO</div>
+
+        <table class="att-table">
+          <thead>
+            <tr>
+              <th>Argomento</th>
+              <th>Riferimento normativo</th>
+            </tr>
+          </thead>
+          <tbody>${righeTabella}</tbody>
+        </table>
+
+        <div class="att-session-box">
+          <div class="att-session-title">Informazioni sulla sessione</div>
+          <div class="att-session-grid">
+            <div><strong>Data:</strong> ${escHtml(dateCorso.join(', '))}</div>
+            <div><strong>Durata:</strong> ${escHtml(durataCorso)} ore</div>
+            <div><strong>Sede:</strong> ${escHtml(sedeCorso)}</div>
+            <div><strong>Docente:</strong> ${escHtml(nomeDoc)}</div>
+            <div class="full"><strong>Modalità:</strong> ${escHtml(modalitaCorso)}</div>
+          </div>
+        </div>
+      </section>`;
+
+      return pagina1 + pagina2;
+    }).join('');
+
+    const html = `<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Attestati_${escHtml(titoloCorso || 'corso')}</title>
+<style>
+  @page { size:A4; margin:0; }
+  html, body { margin:0; padding:0; background:#efefef; }
+  body { font-family:Helvetica, Arial, sans-serif; color:#4a4a4a; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .att-page{
+    width:210mm; min-height:297mm; box-sizing:border-box;
+    margin:0 auto; background:#efefef; position:relative; page-break-after:always;
+  }
+  .att-first{ padding:22mm 18mm 20mm 18mm; text-align:center; }
+  .att-company{ font-size:14px; font-weight:700; letter-spacing:.2px; margin-top:6mm; color:#222; }
+  .att-title{ margin-top:20mm; font-size:31px; line-height:1.06; font-weight:700; letter-spacing:.6px; color:#1f1f1f; }
+  .att-subtitle{ margin-top:6mm; font-size:18px; line-height:1.2; font-weight:400; color:#3e3e3e; letter-spacing:.4px; }
+  .att-certifica{ margin-top:22mm; font-size:18px; color:#5c5c5c; }
+  .att-name{ margin-top:8mm; font-size:33px; line-height:1.1; font-weight:700; color:#1f1f1f; letter-spacing:.4px; }
+  .att-meta-person{ margin-top:4mm; font-size:15px; color:#555; }
+  .att-role{ margin-top:3mm; font-size:16px; color:#5a5a5a; }
+  .att-course-label{ margin-top:20mm; font-size:18px; font-weight:700; letter-spacing:.5px; color:#1f1f1f; }
+  .att-course-title{ margin-top:6mm; font-size:24px; line-height:1.2; font-weight:700; color:#2b2b2b; }
+  .att-course-law{ margin-top:3mm; font-size:15px; color:#595959; }
+  .att-course-info{ margin-top:3mm; font-size:15px; color:#5a5a5a; line-height:1.45; }
+  .att-sign-wrap{ margin-top:26mm; display:flex; justify-content:space-between; align-items:flex-end; text-align:left; gap:10mm; }
+  .att-sign-col{ width:42%; }
+  .att-sign-col-right{ text-align:right; width:48%; }
+  .att-sign-label{ font-size:16px; color:#444; }
+  .att-sign-name{ margin-top:3mm; font-size:20px; font-weight:500; color:#1f1f1f; }
+  .att-sign-firma{ margin-top:12mm; font-size:16px; color:#666; }
+  .att-qr-wrap{ position:absolute; left:18mm; bottom:14mm; display:flex; flex-direction:column; align-items:flex-start; gap:3mm; }
+  .att-qr-box{ width:24mm; height:24mm; background:#fff; border:1px solid #d0d0d0; padding:2mm; box-sizing:border-box; }
+  .att-qr-box img, .att-qr-box canvas{ width:100% !important; height:100% !important; display:block; }
+  .att-qr-caption{ font-size:10px; color:#666; }
+  .att-footer-note{ position:absolute; left:48mm; right:18mm; bottom:12mm; text-align:right; font-size:10.5px; color:#777; }
+
+  .att-second{ padding:18mm 18mm 18mm 18mm; }
+  .att-mini-top{ display:flex; align-items:flex-start; justify-content:space-between; margin-top:4mm; }
+  .att-mini-left{ min-width:160px; }
+  .att-mini-right{ text-align:right; }
+  .att-mini-name{ font-size:16px; font-weight:700; color:#5a5a5a; text-transform:uppercase; }
+  .att-mini-course{ font-size:13px; color:#5c5c5c; margin-top:1mm; }
+  .att-yellow-line{ height:2px; background:#e4aa00; margin:12mm 0 12mm 0; }
+  .att-section-title{ font-size:30px; line-height:1.1; font-weight:700; color:#1d1d1d; margin-bottom:10mm; }
+  .att-table{ width:100%; border-collapse:collapse; background:transparent; font-size:13px; color:#555; }
+  .att-table th{ text-align:left; font-size:14px; color:#9a9a9a; font-weight:700; padding:0 10px 6px 10px; }
+  .att-table td{ border:1px solid #d2d2d2; padding:9px 10px; vertical-align:top; line-height:1.25; background:transparent; }
+  .att-table td:nth-child(1){ width:60%; }
+  .att-table td:nth-child(2){ width:40%; }
+  .att-session-box{ margin-top:14mm; border:1.5px solid #e4aa00; border-radius:6px; padding:12px 16px 14px 16px; }
+  .att-session-title{ font-size:14px; font-weight:700; color:#444; margin-bottom:10px; }
+  .att-session-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 30px; font-size:13px; color:#5a5a5a; line-height:1.35; }
+  .att-session-grid .full{ grid-column:1 / span 2; }
+
+  @media print {
+    html, body { background:#efefef; }
+    .att-page { margin:0; }
+  }
+</style>
+</head>
+<body>${pages}
+<script>
+(function(){
+  function renderQrs(){
+    try{
+      var QR = window.QRCode || (window.opener && window.opener.QRCode);
+      if(!QR) return;
+      document.querySelectorAll('.att-qr-box[data-qr]').forEach(function(el){
+        if(el.dataset.done === '1') return;
+        el.innerHTML = '';
+        new QR(el, {
+          text: el.getAttribute('data-qr') || '',
+          width: 76,
+          height: 76
+        });
+        el.dataset.done = '1';
+      });
+    }catch(err){ console.warn('QR render', err); }
+  }
+  renderQrs();
+  setTimeout(renderQrs, 300);
+  setTimeout(function(){ try{ window.print(); }catch(e){} }, 1200);
+})();
+<\/script>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if(!win){
+      (typeof toast === 'function') ? toast('Popup bloccato dal browser','⚠️') : alert('Popup bloccato dal browser');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+  }catch(e){
+    console.error('Errore generaAttestati:', e);
+    (typeof toast === 'function') ? toast('Errore nella generazione attestati','❌') : alert('Errore nella generazione attestati');
+  }
+}
 
 function generaVerbale(){
   const s=gSess(); if(!s) return;
@@ -8070,7 +7811,8 @@ function riparaDuplicati(){
 }
 
 
-async function syncAndRefresh(){
+async 
+function syncAndRefresh(){
   loadFromSupabase().then(ok=>{
     renderPage(currentPage); updateFilters(); renderDashboard();
     if(ok) toast('Connesso ✅ — dati aggiornati','☁️');
@@ -8555,7 +8297,7 @@ async function init() {
   updateFilters();
   renderDashboard();
   // Auto-backup silenzioso all'apertura
-  // setTimeout(autoBackup, 3000);
+  setTimeout(autoBackup, 3000);
 }
 
 function autoBackup(){
@@ -8608,393 +8350,6 @@ function ripristinaAutoBackup(){
 
 // Check if already logged in this session
 init();
-
-
-
-function generaAttestati(){
-  try{
-    const s = (typeof gSess === 'function') ? gSess() : (db.sessioni()||[]).find(x=>x.id===((document.getElementById('fd-sess')||{}).value||''));
-    if(!s){
-      (typeof toast === 'function') ? toast('Seleziona una sessione','⚠️') : alert('Seleziona una sessione');
-      return;
-    }
-
-    const corso = (db.corsi()||[]).find(c=>c.id===s.corsoId) || {};
-    const az = (db.aziende()||[]).find(a=>a.id===s.aziendaId) || {};
-    const doc = (db.docenti()||[]).find(d=>d.id===s.docenteId) || {};
-    const cfg = (typeof getAttConfig === 'function') ? getAttConfig() : {};
-
-    const allLav = db.lavoratori() || [];
-    const partUniq = [...new Set(s.partecipanti || [])];
-    const partecipanti = partUniq.map(id => allLav.find(l=>l.id===id)).filter(Boolean);
-
-    if(!partecipanti.length){
-      (typeof toast === 'function') ? toast('Nessun partecipante trovato nella sessione','⚠️') : alert('Nessun partecipante trovato nella sessione');
-      return;
-    }
-
-    const escHtml = (str='') => String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#39;');
-
-    const cleanText = (v) => (v==null ? '' : String(v).trim());
-    const firstNonEmpty = (...vals) => vals.find(x => cleanText(x)) || '';
-    const upper = (v) => cleanText(v).toUpperCase();
-
-    const fmtDate = (val) => {
-      if(!val) return '';
-      const s = String(val).trim();
-      if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-        const [y,m,d] = s.split('-');
-        return `${d}/${m}/${y}`;
-      }
-      const d = new Date(s);
-      if(isNaN(d)) return '';
-      return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-    };
-
-    const plusYears = (val, years) => {
-      if(!val) return '';
-      const s = String(val).trim();
-      let d;
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-        const [y,m,dd] = s.split('-').map(Number);
-        d = new Date(y, m-1, dd);
-      } else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
-        const [dd,m,y] = s.split('/').map(Number);
-        d = new Date(y, m-1, dd);
-      } else {
-        d = new Date(s);
-      }
-      if(isNaN(d)) return '';
-      d.setFullYear(d.getFullYear() + (parseInt(years,10) || 0));
-      return d.toISOString().slice(0,10);
-    };
-
-    const giornate = Array.isArray(s.giornate) && s.giornate.length
-      ? s.giornate.filter(g=>g && g.data).sort((a,b)=>String(a.data).localeCompare(String(b.data)))
-      : (s.data ? [{data:s.data, ini:s.oraInizio||'', fine:s.oraFine||''}] : []);
-    const dateCorso = giornate.map(g => fmtDate(g.data)).filter(Boolean);
-    const primaData = giornate[0]?.data || s.data || '';
-    const validitaAnni = parseInt(corso.validita,10) || 5;
-    const scadenza = plusYears(primaData, validitaAnni);
-    const luogoAtt = firstNonEmpty(s.cittaAttestato, cfg.cittaDefault, 'Valbrenta (VI)');
-    const dataAtt = fmtDate(primaData);
-    const nomeDoc = cleanText(((doc.cognome||'') + ' ' + (doc.nome||'')).trim()) || cleanText(s.docenteNome) || '';
-    const respFormativo = cleanText(doc.resp) || 'Franz Lanaro';
-    const aziendaNomeHeader = upper(firstNonEmpty(cfg.aziendaNome, 'Framyx Srl SB'));
-    const titoloAtt = upper(firstNonEmpty(cfg.intestazione, 'ATTESTATO DI PARTECIPAZIONE'));
-    const sottotitoloAtt = upper(firstNonEmpty(cfg.sottotitolo, "CON VERIFICA DELL'APPRENDIMENTO"));
-    const titoloCorso = cleanText(corso.titolo || s.corsoTitolo || s.corso || '');
-    const normaCorso = cleanText(corso.norma || corso.normativa || s.norma || '');
-    const durataCorso = cleanText(corso.durata || s.durata || '');
-    const sedeCorso = cleanText(s.sede || az.indirizzo || '');
-    const modalitaCorso = cleanText(s.modalita || 'In presenza');
-    const testoFooter = cleanText(cfg.footer || '');
-
-    const righeContenuti = [];
-    const pushRiga = (arg, rif) => {
-      const a = cleanText(arg);
-      if(!a) return;
-      righeContenuti.push({argomento:a, riferimento: cleanText(rif || normaCorso)});
-    };
-
-    if(Array.isArray(corso.sezioni) && corso.sezioni.length){
-      corso.sezioni.forEach(sez => {
-        const titoloSez = cleanText(sez.titolo);
-        if(titoloSez) pushRiga(titoloSez, normaCorso);
-        (sez.punti || []).forEach(p => pushRiga('- ' + cleanText(p).replace(/^[-•]\s*/,''), normaCorso));
-      });
-    } else if(Array.isArray(s.argomenti) && s.argomenti.length){
-      pushRiga('Contenuti del corso', normaCorso);
-      s.argomenti.forEach(a => pushRiga((/^[\-•]/.test(cleanText(a)) ? cleanText(a) : '- ' + cleanText(a)), normaCorso));
-    } else if(Array.isArray(corso.argomenti) && corso.argomenti.length){
-      pushRiga('Contenuti del corso', normaCorso);
-      corso.argomenti.forEach(a => pushRiga((/^[\-•]/.test(cleanText(a)) ? cleanText(a) : '- ' + cleanText(a)), normaCorso));
-    } else {
-      pushRiga('Contenuti del corso', normaCorso);
-    }
-
-    const LOGO_B64 = cfg.logo || '';
-    const logoHtml = LOGO_B64
-      ? `<img src="${LOGO_B64}" style="max-height:55px; max-width:200px; object-fit:contain;">`
-      : `<div style="font-size:13px; font-weight:700; color:#484F54; letter-spacing:1px;">FRAMYX SRL SB</div>`;
-    const logoSmall = LOGO_B64
-      ? `<img src="${LOGO_B64}" style="max-height:36px; max-width:140px; object-fit:contain;">`
-      : `<div style="font-size:11px; font-weight:700; color:#484F54;">FRAMYX SRL SB</div>`;
-
-    const pages = partecipanti.map((lav, idx) => {
-      const nomeCompleto = upper(((lav.cognome||'') + ' ' + (lav.nome||'')).replace(/\s+/g,' ').trim());
-      const dataNascita = fmtDate(lav.dataNascita || lav.nascita || lav.data_di_nascita || lav.datanascita);
-      const cf = cleanText(lav.cf || lav.codiceFiscale || lav.cod_fisc || '');
-      const mansione = cleanText(lav.mansione || lav.qualifica || 'Lavoratore');
-      const aziendaLav = cleanText(az.nome || lav.aziendaNome || '');
-      const rigaPersona = [dataNascita ? `nato/a il ${dataNascita}` : '', cf ? `C.F. ${cf}` : ''].filter(Boolean).join(' · ');
-      const qrText = `Attestato emesso da: ${aziendaNomeHeader} | Lavoratore: ${nomeCompleto} | Corso: ${titoloCorso} | Data: ${dataAtt} | Scadenza: ${fmtDate(scadenza)}`;
-      const qrId = `qr_att_${idx}_${Date.now()}`;
-
-      const pagina1 = `
-      <section class="att-page att-first">
-
-        <!-- HEADER FRAMYX -->
-        <div class="att-header">
-          <div class="att-header-logo">${logoHtml}</div>
-          <div class="att-header-info">
-            <div class="att-header-cod">FR-ATT-01</div>
-            <div class="att-header-sub">Framyx Srl SB</div>
-          </div>
-        </div>
-        <div class="att-header-line"></div>
-
-        <!-- TITOLO CENTRALE -->
-        <div class="att-center-block">
-          <div class="att-azienda-nome">${escHtml(aziendaNomeHeader)}</div>
-          <div class="att-title-big">ATTESTATO</div>
-          <div class="att-title-sub">DI PARTECIPAZIONE</div>
-          <div class="att-verifica-label">CON VERIFICA DELL'APPRENDIMENTO</div>
-        </div>
-
-        <!-- NOME LAVORATORE -->
-        <div class="att-si-certifica">Si certifica che</div>
-        <div class="att-nome-lav">${nomeCompleto}</div>
-        ${rigaPersona ? `<div class="att-dati-lav">${escHtml(rigaPersona)}</div>` : ''}
-        ${mansione ? `<div class="att-mansione">${escHtml(mansione)}${aziendaLav ? ' — ' + escHtml(aziendaLav) : ''}</div>` : ''}
-
-        <!-- CORSO — BANDA GIALLA -->
-        <div class="att-corso-band">
-          <div class="att-corso-label">HA FREQUENTATO IL CORSO</div>
-          <div class="att-corso-titolo">${escHtml(titoloCorso)}</div>
-          ${normaCorso ? `<div class="att-corso-norma">${escHtml(normaCorso)}</div>` : ''}
-        </div>
-
-        <!-- DETTAGLI -->
-        <div class="att-dettagli">
-          <span><strong>Durata:</strong> ${escHtml(durataCorso)} ore</span>
-          <span class="att-sep">·</span>
-          <span><strong>${dateCorso.length > 1 ? 'Date' : 'Data'}:</strong> ${escHtml(dateCorso.join(', '))}</span>
-          <span class="att-sep">·</span>
-          <span><strong>Sede:</strong> ${escHtml(sedeCorso || luogoAtt)}</span>
-        </div>
-
-        <!-- SCADENZA -->
-        ${scadenza ? `<div class="att-scadenza">Validità: <strong>${escHtml(String(validitaAnni))} anni</strong> &nbsp;·&nbsp; Scadenza rinnovo: <strong>${escHtml(fmtDate(scadenza))}</strong></div>` : ''}
-
-        <!-- FIRME -->
-        <div class="att-firme">
-          <div class="att-firma-col">
-            <div class="att-firma-ruolo">Il Docente</div>
-            <div class="att-firma-nome">${escHtml(nomeDoc)}</div>
-            <div class="att-firma-linea"></div>
-            <div class="att-firma-label">Firma</div>
-          </div>
-          <div class="att-firma-centro">
-            <div class="att-luogo-data">${escHtml(luogoAtt)}, ${escHtml(dataAtt)}</div>
-          </div>
-          <div class="att-firma-col att-firma-col-r">
-            <div class="att-firma-ruolo">Il Resp. Progetto Formativo</div>
-            <div class="att-firma-nome">${escHtml(respFormativo)}</div>
-            <div class="att-firma-linea"></div>
-            <div class="att-firma-label">Firma</div>
-          </div>
-        </div>
-
-        <!-- QR + FOOTER -->
-        <div class="att-bottom">
-          <div class="att-qr-wrap">
-            <div id="${qrId}" class="att-qr-box" data-qr="${escHtml(qrText)}"></div>
-            <div class="att-qr-caption">Verifica attestato</div>
-            <div class="att-qr-data">Emesso il ${escHtml(dataAtt)}</div>
-          </div>
-          ${testoFooter ? `<div class="att-footer-note">${escHtml(testoFooter)}</div>` : ''}
-        </div>
-
-      </section>`;
-
-      const righeTabella = righeContenuti.map(r => `
-        <tr>
-          <td>${escHtml(r.argomento)}</td>
-          <td>${escHtml(r.riferimento)}</td>
-        </tr>
-      `).join('');
-
-      const pagina2 = `
-      <section class="att-page att-second">
-        <div class="att-mini-top">
-          <div class="att-mini-left">${logoHtml}</div>
-          <div class="att-mini-right">
-            <div class="att-mini-name">${nomeCompleto}</div>
-            <div class="att-mini-course">${escHtml(titoloCorso)}</div>
-          </div>
-        </div>
-        <div class="att-yellow-line"></div>
-
-        <div class="att-section-title">CONTENUTI DEL CORSO</div>
-
-        <table class="att-table">
-          <thead>
-            <tr>
-              <th>Argomento</th>
-              <th>Riferimento normativo</th>
-            </tr>
-          </thead>
-          <tbody>${righeTabella}</tbody>
-        </table>
-
-        <div class="att-session-box">
-          <div class="att-session-title">Informazioni sulla sessione</div>
-          <div class="att-session-grid">
-            <div><strong>Data:</strong> ${escHtml(dateCorso.join(', '))}</div>
-            <div><strong>Durata:</strong> ${escHtml(durataCorso)} ore</div>
-            <div><strong>Sede:</strong> ${escHtml(sedeCorso)}</div>
-            <div><strong>Docente:</strong> ${escHtml(nomeDoc)}</div>
-            <div class="full"><strong>Modalità:</strong> ${escHtml(modalitaCorso)}</div>
-          </div>
-        </div>
-      </section>`;
-
-      return pagina1 + pagina2;
-    }).join('');
-
-    const html = `<!doctype html>
-<html lang="it">
-<head>
-<meta charset="utf-8">
-<title>Attestati_${escHtml(titoloCorso || 'corso')}</title>
-<style>
-  /* ═══ FRAMYX ATTESTATO STYLE ═══ */
-  @page { size:A4 portrait; margin:0; }
-  *, *::before, *::after { box-sizing:border-box; }
-  html, body { margin:0; padding:0; background:#F0F0F0; font-family:Helvetica,Arial,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-
-  .att-page { width:210mm; min-height:297mm; margin:0 auto 8mm; background:white; position:relative; page-break-after:always; }
-
-  /* ── Pagina 1 ── */
-  .att-first { padding:14mm 16mm 10mm 16mm; display:flex; flex-direction:column; min-height:297mm; }
-
-  /* Header */
-  .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0; }
-  .att-header-logo {}
-  .att-header-info { text-align:right; }
-  .att-header-cod { font-size:11px; font-weight:700; color:#484F54; }
-  .att-header-sub { font-size:10px; color:#888; }
-  .att-header-line { height:3px; background:#FDC400; margin:4mm 0 8mm 0; }
-
-  /* Titolo */
-  .att-center-block { text-align:center; margin-bottom:6mm; }
-  .att-azienda-nome { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#484F54; margin-bottom:4mm; }
-  .att-title-big { font-size:42px; font-weight:900; letter-spacing:3px; color:#1A1916; line-height:1; }
-  .att-title-sub { font-size:18px; font-weight:700; letter-spacing:2px; color:#484F54; margin-top:2mm; }
-  .att-verifica-label { font-size:11px; color:#888; margin-top:2mm; letter-spacing:1px; }
-
-  /* Nome lavoratore */
-  .att-si-certifica { text-align:center; font-size:13px; color:#666; margin:7mm 0 3mm; }
-  .att-nome-lav { text-align:center; font-size:30px; font-weight:900; color:#1A1916; letter-spacing:1px; border-bottom:3px solid #FDC400; display:inline-block; padding-bottom:2mm; width:100%; }
-  .att-dati-lav { text-align:center; font-size:12px; color:#555; margin-top:2mm; }
-  .att-mansione { text-align:center; font-size:12px; color:#555; margin-top:1mm; }
-
-  /* Corso banda gialla */
-  .att-corso-band { background:#FDC400; padding:5mm 10mm; text-align:center; margin:6mm 0 4mm; border-radius:3px; }
-  .att-corso-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#484F54; margin-bottom:2mm; }
-  .att-corso-titolo { font-size:17px; font-weight:900; color:#1A1916; line-height:1.3; }
-  .att-corso-norma { font-size:10px; color:#484F54; margin-top:1mm; }
-
-  /* Dettagli */
-  .att-dettagli { text-align:center; font-size:11px; color:#555; margin:3mm 0; }
-  .att-sep { margin:0 4px; color:#CCC; }
-  .att-scadenza { text-align:center; font-size:11px; color:#484F54; background:#FFFBE6; border:1px solid #FDC400; border-radius:3px; padding:2mm 6mm; display:inline-block; margin:2mm auto; width:auto; }
-
-  /* Firme */
-  .att-firme { display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto; padding-top:8mm; gap:4mm; }
-  .att-firma-col { width:38%; }
-  .att-firma-col-r { text-align:right; }
-  .att-firma-centro { flex:1; text-align:center; }
-  .att-firma-ruolo { font-size:11px; color:#888; }
-  .att-firma-nome { font-size:13px; font-weight:700; color:#1A1916; margin:2mm 0; }
-  .att-firma-linea { border-top:1px solid #CCC; margin:8mm 0 2mm; }
-  .att-firma-label { font-size:10px; color:#AAA; }
-  .att-luogo-data { font-size:11px; color:#666; }
-
-  /* QR bottom */
-  .att-bottom { display:flex; justify-content:space-between; align-items:flex-end; margin-top:6mm; border-top:1px solid #EEE; padding-top:4mm; }
-  .att-qr-wrap { display:flex; flex-direction:column; align-items:center; gap:1mm; }
-  .att-qr-box { width:22mm; height:22mm; background:#fff; border:1px solid #DDD; padding:1.5mm; }
-  .att-qr-box img, .att-qr-box canvas { width:100% !important; height:100% !important; display:block; }
-  .att-qr-caption { font-size:9px; color:#888; }
-  .att-qr-data { font-size:9px; color:#888; }
-  .att-footer-note { font-size:9px; color:#888; text-align:right; flex:1; padding-left:8mm; }
-
-  /* ── Pagina 2 ── */
-  .att-second { padding:14mm 16mm; }
-  .att-mini-top { display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid #FDC400; padding-bottom:4mm; margin-bottom:6mm; }
-  .att-mini-left {}
-  .att-mini-right { text-align:right; }
-  .att-mini-name { font-size:13px; font-weight:700; color:#484F54; text-transform:uppercase; }
-  .att-mini-course { font-size:11px; color:#888; margin-top:1mm; }
-  .att-section-title { font-size:22px; font-weight:900; color:#1A1916; margin-bottom:6mm; text-transform:uppercase; letter-spacing:1px; }
-  .att-table { width:100%; border-collapse:collapse; font-size:11px; }
-  .att-table th { text-align:left; font-size:10px; color:#888; font-weight:700; padding:0 8px 5px; border-bottom:2px solid #FDC400; }
-  .att-table td { border:1px solid #E0E0E0; padding:6px 8px; vertical-align:top; line-height:1.3; }
-  .att-table td:nth-child(1) { width:62%; }
-  .att-table td:nth-child(2) { width:38%; color:#666; }
-  .att-table tr:nth-child(even) td { background:#FAFAFA; }
-  .att-session-box { margin-top:8mm; border:1.5px solid #FDC400; border-radius:4px; padding:5mm 7mm; background:#FFFBE6; }
-  .att-session-title { font-size:11px; font-weight:700; color:#484F54; margin-bottom:4mm; text-transform:uppercase; letter-spacing:.5px; }
-  .att-session-grid { display:grid; grid-template-columns:1fr 1fr; gap:3mm 8mm; font-size:11px; color:#555; }
-  .att-session-grid .full { grid-column:1/span 2; }
-
-  @media print {
-    html, body { background:white; }
-    .att-page { margin:0; box-shadow:none; }
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-</head>
-<body>${pages}
-<script>
-(function(){
-  function renderQrs(){
-    try{
-      var QR = window.QRCode || (window.opener && window.opener.QRCode);
-      if(!QR) return;
-      document.querySelectorAll('.att-qr-box[data-qr]').forEach(function(el){
-        if(el.dataset.done === '1') return;
-        el.innerHTML = '';
-        new QR(el, {
-          text: el.getAttribute('data-qr') || '',
-          width: 76,
-          height: 76
-        });
-        el.dataset.done = '1';
-      });
-    }catch(err){ console.warn('QR render', err); }
-  }
-  setTimeout(renderQrs, 200);
-  setTimeout(renderQrs, 600);
-  setTimeout(renderQrs, 1000);
-  setTimeout(function(){ try{ window.print(); }catch(e){} }, 2000);
-})();
-<\/script>
-</body></html>`;
-
-    const win = window.open('', '_blank');
-    if(!win){
-      (typeof toast === 'function') ? toast('Popup bloccato dal browser','⚠️') : alert('Popup bloccato dal browser');
-      return;
-    }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-  }catch(e){
-    console.error('Errore generaAttestati:', e);
-    (typeof toast === 'function') ? toast('Errore nella generazione attestati','❌') : alert('Errore nella generazione attestati');
-  }
-}
-
 
 </script>
 
