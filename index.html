@@ -1286,8 +1286,8 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="mb">
       <input type="hidden" id="lav-id">
       <div class="fr2">
-        <div class="fg"><label class="fl">Nome *</label><input class="fc" id="lav-nome"></div>
-        <div class="fg"><label class="fl">Cognome *</label><input class="fc" id="lav-cognome"></div>
+        <div class="fg"><label class="fl">Cognome *</label><input class="fc" id="lav-cognome" placeholder="Es. ROSSI" style="text-transform:uppercase"></div>
+        <div class="fg"><label class="fl">Nome *</label><input class="fc" id="lav-nome" placeholder="Es. MARIO" style="text-transform:uppercase"></div>
       </div>
       <div class="fr2">
         <div class="fg"><label class="fl">Codice fiscale</label><input class="fc" id="lav-cf" style="text-transform:uppercase"></div>
@@ -1845,7 +1845,7 @@ function goTo(p){
 function renderPage(p){
   ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,offerte:renderOfferte,incarichi:renderIncarichi,fascicolo:renderFascicolo,contratti:renderContratti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
 }
-function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore') popLavAz(); if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
+function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore'){ resetLavModal(); popLavAz(); } if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
 document.addEventListener('click',e=>{ if(e.target.classList.contains('overlay')&&e.target.id&&e.target.id!=='m-sessione') closeM(e.target.id) });
 
@@ -2067,7 +2067,7 @@ function renderAziende(){
 function salvaAzienda(){
   const id=v('az-id')||uid(), nome=v('az-nome'); if(!nome){alert('Ragione sociale obbligatoria');return}
   const az=db.aziende().filter(a=>a.id!==id);
-  az.push({id,nome:normalizzaNome(v('az-nome')),piva:v('az-piva'),referente:normalizzaNome(v('az-referente')),tel:v('az-tel'),email:v('az-email'),indirizzo:toTitleCase(v('az-indirizzo')),comune:toTitleCase(v('az-comune')),note:v('az-note')});
+  az.push({id,nome:toTitleCase((v('az-nome')||'').trim()),piva:v('az-piva'),referente:normalizzaNome(v('az-referente')),tel:v('az-tel'),email:v('az-email'),indirizzo:toTitleCase(v('az-indirizzo')),comune:toTitleCase(v('az-comune')),note:v('az-note')});
   db.save.aziende(az); closeM('m-azienda'); clr('az-id','az-nome','az-piva','az-referente','az-tel','az-email','az-indirizzo','az-comune','az-note'); document.getElementById('m-azienda-t').textContent='Nuova azienda';
   renderAziende(); updateFilters(); renderDashboard(); toast('Azienda salvata');
 }
@@ -2240,8 +2240,64 @@ function renderLavoratori(){
     </tr>`;
   }).join('')
 }
-function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); const _nome=toUpperNome(v('lav-nome')),_cog=toUpperNome(v('lav-cognome')),_luogo=normalizzaNome(v('lav-luogo')),_mans=normalizzaNome(v('lav-mansione')); lav.push({id,nome:_nome,cognome:_cog,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:_luogo,mansione:_mans,ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato'); if(window._afterLavSave){ window._afterLavSave(); window._afterLavSave=null; } }
-function editLav(id){ const l=db.lavoratori().find(x=>x.id===id); if(!l) return; popLavAz(); sv({'lav':{id:l.id,nome:l.nome,cognome:l.cognome,cf:l.cf||'',nascita:l.nascita||'',luogo:l.luogoNascita||'',mansione:l.mansione||'',ateco:l.ateco||'',email:l.email||''}}); document.getElementById('lav-az').value=l.aziendaId; document.getElementById('m-lav-t').textContent='Modifica lavoratore'; openM('m-lavoratore') }
+function salvaLavoratore(){
+  const id = v('lav-id') || uid();
+  const cognome = v('lav-cognome');
+  const nome    = v('lav-nome');
+  const azId    = v('lav-az');
+  if(!cognome){ toast('Cognome obbligatorio','⚠️'); return; }
+  if(!nome){    toast('Nome obbligatorio','⚠️'); return; }
+  if(!azId){    toast('Seleziona l\'azienda','⚠️'); return; }
+  const lav = db.lavoratori().filter(l=>l.id!==id);
+  lav.push({
+    id,
+    cognome: toUpperNome(cognome),
+    nome:    toUpperNome(nome),
+    aziendaId: azId,
+    cf:          v('lav-cf').toUpperCase().replace(/\s/g,''),
+    nascita:     v('lav-nascita'),
+    luogoNascita:normalizzaNome(v('lav-luogo')),
+    mansione:    normalizzaNome(v('lav-mansione')),
+    ateco:       v('lav-ateco'),
+    email:       v('lav-email')
+  });
+  db.save.lavoratori(lav);
+  resetLavModal();
+  closeM('m-lavoratore');
+  renderLavoratori();
+  updateFilters();
+  toast('Lavoratore salvato ✓');
+  // Sync Supabase in background
+  supaUpsert('lavoratori', db.lavoratori()).catch(e=>console.warn('Sync lav:',e));
+  if(window._afterLavSave){ window._afterLavSave(); window._afterLavSave=null; }
+}
+
+function resetLavModal(){
+  ['lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.value='';
+  });
+  const azEl=document.getElementById('lav-az'); if(azEl) azEl.value='';
+  const titEl=document.getElementById('m-lav-t'); if(titEl) titEl.textContent='Nuovo lavoratore';
+}
+function editLav(id){
+  const l=db.lavoratori().find(x=>x.id===id); if(!l) return;
+  resetLavModal();
+  popLavAz();
+  // Imposta i campi esplicitamente (non usare sv() per evitare confusioni)
+  document.getElementById('lav-id').value       = l.id;
+  document.getElementById('lav-cognome').value  = l.cognome||'';
+  document.getElementById('lav-nome').value     = l.nome||'';
+  document.getElementById('lav-cf').value       = l.cf||'';
+  document.getElementById('lav-nascita').value  = l.nascita||'';
+  document.getElementById('lav-luogo').value    = l.luogoNascita||'';
+  document.getElementById('lav-mansione').value = l.mansione||'';
+  document.getElementById('lav-ateco').value    = l.ateco||'';
+  document.getElementById('lav-email').value    = l.email||'';
+  // Azienda — imposta dopo popLavAz che ricostruisce il select
+  setTimeout(()=>{ const s=document.getElementById('lav-az'); if(s) s.value=l.aziendaId||''; }, 30);
+  document.getElementById('m-lav-t').textContent='Modifica lavoratore';
+  openM('m-lavoratore');
+}
 function delLav(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('lavoratori',_id); db.save.lavoratori(db.lavoratori().filter(l=>l.id!==id)); renderLavoratori(); toast('Eliminato','🗑') }) }
 function delAllLav(){ const lav=db.lavoratori(); if(!lav.length){toast('Nessun lavoratore da eliminare','ℹ️');return} confDel(`Eliminare tutti i ${lav.length} lavoratori?`, async ()=>{ await Promise.all(lav.map(l=>supaDelete('lavoratori',l.id))); db.save.lavoratori([]); renderLavoratori(); toast(`${lav.length} lavoratori eliminati`,'🗑') }) }
 function updateSelLav(){ const sel=document.querySelectorAll('.chk-lav:checked'); const btn=document.getElementById('btn-del-sel-lav'); if(btn) btn.style.display=sel.length?'':'none'; const all=document.getElementById('chk-lav-all'); if(all) all.indeterminate=sel.length>0&&sel.length<document.querySelectorAll('.chk-lav').length; }
@@ -2560,7 +2616,7 @@ function popSessSelects(){
   document.getElementById('ss-az').innerHTML='<option value="">Seleziona azienda...</option>'+azOrd.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
   // Docenti: ordine alfabetico per cognome
   const docOrd=db.docenti().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'));
-  document.getElementById('ss-doc').innerHTML='<option value="">Seleziona docente...</option>'+docOrd.map(d=>`<option value="${d.id}">${d.cognome} ${d.nome}</option>`).join('');
+  document.getElementById('ss-doc').innerHTML='<option value="">Seleziona docente...</option>'+docOrd.map(d=>`<option value="${d.id}">${(d.cognome||'').trim()} ${(d.nome||'').trim()}</option>`).join('');
   selPart=[]; renderArgS([]); const _cp=document.getElementById('chip-part'); if(_cp) _cp.innerHTML=''; document.getElementById('cnt-part').textContent='0 selezionati';
   // Città attestato default Valbrenta (VI)
   const cittaEl=document.getElementById('ss-citta');
@@ -2702,7 +2758,10 @@ function togglePart(id){ selPart=selPart.includes(id)?selPart.filter(p=>p!==id):
 
 function salvaSessione(){ const id=v('ss-id')||uid(),corsoId=v('ss-corso'),azId=v('ss-az'); const giornate=getGiornate(); if(!corsoId){ toast('Seleziona il corso','⚠️'); return; }
   if(!azId){ toast('Seleziona l\'azienda','⚠️'); return; }
-  if(!giornate.length){ toast('Aggiungi almeno una giornata con la data','⚠️'); return; } const data=giornate[0].data; const sess=db.sessioni().filter(s=>s.id!==id); const intTipo=v('ss-intestazione-tipo')||'framyx'; const intCustom=v('ss-intestazione-custom')||''; const cittaAtt=v('ss-citta')||''; const isFondi=document.getElementById('ss-fondimpresa')?.checked||false; sess.push({id,corsoId,aziendaId:azId,data,giornate,oraInizio:giornate[0].ini,oraFine:giornate[giornate.length-1].fine,sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note'),intestazioneTipo:intTipo,intestazioneCustom:intCustom,cittaAttestato:cittaAtt,fondimpresa:isFondi}); db.save.sessioni(sess); closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard(); toast('Sessione salvata') }
+  if(!giornate.length){ toast('Aggiungi almeno una giornata con la data','⚠️'); return; } const data=giornate[0].data; const sess=db.sessioni().filter(s=>s.id!==id); const intTipo=v('ss-intestazione-tipo')||'framyx'; const intCustom=v('ss-intestazione-custom')||''; const cittaAtt=v('ss-citta')||''; const isFondi=document.getElementById('ss-fondimpresa')?.checked||false; sess.push({id,corsoId,aziendaId:azId,data,giornate,oraInizio:giornate[0].ini,oraFine:giornate[giornate.length-1].fine,sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note'),intestazioneTipo:intTipo,intestazioneCustom:intCustom,cittaAttestato:cittaAtt,fondimpresa:isFondi}); db.save.sessioni(sess);
+  closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard();
+  toast('Sessione salvata ✓');
+  supaUpsert('sessioni', db.sessioni()).catch(e=>console.warn('Sync sess:',e)); }
 // ══ GIORNATE ══
 function renderGiornate(giornate){
   const el=document.getElementById('ss-giornate-list');
@@ -2777,14 +2836,12 @@ function editSess(id){
       selAz.value=s.aziendaId;
     }
 
-    // Select docente
+    // Select docente — ricostruisci sempre per sicurezza
     const selDoc=document.getElementById('ss-doc');
-    if(selDoc&&s.docenteId){
-      if(!selDoc.querySelector(`option[value="${s.docenteId}"]`)){
-        const docOrd=db.docenti().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'));
-        selDoc.innerHTML='<option value="">Seleziona docente...</option>'+docOrd.map(d=>`<option value="${d.id}">${d.cognome} ${d.nome}</option>`).join('');
-      }
-      selDoc.value=s.docenteId;
+    if(selDoc){
+      const docOrd2=db.docenti().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'));
+      selDoc.innerHTML='<option value="">Seleziona docente...</option>'+docOrd2.map(d=>`<option value="${d.id}">${(d.cognome||'').trim()} ${(d.nome||'').trim()}</option>`).join('');
+      if(s.docenteId) selDoc.value=s.docenteId;
     }
 
     // Fondimpresa
