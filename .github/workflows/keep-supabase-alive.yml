@@ -1,0 +1,5 @@
+framyx/
+├── index.html
+└── .github/
+    └── workflows/
+        └── keep-supabase-alive.yml  ← qui
