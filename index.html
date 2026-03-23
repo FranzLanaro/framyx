@@ -975,6 +975,17 @@ textarea.fc{min-height:68px;resize:vertical}
     <!-- ═══ IMPORTA DATI ═══ -->
     <div class="page" id="page-import">
       <div style="font-size:16px;font-weight:600;margin-bottom:16px">Importa dati</div>
+      <div class="card" style="border-top:3px solid #F5A623;margin-bottom:16px">
+        <div class="card-header"><span class="card-title">📦 Importa storico completo (JSON)</span></div>
+        <div style="padding:14px">
+          <p class="text-sm text-muted" style="margin-bottom:10px">Carica il file <strong>storico_framyx.json</strong> per importare tutto lo storico: aziende, lavoratori, corsi e sessioni con partecipanti. I dati esistenti vengono mantenuti — vengono aggiunti solo i nuovi.</p>
+          <label class="btn btn-primary btn-sm" style="cursor:pointer">
+            📦 Carica storico_framyx.json
+            <input type="file" accept=".json" style="display:none" onchange="importaStoricoJSON(this)">
+          </label>
+          <div id="import-storico-log" style="margin-top:10px;font-size:12px;max-height:200px;overflow-y:auto"></div>
+        </div>
+      </div>
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><span class="card-title">📥 Importa clienti da Excel/CSV</span></div>
@@ -1291,7 +1302,7 @@ textarea.fc{min-height:68px;resize:vertical}
       </div>
       <div class="fg"><label class="fl">Email</label><input class="fc" id="lav-email" type="email"></div>
     </div>
-    <div class="mf"><button class="btn" onclick="closeM('m-lavoratore')">Annulla</button><button class="btn btn-primary" onclick="salvaLavoratore()">Salva</button></div>
+    <div class="mf"><button class="btn" onclick="closeM('m-lavoratore')">Annulla</button><button class="btn btn-sm" style="background:#F5A623;color:white" onclick="fascicoloFormativoModal()">📋 Fascicolo</button><button class="btn btn-primary" onclick="salvaLavoratore()">Salva</button></div>
   </div>
 </div>
 
@@ -2141,6 +2152,14 @@ function fascicoloFormativo(lavId){
 
   stampaPDF(html, 'Fascicolo_'+l.cognome+'_'+l.nome+'.pdf', true);
   toast('Fascicolo formativo generato','📋');
+}
+
+
+function fascicoloFormativoModal(){
+  const id = document.getElementById('lav-id')?.value;
+  if(!id){ toast('Salva prima il lavoratore','⚠️'); return; }
+  closeM('m-lavoratore');
+  fascicoloFormativo(id);
 }
 
 function renderLavoratori(){
@@ -6380,6 +6399,146 @@ function generaReportRiepilogo(aziende){
 
   stampaPDF(html, 'Report_tutti_clienti_'+oggi+'.pdf', true);
   toast('Report riepilogativo generato ('+aziende.length+' aziende)','📊');
+}
+
+
+async function importaStoricoJSON(input){
+  const f=input.files[0]; if(!f) return;
+  const log=document.getElementById('import-storico-log');
+  log.innerHTML='⏳ Lettura file...';
+  
+  const text=await f.text();
+  let data;
+  try{ data=JSON.parse(text); }
+  catch(e){ log.innerHTML='❌ File JSON non valido: '+e.message; return; }
+  
+  if(!data.aziende||!data.lavoratori||!data.corsi||!data.sessioni){
+    log.innerHTML='❌ Struttura file non valida — assicurati di usare storico_framyx.json'; return;
+  }
+  
+  log.innerHTML='⏳ Importazione in corso...';
+  let cntAz=0,cntLav=0,cntCor=0,cntSess=0,cntPart=0;
+  
+  // AZIENDE — dedup per nome
+  const azExist=db.aziende();
+  const azNew=[...azExist];
+  data.aziende.forEach(a=>{
+    if(!azNew.find(x=>x.nome.toLowerCase()===a.nome.toLowerCase())){
+      azNew.push({id:uid(),nome:a.nome,indirizzo:a.indirizzo||'',comune:a.comune||'',
+        piva:'',referente:'',tel:'',email:'',note:''});
+      cntAz++;
+    }
+  });
+  db.save.aziende(azNew);
+  log.innerHTML=`⏳ ${cntAz} aziende aggiunte — elaboro lavoratori...`;
+  await new Promise(r=>setTimeout(r,50));
+  
+  // LAVORATORI — dedup per CF, fallback cognome+nome
+  const lavExist=db.lavoratori();
+  const lavNew=[...lavExist];
+  data.lavoratori.forEach(l=>{
+    const azObj=db.aziende().find(a=>a.nome.toLowerCase()===l.azNome.toLowerCase());
+    const cfOk=l.cf&&l.cf.length===16;
+    const exists=cfOk
+      ? lavNew.find(x=>x.cf&&x.cf.toUpperCase()===l.cf.toUpperCase())
+      : lavNew.find(x=>x.cognome.toLowerCase()===l.cognome.toLowerCase()&&x.nome.toLowerCase()===l.nome.toLowerCase()&&x.aziendaId===azObj?.id);
+    if(!exists){
+      lavNew.push({id:uid(),cognome:l.cognome,nome:l.nome,cf:l.cf||'',
+        nascita:l.nascita||'',luogoNascita:l.luogoNascita||'',
+        mansione:l.mansione||'',ateco:l.ateco||'',email:'',
+        aziendaId:azObj?.id||''});
+      cntLav++;
+    }
+  });
+  db.save.lavoratori(lavNew);
+  log.innerHTML=`⏳ ${cntLav} lavoratori aggiunti — elaboro corsi...`;
+  await new Promise(r=>setTimeout(r,50));
+  
+  // CORSI — dedup per titolo
+  const corsiExist=db.corsi();
+  const corsiNew=[...corsiExist];
+  data.corsi.forEach(c=>{
+    if(!corsiNew.find(x=>x.titolo.toLowerCase().includes(c.titolo.toLowerCase().slice(0,30))||
+                          c.titolo.toLowerCase().includes(x.titolo.toLowerCase().slice(0,30)))){
+      corsiNew.push({id:uid(),titolo:c.titolo,norma:'D.Lgs. 81/2008 - Accordo Stato-Regioni',
+        durata:c.durata||0,validita:c.validita||5,tipo:'Sicurezza',
+        sezioni:[],domande:[],argomenti:c.argomenti||''});
+      cntCor++;
+    }
+  });
+  db.save.corsi(corsiNew);
+  log.innerHTML=`⏳ ${cntCor} corsi aggiunti — elaboro sessioni (${data.sessioni.length})...`;
+  await new Promise(r=>setTimeout(r,50));
+  
+  // SESSIONI — dedup per azNome+corsoTitolo+data
+  const sessExist=db.sessioni();
+  const sessNew=[...sessExist];
+  
+  for(let i=0;i<data.sessioni.length;i++){
+    const s=data.sessioni[i];
+    if(i%50===0){
+      log.innerHTML=`⏳ Sessioni: ${i}/${data.sessioni.length}...`;
+      await new Promise(r=>setTimeout(r,5));
+    }
+    
+    const az=db.aziende().find(a=>a.nome.toLowerCase()===s.azNome.toLowerCase());
+    const corso=db.corsi().find(c=>
+      c.titolo.toLowerCase().includes(s.corsoTitolo.toLowerCase().slice(0,25))||
+      s.corsoTitolo.toLowerCase().includes(c.titolo.toLowerCase().slice(0,25)));
+    
+    // Cerca sessione esistente
+    const exists=sessNew.find(x=>
+      x.aziendaId===az?.id && x.corsoId===corso?.id && x.data===s.data);
+    
+    let sess=exists;
+    if(!exists){
+      sess={id:uid(),corsoId:corso?.id||'',aziendaId:az?.id||'',
+        data:s.data,giornate:[{data:s.data,ini:'',fine:''}],
+        oraInizio:'',oraFine:'',sede:az?(az.indirizzo||az.comune||''):'',
+        docenteId:'',modalita:'In presenza',argomenti:[],
+        partecipanti:[],stato:'completata',
+        note:'Importato da archivio storico',
+        cittaAttestato:'',fondimpresa:false};
+      // Cerca docente per nome
+      const docName=(s.docente||'').trim();
+      if(docName){
+        const docObj=db.docenti().find(d=>
+          docName.toLowerCase().includes(d.cognome.toLowerCase())||
+          d.cognome.toLowerCase().includes(docName.split(' ')[0].toLowerCase()));
+        if(docObj) sess.docenteId=docObj.id;
+      }
+      sessNew.push(sess);
+      cntSess++;
+    }
+    
+    // Aggiungi partecipanti
+    s.partecipanti.forEach(p=>{
+      const cfOk=p.cf&&p.cf.length===16;
+      const lavObj=cfOk
+        ? db.lavoratori().find(l=>l.cf&&l.cf.toUpperCase()===p.cf.toUpperCase())
+        : db.lavoratori().find(l=>l.cognome.toLowerCase()===p.cognome.toLowerCase()&&l.nome.toLowerCase()===p.nome.toLowerCase());
+      if(lavObj&&!sess.partecipanti.includes(lavObj.id)){
+        sess.partecipanti.push(lavObj.id);
+        cntPart++;
+      }
+    });
+  }
+  db.save.sessioni(sessNew);
+  
+  // Sync to Supabase in background
+  log.innerHTML=`✅ Import completato!<br>
+    +${cntAz} aziende · +${cntLav} lavoratori · +${cntCor} corsi · +${cntSess} sessioni · +${cntPart} partecipanti collegati<br>
+    <em>Sincronizzazione Supabase in corso...</em>`;
+  
+  try{
+    await syncToSupabase();
+    log.innerHTML+='<br>☁️ Sincronizzato su Supabase!';
+  }catch(e){
+    log.innerHTML+='<br>⚠️ Sync Supabase: '+e.message+' (dati salvati in locale)';
+  }
+  
+  renderDashboard();
+  input.value='';
 }
 
 function renderImpostazioni(){
