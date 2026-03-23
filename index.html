@@ -540,6 +540,7 @@ textarea.fc{min-height:68px;resize:vertical}
             <button class="btn btn-sm" style="background:#7C3AED;color:white" onclick="generaLettIncarico()">✉️ Genera lettera incarico</button>
           </div></div>
       </div>
+      <div id="sess-diagnostica" style="margin-top:10px"></div>
       <div id="doc-preview" style="margin-top:18px"></div>
     </div>
 
@@ -1070,6 +1071,14 @@ textarea.fc{min-height:68px;resize:vertical}
     <!-- ═══ IMPOSTAZIONI ═══ -->
     <div class="page" id="page-impostazioni">
       <div style="font-size:16px;font-weight:600;margin-bottom:16px">Impostazioni</div>
+      <div class="card" style="border-top:3px solid #C0392B;margin-bottom:12px">
+        <div class="card-header"><span class="card-title">🔧 Strumenti riparazione</span></div>
+        <div style="padding:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:#C0392B;color:white" onclick="riparaDuplicati()">🔧 Rimuovi partecipanti duplicati</button>
+          <span class="text-xs text-muted" style="align-self:center">Rimuove i duplicati da tutte le sessioni (solo dati locali)</span>
+        </div>
+        <div id="ripara-log" style="padding:0 14px 10px;font-size:12px"></div>
+      </div>
       <div class="card mt-2" style="border-top:3px solid #1A56DB">
         <div class="card-header"><span class="card-title">📧 Configurazione Email</span></div>
         <div style="padding:18px">
@@ -1577,12 +1586,12 @@ const db = {
   sessioni:   () => cache.sessioni   || LS.g('sessioni'),
   offerte:    () => cache.offerte    || LS.g('offerte'),
   save: {
-    aziende:    async v => { cache.aziende=v;    LS.s('aziende',v);    await supaUpsert('aziende',v) },
-    lavoratori: async v => { cache.lavoratori=v; LS.s('lavoratori',v); await supaUpsert('lavoratori',v) },
-    docenti:    async v => { cache.docenti=v;    LS.s('docenti',v);    await supaUpsert('docenti',v) },
-    corsi:      async v => { cache.corsi=v;      LS.s('corsi',v);      await supaUpsert('corsi',v) },
-    sessioni:   async v => { cache.sessioni=v;   LS.s('sessioni',v);   await supaUpsert('sessioni',v) },
-    offerte:    async v => { cache.offerte=v;    LS.s('offerte',v);    await supaUpsert('offerte',v) },
+    aziende:    v => { cache.aziende=v;    LS.s('aziende',v);    supaUpsert('aziende',v).catch(e=>console.warn('sync aziende:',e)) },
+    lavoratori: v => { cache.lavoratori=v; LS.s('lavoratori',v); supaUpsert('lavoratori',v).catch(e=>console.warn('sync lav:',e)) },
+    docenti:    v => { cache.docenti=v;    LS.s('docenti',v);    supaUpsert('docenti',v).catch(e=>console.warn('sync doc:',e)) },
+    corsi:      v => { cache.corsi=v;      LS.s('corsi',v);      supaUpsert('corsi',v).catch(e=>console.warn('sync corsi:',e)) },
+    sessioni:   v => { cache.sessioni=v;   LS.s('sessioni',v);   supaUpsert('sessioni',v).catch(e=>console.warn('sync sess:',e)) },
+    offerte:    v => { cache.offerte=v;    LS.s('offerte',v);    supaUpsert('offerte',v).catch(e=>console.warn('sync off:',e)) },
   }
 };
 
@@ -2385,12 +2394,48 @@ function renderLavoratori(){
 }
 function salvaLavoratore(){
   const id = v('lav-id') || uid();
+  const isNuovo = !v('lav-id'); // true se è un nuovo inserimento
   const cognome = v('lav-cognome');
   const nome    = v('lav-nome');
   const azId    = v('lav-az');
+  const cf      = v('lav-cf').toUpperCase().replace(/\s/g,'');
   if(!cognome){ toast('Cognome obbligatorio','⚠️'); return; }
   if(!nome){    toast('Nome obbligatorio','⚠️'); return; }
   if(!azId){    toast('Seleziona l\'azienda','⚠️'); return; }
+
+  // ── Controllo duplicati (solo su nuovo inserimento) ──
+  if(isNuovo){
+    const tutti = db.lavoratori();
+    const az = db.aziende().find(a=>a.id===azId);
+    const azNome = az?.nome||'';
+
+    // Duplicato per CF
+    if(cf.length===16){
+      const dup = tutti.find(l=>l.cf&&l.cf.toUpperCase()===cf);
+      if(dup){
+        const dupAz = db.aziende().find(a=>a.id===dup.aziendaId);
+        if(!confirm('⚠️ ATTENZIONE — Lavoratore già esistente!\n\n'+
+          'CF '+cf+' già presente come:\n'+
+          dup.cognome+' '+dup.nome+(dupAz?' — '+dupAz.nome:'')+
+          '\n\nSei sicuro di voler aggiungere un secondo record con lo stesso codice fiscale?\n(Clicca OK solo se è un errore nel CF esistente)'))
+          return;
+      }
+    }
+
+    // Duplicato per nome+cognome+azienda
+    const dupNome = tutti.find(l=>
+      l.cognome.toUpperCase()===cognome.toUpperCase()&&
+      l.nome.toUpperCase()===nome.toUpperCase()&&
+      l.aziendaId===azId
+    );
+    if(dupNome){
+      if(!confirm('⚠️ ATTENZIONE — Lavoratore già esistente!\n\n'+
+        dupNome.cognome+' '+dupNome.nome+' è già presente in '+azNome+
+        '\n\nSei sicuro di voler aggiungere un duplicato?'))
+        return;
+    }
+  }
+
   const lav = db.lavoratori().filter(l=>l.id!==id);
   lav.push({
     id,
@@ -3046,10 +3091,29 @@ function onDocSessChange(){
   const sid=v('fd-sess');
   document.getElementById('doc-panel').style.display=sid?'block':'none'; 
   document.getElementById('doc-preview').innerHTML='';
+  const diagEl=document.getElementById('sess-diagnostica');
+  if(diagEl) diagEl.innerHTML='';
   if(!sid) return;
   const s=db.sessioni().find(x=>x.id===sid);
   if(!s) return;
   const nPart=(s.partecipanti||[]).length;
+  const partUniq=[...new Set(s.partecipanti||[])];
+  const nUniq=partUniq.length;
+  const duplicati=nPart-nUniq;
+  const trovati=partUniq.map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean).length;
+  const nonTrovati=nUniq-trovati;
+  if(diagEl){
+    const color = (duplicati>0||nonTrovati>0) ? '#FFF3E0' : '#EAF5EE';
+    const border = (duplicati>0||nonTrovati>0) ? '#FFB74D' : '#A8D5B5';
+    diagEl.innerHTML=`<div style="background:${color};border:1px solid ${border};border-radius:6px;padding:8px 14px;font-size:12px;margin-bottom:8px">
+      👥 <strong>Partecipanti nella sessione: ${nPart}</strong>
+      ${duplicati>0?` &nbsp;·&nbsp; <span style="color:#C0392B">⚠️ ${duplicati} duplicati</span>`:''}
+      &nbsp;·&nbsp; Unici: ${nUniq}
+      &nbsp;·&nbsp; Trovati in anagrafica: <strong style="color:${nonTrovati>0?'#C0392B':'#2D7D46'}">${trovati}</strong>
+      ${nonTrovati>0?` &nbsp;·&nbsp; <span style="color:#C0392B">⚠️ ${nonTrovati} non trovati in anagrafica</span>`:''}
+      ${duplicati>0?` &nbsp;·&nbsp; <button class="btn btn-xs" style="background:#C0392B;color:white" onclick="riparaSessione('${sid}')">🔧 Ripara</button>`:''}
+    </div>`;
+  }
   const noCors=!db.corsi().find(c=>c.id===s.corsoId);
   let warn='';
   if(nPart===0) warn+='<div style="background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12px">⚠️ <strong>Nessun partecipante</strong> — vai in Sessioni, apri questa sessione e aggiungi i lavoratori prima di generare gli attestati.</div>';
@@ -7085,6 +7149,48 @@ async function importaStoricoJSON(input){
   input.value='';
 }
 
+
+
+function riparaSessione(sid){
+  const sess=db.sessioni();
+  const idx=sess.findIndex(s=>s.id===sid);
+  if(idx<0) return;
+  const s=sess[idx];
+  const uniq=[...new Set(s.partecipanti||[])];
+  const rimossi=s.partecipanti.length-uniq.length;
+  sess[idx]={...s, partecipanti:uniq};
+  cache.sessioni=sess;
+  LS.s('sessioni',sess);
+  supaUpsert('sessioni',sess).catch(e=>console.warn(e));
+  toast('Rimossi '+rimossi+' duplicati da questa sessione ✓');
+  onDocSessChange();
+}
+
+function riparaDuplicati(){
+  const sess = db.sessioni();
+  let changed = 0, totRimossi = 0;
+  const cleaned = sess.map(s=>{
+    if(!s.partecipanti||!s.partecipanti.length) return s;
+    const uniq = [...new Set(s.partecipanti)];
+    const rimossi = s.partecipanti.length - uniq.length;
+    if(rimossi > 0){ changed++; totRimossi+=rimossi; return {...s, partecipanti:uniq}; }
+    return s;
+  });
+  // Salva SOLO in locale, non su Supabase
+  cache.sessioni = cleaned;
+  LS.s('sessioni', cleaned);
+  const log = document.getElementById('ripara-log');
+  if(log){
+    if(changed > 0){
+      log.innerHTML = '<span style="color:var(--green)">✅ Riparate '+changed+' sessioni — rimossi '+totRimossi+' duplicati. Clicca Sincronizza ora per aggiornare Supabase.</span>';
+    } else {
+      log.innerHTML = '<span style="color:var(--text2)">✓ Nessun duplicato trovato nelle '+sess.length+' sessioni.</span>';
+    }
+  }
+  toast(changed>0?'Rimossi '+totRimossi+' duplicati da '+changed+' sessioni':'Nessun duplicato trovato');
+  renderSessioni();
+}
+
 function renderImpostazioni(){
   renderImpostazioniEmail();
   const cfg=getAttConfig();
@@ -7501,21 +7607,7 @@ async function init() {
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
   showSyncStatus('loading');
   const loaded = await loadFromSupabase();
-  // Pulisci partecipanti duplicati in tutte le sessioni esistenti
-  setTimeout(()=>{
-    const sess = db.sessioni();
-    let changed = 0;
-    const cleaned = sess.map(s=>{
-      if(!s.partecipanti) return s;
-      const uniq = [...new Set(s.partecipanti)];
-      if(uniq.length !== s.partecipanti.length){ changed++; return {...s, partecipanti:uniq}; }
-      return s;
-    });
-    if(changed>0){
-      db.save.sessioni(cleaned);
-      console.log('Cleaned duplicates in '+changed+' sessions');
-    }
-  }, 2000);
+
   if(!loaded || db.aziende().length === 0) loadDemo();
   updateFilters();
   renderDashboard();
