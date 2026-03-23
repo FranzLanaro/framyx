@@ -253,28 +253,28 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard"><span class="ni">◉</span>Dashboard<span class="nbadge" id="badge-scad" style="display:none">0</span></div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Anagrafiche</div>
+    <div class="nav-label" style="color:#FDC400">Anagrafiche</div>
     <div class="nav-item" onclick="goTo('aziende')" id="nav-aziende"><span class="ni">🏢</span>Aziende</div>
     <div class="nav-item" onclick="goTo('lavoratori')" id="nav-lavoratori"><span class="ni">👷</span>Lavoratori</div>
     <div class="nav-item" onclick="goTo('docenti')" id="nav-docenti"><span class="ni">🎓</span>Docenti</div>
     <div class="nav-item" onclick="goTo('corsi')" id="nav-corsi"><span class="ni">📚</span>Corsi</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Formazione</div>
+    <div class="nav-label" style="color:#FDC400">Formazione</div>
     <div class="nav-item" onclick="goTo('sessioni')" id="nav-sessioni"><span class="ni">📅</span>Sessioni</div>
     <div class="nav-item" onclick="goTo('documenti')" id="nav-documenti"><span class="ni">📄</span>Documenti</div>
     <div class="nav-item" onclick="goTo('storico')" id="nav-storico"><span class="ni">🗂</span>Storico corsi</div>
     <div class="nav-item" onclick="goTo('scadenze')" id="nav-scadenze"><span class="ni">⏰</span>Scadenze</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Commerciale</div>
+    <div class="nav-label" style="color:#FDC400">Commerciale</div>
     <div class="nav-item" onclick="goTo('offerte')" id="nav-offerte"><span class="ni">📋</span>Offerte servizi<span id="badge-offerte" class="badge bb" style="display:none;margin-left:auto;font-size:10px"></span></div>
     <div class="nav-item" onclick="goTo('preventivi')" id="nav-preventivi"><span class="ni">💼</span>Offerte formazione</div>
     <div class="nav-item" onclick="goTo('fascicolo')" id="nav-fascicolo"><span class="ni">🏢</span>Fascicolo aziende</div>
     <div class="nav-item" onclick="goTo('contratti')" id="nav-contratti"><span class="ni">📁</span>Incarichi attivi</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Collaboratori</div>
+    <div class="nav-label" style="color:#FDC400">Collaboratori</div>
     <div class="nav-item" onclick="goTo('incarichi')" id="nav-incarichi"><span class="ni">✉️</span>Lettere incarico</div>
     <div class="nav-item" onclick="goTo('fondimpresa')" id="nav-fondimpresa"><span class="ni">🏛</span>Fondimpresa</div>
   </div>
@@ -514,7 +514,7 @@ textarea.fc{min-height:68px;resize:vertical}
           <div class="card" style="border-top:3px solid var(--blue)"><div class="card-header"><span class="card-title">📝 Test verifica</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Questionario dal corso — uno per partecipante.</p><button class="btn btn-blue btn-sm" onclick="generaTest()">Genera test</button></div></div>
           <div class="card" style="border-top:3px solid #F5A623"><div class="card-header"><span class="card-title">⭐ Questionario gradimento</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Modulo di valutazione del corso — uno per partecipante.</p><button class="btn btn-sm" style="background:#F5A623;color:white" onclick="generaGradimento()">Genera questionario</button></div></div>
         </div>
-        <div class="card mt-2" style="border-top:3px solid var(--orange)"><div class="card-header"><span class="card-title">📊 Verbale sessione</span></div><div style="padding:14px"><p class="text-sm text-muted" style="margin-bottom:10px">Verbale con argomenti, presenti e nota allegato firme.</p><button class="btn btn-orange btn-sm" onclick="generaVerbale()">Genera verbale</button></div></div>
+
         <div class="card mt-2" style="border-top:3px solid #7C3AED"><div class="card-header"><span class="card-title">✉️ Lettere di incarico docente</span></div><div style="padding:14px">
             <p class="text-sm text-muted" style="margin-bottom:10px">Genera lettere formali di incarico per formazione o altre attività.</p>
             <div class="fr2" style="margin-bottom:8px">
@@ -2905,11 +2905,24 @@ ${argHTML(s.argomenti||[])}</div>
 <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px">
 <div style="background:#484F54;color:white;font-weight:700;font-size:11px;text-transform:uppercase;padding:6px 14px">Firme di chiusura sessione</div>
 <table style="width:100%;border-collapse:collapse">
-<tr>${['Docente / Formatore','Per la Direzione / Referente','',''].map(l=>`<td style="padding:5px 14px;border:1px solid #ddd;font-size:11px;font-weight:700;color:#6B7280">${l}</td>`).join('')}</tr>
-<tr>${['Nome e Cognome','Nome e Cognome','Nome e Cognome','Nome e Cognome'].map(l=>`<td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${l}</td>`).join('')}</tr>
-<tr><td style="padding:7px 14px;border:1px solid #ddd;font-weight:700;height:44px">${doc.nome?doc.nome+' '+doc.cognome:''}</td>${[1,2,3].map(()=>`<td style="border:1px solid #ddd;height:44px"></td>`).join('')}</tr>
-<tr>${['Firma','Firma','Firma','Firma'].map(l=>`<td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${l}</td>`).join('')}</tr>
-<tr>${[1,2,3,4].map(()=>`<td style="border:1px solid #ddd;height:54px"></td>`).join('')}</tr>
+<tr>
+  <td style="padding:5px 14px;border:1px solid #ddd;font-size:11px;font-weight:700;color:#6B7280;width:50%">Docente / Formatore</td>
+  <td style="padding:5px 14px;border:1px solid #ddd;font-size:11px;font-weight:700;color:#6B7280;width:50%">Per la Direzione Aziendale — ${az.referente||az.nome||'Referente'}</td>
+</tr>
+<tr>
+  <td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
+  <td style="padding:4px 14px;border:1px solid #ddd;font-size:11px;color:#888">${az.referente||''}</td>
+</tr>
+<tr>
+  <td style="border:1px solid #ddd;height:64px;padding:4px 14px;vertical-align:bottom">
+    ${doc.firma?`<img src="${doc.firma}" style="max-height:54px;max-width:180px;display:block">`:``}
+  </td>
+  <td style="border:1px solid #ddd;height:64px"></td>
+</tr>
+<tr>
+  <td style="padding:4px 14px;border:1px solid #ddd;font-size:10px;color:#aaa">Firma</td>
+  <td style="padding:4px 14px;border:1px solid #ddd;font-size:10px;color:#aaa">Firma</td>
+</tr>
 </table></div>
 <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:12px">
 <div style="background:#484F54;padding:5px 14px"><table style="width:100%"><tr>
@@ -3001,13 +3014,13 @@ function generaAttestati(){
         <div style="text-align:center;width:40%">
           <div style="font-size:9pt;color:#888;margin-bottom:2mm">Il Docente</div>
           <div style="font-weight:700;font-size:10pt;margin-bottom:2mm">${doc.cognome?doc.cognome+' '+doc.nome:''}</div>
-          ${doc.firma?`<img src="${doc.firma}" style="max-height:40px;max-width:140px;display:block;margin:0 auto 3mm">`:doc.cognome?`<div style="height:40px"></div>`:''}
+          ${doc.firma?`<img src="${doc.firma}" style="max-height:80px;max-width:200px;display:block;margin:0 auto 4mm">`:doc.cognome?`<div style="height:80px"></div>`:''}
           <div style="border-top:1px solid #CCC;padding-top:2mm;font-size:9pt;color:#888">${luogo}, ${fmt(s.data)}</div>
         </div>
         <div style="text-align:center;width:40%">
           <div style="font-size:9pt;color:#888;margin-bottom:2mm">Il Resp. Progetto Formativo</div>
           <div style="font-weight:700;font-size:10pt;margin-bottom:2mm">${doc.resp||''}</div>
-          ${doc.firmaResp?`<img src="${doc.firmaResp}" style="max-height:40px;max-width:140px;display:block;margin:0 auto 3mm">`:doc.firmaResp!==undefined?`<div style="height:40px"></div>`:'<div style="height:40px"></div>'}
+          ${doc.firmaResp?`<img src="${doc.firmaResp}" style="max-height:80px;max-width:200px;display:block;margin:0 auto 4mm">`:doc.firmaResp!==undefined?`<div style="height:80px"></div>`:'<div style="height:80px"></div>'}
           <div style="border-top:1px solid #CCC;padding-top:2mm;font-size:9pt;color:#888">Firma</div>
         </div>
       </div>
@@ -4990,14 +5003,14 @@ function stampaPDF(htmlContent, nomeFile, useFramyxStyle){
   .footer { position: fixed; bottom: 8mm; left: 18mm; right: 18mm; border-top: 0.5pt solid #D0D0D0; padding-top: 3pt; font-size: 7.5pt; color: #999; text-align: center; }
   @media print {
     body { margin: 0; }
-    @page { size: A4; margin: 0; }
+    @page { size: A4 portrait; margin: 0; }
     .no-print { display: none !important; }
     .footer { position: fixed; bottom: 8mm; }
   }
 ` : `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;background:white;padding:20px}@media print{body{padding:0}@page{size:A4;margin:15mm 15mm 15mm 15mm}}`;
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
-  doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+nomeFile+'</title><style>'+cssBase+'</style></head><body>'+htmlContent+'</body></html>');
+  doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+nomeFile+'</title><style>'+cssBase+'@page{size:A4 portrait;margin:0}</style></head><body>'+htmlContent+'</body></html>');
   doc.close();
   modal.style.display = 'flex';
 }
