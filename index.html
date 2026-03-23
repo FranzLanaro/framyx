@@ -1417,9 +1417,9 @@ textarea.fc{min-height:68px;resize:vertical}
         <!-- Barra ricerca + azioni -->
         <div id="part-toolbar" style="display:none;padding:8px 10px;background:white;border-bottom:1px solid var(--border);display:none;gap:6px;flex-wrap:wrap;align-items:center">
           <input id="part-cerca" class="fc" placeholder="🔍 Cerca nome..." oninput="filtraPartecipanti()" style="max-width:180px;padding:4px 8px;font-size:12px">
-          <button class="btn btn-xs btn-primary" onclick="selezionaTutti()">✅ Seleziona tutti</button>
-          <button class="btn btn-xs" onclick="deselezionaTutti()">☐ Deseleziona tutti</button>
-          <button class="btn btn-xs" onclick="aggiungiLavoratoreQuick()">+ Nuovo</button>
+          <button class="btn btn-xs btn-primary" onclick="event.stopPropagation();selezionaTutti()">✅ Seleziona tutti</button>
+          <button class="btn btn-xs" onclick="event.stopPropagation();deselezionaTutti()">☐ Deseleziona tutti</button>
+          <button class="btn btn-xs" onclick="event.stopPropagation();aggiungiLavoratoreQuick()">+ Nuovo</button>
         </div>
         <!-- Lista lavoratori -->
         <div id="part-lista" style="max-height:200px;overflow-y:auto;background:white"></div>
@@ -1621,6 +1621,19 @@ async function supaDelete(table, id) {
   try {
     await supa.from(table).delete().eq('id', id);
   } catch(e) { console.warn('Delete error:', e) }
+}
+
+async function syncToSupabase(){
+  try {
+    await supaUpsert('aziende', db.aziende());
+    await supaUpsert('lavoratori', db.lavoratori());
+    await supaUpsert('corsi', db.corsi());
+    await supaUpsert('sessioni', db.sessioni());
+    return true;
+  } catch(e) {
+    console.warn('syncToSupabase error:', e);
+    throw e;
+  }
 }
 
 function showSyncStatus(status) {
@@ -1834,7 +1847,7 @@ function renderPage(p){
 }
 function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore') popLavAz(); if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
-document.addEventListener('click',e=>{ if(e.target.classList.contains('overlay')) closeM(e.target.id) });
+document.addEventListener('click',e=>{ if(e.target.classList.contains('overlay')&&e.target.id&&e.target.id!=='m-sessione') closeM(e.target.id) });
 
 // ══ TOAST ══
 function toast(msg,icon='✓'){ const t=document.getElementById('toast'); document.getElementById('t-msg').textContent=msg; document.getElementById('t-icon').textContent=icon; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200) }
@@ -2625,18 +2638,21 @@ function renderChip(azId, sel){
   const q=(document.getElementById('part-cerca')?.value||'').toLowerCase();
   const lavFilt=q?lav.filter(l=>(l.cognome+' '+l.nome+' '+(l.cf||'')).toLowerCase().includes(q)):lav;
 
-  lista.innerHTML=lavFilt.length ? lavFilt.map(l=>`
-    <div onclick="togglePart('${l.id}')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--border);background:${sel.includes(l.id)?'#EBF5FF':'white'};transition:background .1s"
-      onmouseover="this.style.background=this.style.background==='rgb(235, 245, 255)'?'#EBF5FF':'#F5F5F5'"
-      onmouseout="this.style.background='${sel.includes(l.id)?'#EBF5FF':'white'}'">
-      <div style="width:18px;height:18px;border:2px solid ${sel.includes(l.id)?'#1A56DB':'#CCC'};border-radius:3px;background:${sel.includes(l.id)?'#1A56DB':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        ${sel.includes(l.id)?'<svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':''}
+  lista.innerHTML=lavFilt.length ? lavFilt.map(l=>{
+    const on=sel.includes(l.id);
+    return `<div onclick="event.stopPropagation();togglePart('${l.id}')"
+      style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--border);background:${on?'#EBF5FF':'white'}"
+      onmouseover="if(!${on}) this.style.background='#F5F5F5'"
+      onmouseout="this.style.background='${on?'#EBF5FF':'white'}'">
+      <div style="width:18px;height:18px;border:2px solid ${on?'#1A56DB':'#CCC'};border-radius:3px;background:${on?'#1A56DB':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0;flex-shrink:0">
+        ${on?'<svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':''}
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:${sel.includes(l.id)?'700':'500'};font-size:13px">${l.cognome} ${l.nome}</div>
+        <div style="font-weight:${on?'700':'500'};font-size:13px">${l.cognome} ${l.nome}</div>
         <div style="font-size:11px;color:var(--text2)">${l.mansione||'—'}${l.cf?' · '+l.cf:''}</div>
       </div>
-    </div>`).join('')
+    </div>`;
+  }).join('')
     : '<div style="padding:12px;text-align:center;color:var(--text2);font-size:12px">Nessun risultato</div>';
 
   // Contatore
@@ -2682,9 +2698,11 @@ function aggiungiLavoratoreQuick(){
     window._afterLavSave=()=>{ closeM('m-lavoratore'); openM('m-sessione'); renderChip(azId,selPart); };
   },50);
 }
-function togglePart(id){ selPart=selPart.includes(id)?selPart.filter(p=>p!==id):[...selPart,id]; renderChip(v('ss-az'),selPart) }
+function togglePart(id){ selPart=selPart.includes(id)?selPart.filter(p=>p!==id):[...selPart,id]; renderChip(v('ss-az'),selPart); }
 
-function salvaSessione(){ const id=v('ss-id')||uid(),corsoId=v('ss-corso'),azId=v('ss-az'); const giornate=getGiornate(); if(!corsoId||!azId||!giornate.length){alert('Corso, azienda e almeno una giornata obbligatori');return} const data=giornate[0].data; const sess=db.sessioni().filter(s=>s.id!==id); const intTipo=v('ss-intestazione-tipo')||'framyx'; const intCustom=v('ss-intestazione-custom')||''; const cittaAtt=v('ss-citta')||''; const isFondi=document.getElementById('ss-fondimpresa')?.checked||false; sess.push({id,corsoId,aziendaId:azId,data,giornate,oraInizio:giornate[0].ini,oraFine:giornate[giornate.length-1].fine,sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note'),intestazioneTipo:intTipo,intestazioneCustom:intCustom,cittaAttestato:cittaAtt,fondimpresa:isFondi}); db.save.sessioni(sess); closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard(); toast('Sessione salvata') }
+function salvaSessione(){ const id=v('ss-id')||uid(),corsoId=v('ss-corso'),azId=v('ss-az'); const giornate=getGiornate(); if(!corsoId){ toast('Seleziona il corso','⚠️'); return; }
+  if(!azId){ toast('Seleziona l\'azienda','⚠️'); return; }
+  if(!giornate.length){ toast('Aggiungi almeno una giornata con la data','⚠️'); return; } const data=giornate[0].data; const sess=db.sessioni().filter(s=>s.id!==id); const intTipo=v('ss-intestazione-tipo')||'framyx'; const intCustom=v('ss-intestazione-custom')||''; const cittaAtt=v('ss-citta')||''; const isFondi=document.getElementById('ss-fondimpresa')?.checked||false; sess.push({id,corsoId,aziendaId:azId,data,giornate,oraInizio:giornate[0].ini,oraFine:giornate[giornate.length-1].fine,sede:v('ss-sede'),docenteId:v('ss-doc'),modalita:v('ss-mod'),argomenti:getArgS(),partecipanti:[...selPart],stato:v('ss-stato'),note:v('ss-note'),intestazioneTipo:intTipo,intestazioneCustom:intCustom,cittaAttestato:cittaAtt,fondimpresa:isFondi}); db.save.sessioni(sess); closeM('m-sessione'); resetSess(); renderSessioni(); renderDashboard(); toast('Sessione salvata') }
 // ══ GIORNATE ══
 function renderGiornate(giornate){
   const el=document.getElementById('ss-giornate-list');
