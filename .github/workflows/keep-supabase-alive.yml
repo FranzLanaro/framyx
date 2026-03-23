@@ -1,5 +1,17 @@
-framyx/
-├── index.html
-└── .github/
-    └── workflows/
-        └── keep-supabase-alive.yml  ← qui
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 8 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s" \
+            "https://jmdoeqzsyrjhcvacqhub.supabase.co/rest/v1/aziende?select=id&limit=1"
+          echo "Supabase ping done"
