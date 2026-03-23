@@ -1613,6 +1613,13 @@ async function supaUpsert(table, records) {
 async function loadFromSupabase() {
   showSyncStatus('loading');
   try {
+    // Test connessione rapido prima di tutto
+    const testConn = await Promise.race([
+      supa.from('aziende').select('data').limit(1),
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000))
+    ]);
+    if(testConn.error) throw testConn.error;
+
     // Tabelle grandi: usa paginazione da 1000
     async function fetchAll(table){
       let all=[], from=0, step=1000;
@@ -1680,7 +1687,7 @@ function showSyncStatus(status) {
   } else {
     bar.style.background = 'var(--red-bg)';
     bar.style.borderColor = '#E8A49E';
-    msg.innerHTML = '❌ Errore connessione database — dati locali in uso';
+    msg.innerHTML = '⚠️ Database non raggiungibile — lavoro con dati locali &nbsp;<button onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard()})" style="background:var(--accent);color:#1A1916;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:600">↻ Riprova</button>';
   }
 }
 
@@ -7810,10 +7817,20 @@ window.renderPage = function(p) {
 async function init() {
   // Chiudi tutti i modal all'avvio
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
+  // Se ci sono già dati locali, mostrali subito mentre si carica Supabase
+  const haDatiLocali = (LS.g('aziende')||[]).length > 0;
+  if(haDatiLocali){
+    cache.aziende    = LS.g('aziende')||[];
+    cache.lavoratori = LS.g('lavoratori')||[];
+    cache.docenti    = LS.g('docenti')||[];
+    cache.corsi      = LS.g('corsi')||[];
+    cache.sessioni   = LS.g('sessioni')||[];
+    cache.offerte    = LS.g('offerte')||[];
+    updateFilters(); renderDashboard();
+  }
   showSyncStatus('loading');
   const loaded = await loadFromSupabase();
-
-  if(!loaded || db.aziende().length === 0) loadDemo();
+  if(!loaded && !haDatiLocali) loadDemo();
   updateFilters();
   renderDashboard();
   // Auto-backup silenzioso all'apertura
