@@ -233,6 +233,7 @@ textarea.fc{min-height:68px;resize:vertical}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -313,6 +314,8 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="page active" id="page-dashboard">
       <div class="grid-2">
         <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti <span id="dash-scad-count" style="font-size:11px;font-weight:400;color:var(--text2)"></span></span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte →</button></div><div id="dash-scad"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📁 Documenti aziendali in scadenza</span><button class="btn btn-sm" onclick="goTo('fascicolo')">Fascicolo →</button></div><div id="dash-docs-az"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📅 Appuntamenti settimana</span><button class="btn btn-sm" onclick="goTo('contratti')">Agenda →</button></div><div id="dash-appunt"></div></div>
         <div class="card"><div class="card-header"><span class="card-title">📋 Offerte / Preventivi da confermare</span><button class="btn btn-sm" onclick="goTo('offerte')">Vedi tutte</button></div><div id="dash-offerte"></div></div>
         <div class="card"><div class="card-header"><span class="card-title">📚 Formazione in corso</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
       </div>
@@ -3882,6 +3885,88 @@ function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.se
   if(dscEl){ dscEl.textContent=ul.length?(ulScad.length+' scaduti · '+ulUrg.length+' in scadenza'):''; }
   document.getElementById('dash-sess').innerHTML=sessAttive.length?sessAttive.map(s=>`<div class="srow" style="cursor:pointer" onclick="goTo('sessioni')"><div class="sdot o"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Nessuna formazione aperta</h3></div>`;
   renderCalendario();
+
+  // ── Scadenze documenti aziendali ──
+  const oggi = new Date().toISOString().slice(0,10);
+  const fascAll = JSON.parse(localStorage.getItem('frm_fascicoli_az')||'{}');
+  const scadDocs = [];
+  db.aziende().forEach(az=>{
+    const fasc = fascAll[az.id]||{};
+    DOCS_SICUREZZA.forEach(d=>{
+      const f = fasc[d.id]||{};
+      const stato = getStatoDoc(f,d,oggi);
+      if(stato==='scaduto'||stato==='scadenza'){
+        const dataRef = f.dataRev||f.dataRed;
+        const mesi = f.mesi!==undefined?f.mesi:d.mesi;
+        let scadData = null;
+        if(dataRef&&mesi>0){
+          const s=new Date(dataRef); s.setMonth(s.getMonth()+mesi);
+          scadData=s.toISOString().slice(0,10);
+        }
+        scadDocs.push({azNome:az.nome,azId:az.id,doc:d.label,stato,scadData,antisosp:d.antisosp});
+      }
+    });
+  });
+  scadDocs.sort((a,b)=>(a.scadData||'9999').localeCompare(b.scadData||'9999'));
+  const dashDocsEl=document.getElementById('dash-docs-az');
+  if(dashDocsEl){
+    if(!scadDocs.length){
+      dashDocsEl.innerHTML='<div class="empty" style="padding:16px"><div class="ei">✅</div><h3>Tutto in regola</h3></div>';
+    } else {
+      dashDocsEl.innerHTML=scadDocs.slice(0,8).map(x=>{
+        const isScad=x.stato==='scaduto';
+        const color=isScad?'#C0392B':'#D4620A';
+        return `<div class="srow" style="cursor:pointer;${isScad?'background:#fff5f5':''}" onclick="goTo('fascicolo')">
+          <div class="sdot" style="background:${color}"></div>
+          <div class="sinfo">
+            <div class="sname" style="font-size:12px;font-weight:600">${x.azNome}</div>
+            <div class="smeta" style="font-size:10px">${x.doc}${x.antisosp?' <span style="background:#C0392B;color:white;font-size:8px;padding:1px 3px;border-radius:2px">ANTISOSP.</span>':''}</div>
+          </div>
+          <div style="font-size:10px;font-weight:600;color:${color};flex-shrink:0">${isScad?'Scaduto':x.scadData?fmt(x.scadData):''}</div>
+        </div>`;
+      }).join('')+(scadDocs.length>8?`<div style="padding:6px 12px;font-size:11px;color:var(--text2)">+${scadDocs.length-8} altri...</div>`:'');
+    }
+  }
+
+  // ── Appuntamenti settimana ──
+  const lunedi = new Date(); lunedi.setDate(lunedi.getDate()-lunedi.getDay()+1);
+  const domenica = new Date(lunedi); domenica.setDate(lunedi.getDate()+6);
+  const lunStr = lunedi.toISOString().slice(0,10);
+  const domStr = domenica.toISOString().slice(0,10);
+  const appuntSett = [];
+  dbContratti().forEach(ct=>{
+    if(ct.stato!=='attivo') return;
+    const az=db.aziende().find(a=>a.id===ct.azId)||{};
+    const docC=db.docenti().find(d=>d.id===ct.docId)||{};
+    (ct.appuntamenti||[]).forEach(app=>{
+      if(app.data>=lunStr&&app.data<=domStr&&app.stato!=='annullato'){
+        appuntSett.push({data:app.data,ora:app.ora||'',azNome:az.nome||'—',tipo:ct.tipo||'',docNome:docC.cognome?docC.cognome+' '+docC.nome:'',stato:app.stato,ctId:ct.id});
+      }
+    });
+  });
+  appuntSett.sort((a,b)=>a.data.localeCompare(b.data)||(a.ora||'').localeCompare(b.ora||''));
+  const dashAppEl=document.getElementById('dash-appunt');
+  if(dashAppEl){
+    if(!appuntSett.length){
+      dashAppEl.innerHTML='<div class="empty" style="padding:16px"><div class="ei">📅</div><h3>Nessun appuntamento</h3><p style="font-size:11px">questa settimana</p></div>';
+    } else {
+      dashAppEl.innerHTML=appuntSett.map(a=>{
+        const isSvolto=a.stato==='svolto';
+        return `<div class="srow" style="cursor:pointer" onclick="goTo('contratti')">
+          <div class="sdot" style="background:${isSvolto?'#2D7D46':'#7C3AED'}"></div>
+          <div class="sinfo">
+            <div class="sname" style="font-size:12px;font-weight:600">${a.azNome}</div>
+            <div class="smeta" style="font-size:10px">${a.tipo}${a.docNome?' · '+a.docNome:''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;font-weight:600;color:#7C3AED">${fmt(a.data)}</div>
+            <div style="font-size:10px;color:var(--text2)">${a.ora}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
   // Dash offerte
   const dashOff=document.getElementById('dash-offerte');
   if(dashOff){
@@ -5335,9 +5420,20 @@ function stampaPDF(htmlContent, nomeFile, useFramyxStyle){
 ` : `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;background:white;padding:20px}@media print{body{padding:0}@page{size:A4;margin:15mm 15mm 15mm 15mm}}`;
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
-  doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+nomeFile+'</title><style>'+cssBase+'@page{size:A4 portrait;margin:0}</style></head><body>'+htmlContent+'</body></html>');
+  doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+nomeFile+'</title><style>'+cssBase+'@page{size:A4 portrait;margin:0}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body>'+htmlContent+'</body></html>');
   doc.close();
   modal.style.display = 'flex';
+  // Genera QR codes dopo il rendering
+  setTimeout(()=>{
+    try{
+      const iDoc=iframe.contentDocument||iframe.contentWindow.document;
+      iDoc.querySelectorAll('[id^="qr-"]').forEach(el=>{
+        if(el.children.length) return; // già generato
+        const testo=el.getAttribute('data-qr')||el.id;
+        new iDoc.defaultView.QRCode(el,{text:testo,width:60,height:60,correctLevel:iDoc.defaultView.QRCode.CorrectLevel.M});
+      });
+    }catch(e){ console.warn('QR:',e); }
+  },300);
 }
 
 function iframePrint(){
