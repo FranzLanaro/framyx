@@ -292,7 +292,7 @@ textarea.fc{min-height:68px;resize:vertical}
   <!-- SYNC STATUS BAR -->
   <div id="sync-bar" style="background:var(--accent-bg);border-bottom:1px solid var(--accent);padding:7px 22px;display:flex;align-items:center;gap:10px;font-size:12px">
     <span id="sync-msg">🔄 Connessione a Supabase...</span>
-    <button class="btn btn-xs" onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard()})" style="margin-left:auto">↻ Ricarica</button>
+    <button class="btn btn-xs" onclick="loadFromSupabase().then(ok=>{ renderPage(currentPage);updateFilters();renderDashboard(); if(ok) toast('Connesso ✅','☁️'); })" style="margin-left:auto">↻ Ricarica</button>
   </div>
 
   <!-- TOPBAR -->
@@ -1137,7 +1137,7 @@ textarea.fc{min-height:68px;resize:vertical}
             <div style="font-size:12px;color:var(--text2)">URL: <code style="font-size:11px">https://jmdoeqzsyrjhcvacqhub.supabase.co</code></div>
           </div>
           <div class="flex gap-2" style="flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard();toast('Dati ricaricati da Supabase','☁️')})">↻ Sincronizza ora</button>
+            <button class="btn btn-primary btn-sm" onclick="loadFromSupabase().then(ok=>{ renderPage(currentPage);updateFilters();renderDashboard(); if(ok) toast('Connesso ✅ — dati aggiornati','☁️'); else toast('Connessione fallita — dati locali in uso','⚠️'); })">↻ Sincronizza ora</button>
             <button class="btn btn-sm" onclick="exportJSON()">💾 Esporta backup JSON</button>
             <button class="btn btn-sm" onclick="creaTabellaSupabase()" id="btn-crea-tabella" style="background:#7C3AED;color:white">⚡ Crea tabella offerte</button>
           </div>
@@ -1676,10 +1676,17 @@ async function loadFromSupabase() {
     const fondo = (fd||[]).map(r=>r.data).filter(Boolean);
     localStorage.setItem('frm_fondo', JSON.stringify(fondo));
     showSyncStatus('ok');
+    // Nascondi la barra dopo 4 secondi se tutto ok
+    setTimeout(()=>{
+      const bar=document.getElementById('sync-bar');
+      if(bar) bar.style.display='none';
+    }, 4000);
     return true;
   } catch(e) {
     console.warn('Load error:', e);
     showSyncStatus('error');
+    const bar=document.getElementById('sync-bar');
+    if(bar) bar.style.display='block';
     return false;
   }
 }
@@ -1719,7 +1726,7 @@ function showSyncStatus(status) {
   } else {
     bar.style.background = 'var(--red-bg)';
     bar.style.borderColor = '#E8A49E';
-    msg.innerHTML = '⚠️ Database non raggiungibile — lavoro con dati locali &nbsp;<button onclick="loadFromSupabase().then(()=>{renderPage(currentPage);updateFilters();renderDashboard()})" style="background:var(--accent);color:#1A1916;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:600">↻ Riprova</button>';
+    msg.innerHTML = '⚠️ Database non raggiungibile — lavoro con dati locali &nbsp;<button onclick="syncAndRefresh()" style="background:var(--accent);color:#1A1916;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:600">↻ Riprova</button>';
   }
 }
 
@@ -7470,6 +7477,15 @@ function riparaDuplicati(){
 }
 
 
+async 
+function syncAndRefresh(){
+  loadFromSupabase().then(ok=>{
+    renderPage(currentPage); updateFilters(); renderDashboard();
+    if(ok) toast('Connesso ✅ — dati aggiornati','☁️');
+    else toast('Connessione non riuscita','⚠️');
+  });
+}
+
 async function testConnessioneDettagliata(){
   const el = document.getElementById('conn-test-result');
   if(el) el.innerHTML = '🔄 Test in corso...';
@@ -7939,6 +7955,8 @@ async function init() {
     cache.offerte    = LS.g('offerte')||[];
     updateFilters(); renderDashboard();
   }
+  const bar=document.getElementById('sync-bar');
+  if(bar) bar.style.display='block';
   showSyncStatus('loading');
   const loaded = await loadFromSupabase();
   if(!loaded && !haDatiLocali) loadDemo();
