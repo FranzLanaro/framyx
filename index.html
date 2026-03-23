@@ -1171,6 +1171,21 @@ textarea.fc{min-height:68px;resize:vertical}
               <input class="fc" id="att-sottotitolo" placeholder="es. CON VERIFICA DELL'APPRENDIMENTO">
             </div>
           </div>
+          <div class="fr2" style="margin-top:10px">
+            <div class="fg">
+              <label class="fl">👤 Resp. Progetto Formativo (nome)</label>
+              <input class="fc" id="att-resp-nome" placeholder="es. Franz Lanaro">
+            </div>
+            <div class="fg">
+              <label class="fl">✍️ Firma Resp. Progetto (immagine)</label>
+              <div style="border:1px dashed #ccc;border-radius:6px;padding:6px;cursor:pointer;min-height:50px;display:flex;align-items:center;justify-content:center;background:#fafafa" onclick="document.getElementById('att-firma-resp-file').click()">
+                <img id="att-firma-resp-img" style="max-height:46px;max-width:180px;display:none">
+                <span id="att-firma-resp-ph" style="font-size:11px;color:#aaa">Clicca per caricare firma</span>
+              </div>
+              <input type="file" id="att-firma-resp-file" accept="image/*" style="display:none" onchange="loadFirmaResp(this)">
+              <button class="btn btn-xs" style="margin-top:2px" onclick="clearFirmaResp()">✕ Rimuovi</button>
+            </div>
+          </div>
           <div class="fg" style="margin-top:10px">
             <label class="fl">Testo libero in fondo all'attestato</label>
             <textarea class="fc" id="att-footer" rows="3" placeholder="es. Il presente attestato è rilasciato ai sensi dell'art. 37 D.Lgs. 81/08..." style="resize:vertical"></textarea>
@@ -3542,10 +3557,10 @@ function generaAttestati(){
     const qrId = 'qr'+idx+'_'+Date.now();
     const qrTxt= esc('Emesso da: '+attAz+' | '+nome+' | '+titoloCorso+' | '+fmtD(primaD)+(scad?' | Scad: '+fmtD(scad):''));
 
-    const p1 = `<div class="att-page" style="page-break-after:always">
+    const p1 = `<div class="att-page" style="page-break-after:always;page-break-inside:avoid">
       <div class="hdr">
         <img src="${LOGO_SRC}" class="hdr-logo">
-        <div class="hdr-right"><div class="hdr-cod">FR-ATT-01</div><div class="hdr-sub">Framyx Srl SB</div></div>
+
       </div>
       <div class="hdr-line"></div>
 
@@ -3556,10 +3571,12 @@ function generaAttestati(){
         <div class="att-verif">CON VERIFICA DELL'APPRENDIMENTO</div>
       </div>
 
-      <div class="sc-block">Si certifica che</div>
-      <div class="lav-nome">${esc(nome)}</div>
-      ${nasc||cf?`<div class="lav-meta">${nasc?'nato/a il '+nasc:''}${nasc&&cf?' · ':''}${cf?'C.F. '+cf:''}</div>`:''}
-      ${mans?`<div class="lav-mans">${esc(mans)}${az.nome?' presso '+esc(az.nome):''}</div>`:''}
+      <div class="lav-block">
+        <div class="sc-block">Si certifica che</div>
+        <div class="lav-nome">${esc(nome)}</div>
+        ${nasc||cf?`<div class="lav-meta">${nasc?'nato/a il '+nasc:''}${nasc&&cf?' · ':''}${cf?'C.F. '+cf:''}</div>`:''}
+        ${mans?`<div class="lav-mans">${esc(mans)}${az.nome?' presso '+esc(az.nome):''}</div>`:''}
+      </div>
 
       <div class="corso-band">
         <div class="corso-lbl">HA FREQUENTATO IL CORSO</div>
@@ -3567,13 +3584,14 @@ function generaAttestati(){
         ${norma?`<div class="corso-norma">${esc(norma)}</div>`:''}
       </div>
 
-      <div class="det-row">
-        ${durata?`<span><strong>Durata:</strong> ${esc(durata)} ore</span><span class="sep">·</span>`:''}
-        <span><strong>${date.length>1?'Date':'Data'}:</strong> ${esc(date.join(', '))}</span>
-        ${sede?`<span class="sep">·</span><span><strong>Sede:</strong> ${esc(sede)}</span>`:''}
+      <div class="det-block">
+        <div class="det-row">
+          ${durata?`<span><strong>Durata:</strong> ${esc(durata)} ore</span><span class="sep">·</span>`:''}
+          <span><strong>${date.length>1?'Date':'Data'}:</strong> ${esc(date.join(', '))}</span>
+          ${sede?`<span class="sep">·</span><span><strong>Sede:</strong> ${esc(sede)}</span>`:''}
+        </div>
+        ${scad?`<div class="scad-box">Validità: <strong>${anni} anni</strong> &nbsp;·&nbsp; Scadenza: <strong>${fmtD(scad)}</strong></div>`:''}
       </div>
-
-      ${scad?`<div class="scad-box">Validità: <strong>${anni} anni</strong> &nbsp;·&nbsp; Scadenza: <strong>${fmtD(scad)}</strong></div>`:''}
 
       <div class="firme-row">
         <div class="firma-col">
@@ -3604,7 +3622,7 @@ function generaAttestati(){
     </div>`;
 
     const righe = args.map(r=>`<tr><td>${esc(r.a)}</td><td>${esc(r.n)}</td></tr>`).join('');
-    const p2 = `<div class="att-page" style="page-break-after:always">
+    const p2 = `<div class="att-page" style="page-break-inside:avoid">
       <div class="p2-hdr">
         <img src="${LOGO_SRC}" style="height:36px;object-fit:contain">
         <div style="text-align:right">
@@ -3631,81 +3649,89 @@ function generaAttestati(){
     </div>`;
 
     return p1 + p2;
-  }).join('');
+  }).join('<div style="page-break-after:always"></div>');
 
   const css = `
     @page { size:A4 portrait; margin:0; }
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { background:white; font-family:Helvetica,Arial,sans-serif; color:#222; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .att-page { width:210mm; min-height:297mm; background:white; padding:14mm 16mm 10mm; display:flex; flex-direction:column; position:relative; }
 
-    /* Header */
+    /* Pagina A4 — flex column con spazio distribuito */
+    .att-page {
+      width:210mm; min-height:297mm; background:white;
+      padding:12mm 16mm 10mm;
+      display:flex; flex-direction:column;
+      justify-content:space-between;
+    }
+
+    /* ── HEADER ── */
     .hdr { display:flex; justify-content:space-between; align-items:center; }
     .hdr-logo { height:55px; max-width:200px; object-fit:contain; }
     .hdr-right { text-align:right; }
     .hdr-cod { font-size:11px; font-weight:700; color:#484F54; }
     .hdr-sub { font-size:10px; color:#888; }
-    .hdr-line { height:3px; background:#FDC400; margin:4mm 0 6mm; }
+    .hdr-line { height:3px; background:#FDC400; margin:3mm 0 0; }
 
-    /* Centro */
-    .center { text-align:center; margin-bottom:5mm; }
-    .az-nome { font-size:11px; font-weight:700; letter-spacing:2px; color:#484F54; margin-bottom:3mm; }
-    .att-big { font-size:44px; font-weight:900; letter-spacing:3px; color:#1A1916; line-height:1; }
-    .att-sub { font-size:18px; font-weight:700; letter-spacing:2px; color:#484F54; margin-top:2mm; }
-    .att-verif { font-size:10px; color:#888; margin-top:2mm; letter-spacing:1px; }
+    /* ── TITOLO ATTESTATO ── */
+    .center { text-align:center; padding:6mm 0 4mm; }
+    .az-nome { font-size:11px; font-weight:700; letter-spacing:2px; color:#484F54; margin-bottom:4mm; }
+    .att-big { font-size:52px; font-weight:900; letter-spacing:4px; color:#1A1916; line-height:1; }
+    .att-sub { font-size:20px; font-weight:700; letter-spacing:3px; color:#484F54; margin-top:3mm; }
+    .att-verif { font-size:11px; color:#888; margin-top:3mm; letter-spacing:1px; }
 
-    /* Lavoratore */
-    .sc-block { text-align:center; font-size:13px; color:#666; margin:5mm 0 2mm; }
-    .lav-nome { text-align:center; font-size:28px; font-weight:900; color:#1A1916; letter-spacing:1px; border-bottom:3px solid #FDC400; padding-bottom:2mm; }
-    .lav-meta { text-align:center; font-size:11px; color:#555; margin-top:2mm; }
-    .lav-mans { text-align:center; font-size:11px; color:#666; margin-top:1mm; }
+    /* ── LAVORATORE ── */
+    .lav-block { text-align:center; padding:4mm 0; }
+    .sc-block { font-size:14px; color:#666; margin-bottom:4mm; }
+    .lav-nome { font-size:30px; font-weight:900; color:#1A1916; letter-spacing:1px; border-bottom:3px solid #FDC400; display:inline-block; padding-bottom:3mm; }
+    .lav-meta { font-size:12px; color:#555; margin-top:3mm; }
+    .lav-mans { font-size:12px; color:#666; margin-top:2mm; }
 
-    /* Corso */
-    .corso-band { background:#FDC400; padding:4mm 8mm; text-align:center; margin:5mm 0 3mm; border-radius:3px; }
-    .corso-lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#484F54; margin-bottom:1mm; }
-    .corso-tit { font-size:16px; font-weight:900; color:#1A1916; line-height:1.3; }
-    .corso-norma { font-size:10px; color:#484F54; margin-top:1mm; }
+    /* ── CORSO ── */
+    .corso-band { background:#FDC400; padding:5mm 10mm; text-align:center; border-radius:3px; }
+    .corso-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#484F54; margin-bottom:2mm; }
+    .corso-tit { font-size:18px; font-weight:900; color:#1A1916; line-height:1.3; }
+    .corso-norma { font-size:11px; color:#484F54; margin-top:2mm; }
 
-    /* Dettagli */
-    .det-row { text-align:center; font-size:11px; color:#555; margin:2mm 0; }
-    .sep { margin:0 4px; color:#CCC; }
-    .scad-box { text-align:center; font-size:11px; color:#484F54; background:#FFFBE6; border:1px solid #FDC400; border-radius:3px; padding:2mm 6mm; display:inline-block; margin:2mm auto; }
+    /* ── DETTAGLI + SCADENZA ── */
+    .det-block { text-align:center; }
+    .det-row { font-size:12px; color:#555; padding:2mm 0; }
+    .sep { margin:0 6px; color:#CCC; }
+    .scad-box { display:inline-block; font-size:12px; color:#484F54; background:#FFFBE6; border:1px solid #FDC400; border-radius:3px; padding:2mm 8mm; margin-top:2mm; }
 
-    /* Firme */
-    .firme-row { display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto; padding-top:6mm; gap:4mm; }
-    .firma-col { width:38%; }
+    /* ── FIRME ── */
+    .firme-row { display:flex; justify-content:space-between; align-items:flex-end; gap:4mm; padding-top:4mm; }
+    .firma-col { width:40%; }
     .firma-col-r { text-align:right; }
-    .firma-centro { flex:1; text-align:center; }
-    .firma-ruolo { font-size:10px; color:#888; }
-    .firma-nome { font-size:13px; font-weight:700; color:#1A1916; margin:1mm 0 2mm; }
-    .firma-img { max-height:50px; max-width:150px; display:block; margin-bottom:2mm; }
+    .firma-centro { flex:1; text-align:center; padding-top:4mm; }
+    .firma-ruolo { font-size:11px; color:#888; }
+    .firma-nome { font-size:14px; font-weight:700; color:#1A1916; margin:2mm 0 3mm; }
+    .firma-img { max-height:55px; max-width:160px; display:block; margin-bottom:2mm; }
     .firma-col-r .firma-img { margin-left:auto; }
-    .firma-spazio { height:50px; }
-    .firma-linea { border-top:1px solid #CCC; margin-bottom:1mm; }
-    .firma-lbl { font-size:9px; color:#AAA; }
-    .luogo-data { font-size:10px; color:#666; }
+    .firma-spazio { height:55px; }
+    .firma-linea { border-top:1px solid #CCC; margin-bottom:2mm; }
+    .firma-lbl { font-size:10px; color:#AAA; }
+    .luogo-data { font-size:11px; color:#666; }
 
-    /* Bottom / QR */
-    .bottom-bar { border-top:1px solid #EEE; padding-top:3mm; margin-top:4mm; }
+    /* ── QR ── */
+    .bottom-bar { border-top:1px solid #EEE; padding-top:3mm; display:flex; align-items:flex-end; }
     .qr-wrap { display:flex; flex-direction:column; align-items:flex-start; gap:1mm; }
-    .qr-box { width:22mm; height:22mm; background:white; border:1px solid #DDD; padding:1.5mm; }
+    .qr-box { width:24mm; height:24mm; background:white; border:1px solid #DDD; padding:1.5mm; }
     .qr-box img, .qr-box canvas { width:100%!important; height:100%!important; display:block; }
     .qr-cap { font-size:9px; color:#888; }
 
-    /* Pagina 2 */
-    .p2-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:0; }
-    .p2-title { font-size:22px; font-weight:900; color:#1A1916; margin:5mm 0 4mm; text-transform:uppercase; }
-    .p2-table { width:100%; border-collapse:collapse; font-size:11px; }
-    .p2-table th { text-align:left; font-size:10px; color:#888; font-weight:700; padding:0 8px 4px; border-bottom:2px solid #FDC400; }
-    .p2-table td { border:1px solid #E0E0E0; padding:5px 8px; vertical-align:top; line-height:1.3; }
+    /* ── PAGINA 2 ── */
+    .p2-hdr { display:flex; justify-content:space-between; align-items:center; }
+    .p2-title { font-size:24px; font-weight:900; color:#1A1916; margin:5mm 0 4mm; text-transform:uppercase; }
+    .p2-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .p2-table th { text-align:left; font-size:11px; color:#888; font-weight:700; padding:0 8px 5px; border-bottom:2px solid #FDC400; }
+    .p2-table td { border:1px solid #E0E0E0; padding:6px 8px; vertical-align:top; line-height:1.35; }
     .p2-table tr:nth-child(even) td { background:#FAFAFA; }
-    .sess-box { margin-top:6mm; border:1.5px solid #FDC400; border-radius:4px; padding:4mm 6mm; background:#FFFBE6; }
-    .sess-title { font-size:11px; font-weight:700; color:#484F54; margin-bottom:3mm; text-transform:uppercase; }
-    .sess-grid { display:grid; grid-template-columns:1fr 1fr; gap:3mm 8mm; font-size:11px; color:#555; }
+    .sess-box { margin-top:8mm; border:1.5px solid #FDC400; border-radius:4px; padding:5mm 7mm; background:#FFFBE6; }
+    .sess-title { font-size:11px; font-weight:700; color:#484F54; margin-bottom:4mm; text-transform:uppercase; letter-spacing:.5px; }
+    .sess-grid { display:grid; grid-template-columns:1fr 1fr; gap:3mm 8mm; font-size:12px; color:#555; }
 
     @media print {
       html, body { background:white; }
-      .att-page { page-break-after:always; }
     }
   `;
 
@@ -7812,6 +7838,8 @@ function renderImpostazioni(){
   document.getElementById('att-sottotitolo').value=cfg.sottotitolo||"CON VERIFICA DELL'APPRENDIMENTO";
   document.getElementById('att-footer').value=cfg.footer||'';
   document.getElementById('att-citta-default').value=cfg.cittaDefault||'';
+  const attRespEl=document.getElementById('att-resp-nome'); if(attRespEl) attRespEl.value=cfg.respFormativo||'Franz Lanaro';
+  if(cfg.firmaResp){ const img=document.getElementById('att-firma-resp-img'); const ph=document.getElementById('att-firma-resp-ph'); if(img){ img.src=cfg.firmaResp; img.style.display='block'; } if(ph) ph.style.display='none'; }
   // logo
   clearLogo();
   if(cfg.logo){ document.getElementById('logo-img').src=cfg.logo; document.getElementById('logo-img').style.display='block'; document.getElementById('logo-placeholder').style.display='none'; }
@@ -7827,8 +7855,11 @@ function salvaImpostazioni(){
   cfg.sottotitolo=document.getElementById('att-sottotitolo').value||"CON VERIFICA DELL'APPRENDIMENTO";
   cfg.footer=document.getElementById('att-footer').value||'';
   cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
+  cfg.respFormativo=document.getElementById('att-resp-nome')?.value||'';
   const logoImg=document.getElementById('logo-img');
   if(logoImg&&logoImg.src&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
+  const firmaRespImg=document.getElementById('att-firma-resp-img');
+  if(firmaRespImg&&firmaRespImg.src&&firmaRespImg.style.display!=='none') cfg.firmaResp=firmaRespImg.src;
   localStorage.setItem('frm_att_config', JSON.stringify(cfg));
   toast('Impostazioni salvate','💾');
 }
@@ -7836,6 +7867,29 @@ function resetImpostazioni(){
   localStorage.removeItem('frm_att_config');
   renderImpostazioni();
   toast('Impostazioni ripristinate','↩');
+}
+function loadFirmaResp(input){
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=document.getElementById('att-firma-resp-img');
+    const ph=document.getElementById('att-firma-resp-ph');
+    if(img){ img.src=e.target.result; img.style.display='block'; }
+    if(ph) ph.style.display='none';
+    // Salva subito in cfg
+    const cfg=getAttConfig(); cfg.firmaResp=e.target.result;
+    localStorage.setItem('frm_att_config',JSON.stringify(cfg));
+    toast('Firma responsabile caricata','✍️');
+  };
+  r.readAsDataURL(f); input.value='';
+}
+function clearFirmaResp(){
+  const img=document.getElementById('att-firma-resp-img');
+  const ph=document.getElementById('att-firma-resp-ph');
+  if(img){ img.src=''; img.style.display='none'; }
+  if(ph) ph.style.display='block';
+  const cfg=getAttConfig(); delete cfg.firmaResp;
+  localStorage.setItem('frm_att_config',JSON.stringify(cfg));
 }
 function loadLogo(input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ document.getElementById('logo-img').src=e.target.result; document.getElementById('logo-img').style.display='block'; document.getElementById('logo-placeholder').style.display='none'; }; r.readAsDataURL(f); input.value=''; }
 function clearLogo(){ document.getElementById('logo-img').src=''; document.getElementById('logo-img').style.display='none'; document.getElementById('logo-placeholder').style.display='block'; const cfg=getAttConfig(); delete cfg.logo; localStorage.setItem('frm_att_config',JSON.stringify(cfg)); }
