@@ -1667,9 +1667,36 @@ async function loadFromSupabase() {
     }
     const tables = ['aziende','lavoratori','docenti','corsi','sessioni','offerte'];
     await Promise.all(tables.map(async t => {
-      const records = await fetchAll(t);
-      cache[t] = records;
-      LS.s(t, records);
+      const daSupabase = await fetchAll(t);
+      const daLocale   = LS.g(t) || [];
+
+      if(daSupabase.length === 0 && daLocale.length === 0){
+        // Nessun dato da nessuna parte — ok
+        cache[t] = [];
+
+      } else if(daSupabase.length === 0 && daLocale.length > 0){
+        // Supabase vuoto, localStorage ha dati → usa locale e carica su Supabase
+        console.log(t+': Supabase vuoto, carico '+daLocale.length+' record locali');
+        cache[t] = daLocale;
+        supaUpsert(t, daLocale).catch(e=>console.warn('Upload '+t+':',e));
+
+      } else if(daSupabase.length > 0 && daLocale.length === 0){
+        // Supabase ha dati, locale vuoto → usa Supabase e salva in locale
+        cache[t] = daSupabase;
+        LS.s(t, daSupabase);
+
+      } else {
+        // Entrambi hanno dati → prendi il più ricco (più record)
+        // In caso di parità usa Supabase (è il master)
+        if(daLocale.length > daSupabase.length){
+          console.log(t+': locale ('+daLocale.length+') > supabase ('+daSupabase.length+') — carico locale su Supabase');
+          cache[t] = daLocale;
+          supaUpsert(t, daLocale).catch(e=>console.warn('Upload '+t+':',e));
+        } else {
+          cache[t] = daSupabase;
+          LS.s(t, daSupabase);
+        }
+      }
     }));
     // piani_fondo
     const {data: fd} = await supa.from('piani_fondo').select('data');
