@@ -249,6 +249,7 @@ textarea.fc{min-height:68px;resize:vertical}
   </div>
   <div class="nav-section">
     <div class="nav-label">Principale</div>
+    <div style="padding:6px 16px;font-size:9px;color:var(--text2);letter-spacing:1px;text-transform:uppercase">v2.3 · 23/03/2026</div>
     <div class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard"><span class="ni">◉</span>Dashboard<span class="nbadge" id="badge-scad" style="display:none">0</span></div>
   </div>
   <div class="nav-section">
@@ -1393,14 +1394,40 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="mh"><span class="mt" id="m-sess-t">Nuova sessione corso</span><span class="mx" onclick="closeM('m-sessione')">✕</span></div>
     <div class="mb">
       <input type="hidden" id="ss-id">
+
+      <!-- RIGA 1: Corso + Azienda -->
       <div class="fr2">
         <div class="fg">
           <label class="fl">Corso *</label>
           <select class="fc" id="ss-corso" onchange="onCorsoChange()"><option value="">Seleziona corso...</option></select>
           <div id="ss-corso-scheda" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:11px"></div>
         </div>
-        <div class="fg"><label class="fl">Azienda *</label><select class="fc" id="ss-az" onchange="onAzChange()"><option value="">Seleziona...</option></select></div>
+        <div class="fg">
+          <label class="fl">Azienda *</label>
+          <select class="fc" id="ss-az" onchange="onAzChange()"><option value="">Seleziona azienda...</option></select>
+        </div>
       </div>
+
+      <!-- PARTECIPANTI -->
+      <div class="fg" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px">
+        <div style="background:var(--surface2);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+          <label class="fl" style="margin:0;font-weight:700">👷 Partecipanti</label>
+          <span style="font-size:12px;color:var(--text2)" id="cnt-part">Seleziona prima un'azienda</span>
+        </div>
+        <!-- Barra ricerca + azioni -->
+        <div id="part-toolbar" style="display:none;padding:8px 10px;background:white;border-bottom:1px solid var(--border);display:none;gap:6px;flex-wrap:wrap;align-items:center">
+          <input id="part-cerca" class="fc" placeholder="🔍 Cerca nome..." oninput="filtraPartecipanti()" style="max-width:180px;padding:4px 8px;font-size:12px">
+          <button class="btn btn-xs btn-primary" onclick="selezionaTutti()">✅ Seleziona tutti</button>
+          <button class="btn btn-xs" onclick="deselezionaTutti()">☐ Deseleziona tutti</button>
+          <button class="btn btn-xs" onclick="aggiungiLavoratoreQuick()">+ Nuovo</button>
+        </div>
+        <!-- Lista lavoratori -->
+        <div id="part-lista" style="max-height:200px;overflow-y:auto;background:white"></div>
+        <!-- Riepilogo selezionati -->
+        <div id="part-riepilogo" style="display:none;padding:6px 12px;background:#EBF5FF;border-top:1px solid var(--border);font-size:11px;color:#1A56DB"></div>
+      </div>
+
+      <!-- RIGA 2: Giornate -->
       <div class="fg">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <label class="fl" style="margin:0">📅 Giornate del corso *</label>
@@ -1411,15 +1438,20 @@ textarea.fc{min-height:68px;resize:vertical}
         <input type="hidden" id="ss-ini">
         <input type="hidden" id="ss-fine">
       </div>
+
+      <!-- RIGA 3: Sede + Docente -->
       <div class="fr2">
         <div class="fg"><label class="fl">Sede</label><input class="fc" id="ss-sede"></div>
         <div class="fg"><label class="fl">Docente</label><select class="fc" id="ss-doc"><option value="">Seleziona...</option></select></div>
       </div>
-      <div class="fr2">
-        <div class="fg"><label class="fl">📍 Città attestato</label><input class="fc" id="ss-citta" placeholder="es. Vicenza — lascia vuoto per usare comune azienda"></div>
-      </div>
-      <div class="fg"><label class="fl">Modalità</label><select class="fc" id="ss-mod"><option>In presenza</option><option>Videoconferenza sincrona</option><option>E-learning</option><option>Mista</option></select></div>
 
+      <!-- RIGA 4: Città + Modalità -->
+      <div class="fr2">
+        <div class="fg"><label class="fl">📍 Città attestato</label><input class="fc" id="ss-citta" placeholder="Valbrenta (VI)"></div>
+        <div class="fg"><label class="fl">Modalità</label><select class="fc" id="ss-mod"><option>In presenza</option><option>Videoconferenza sincrona</option><option>E-learning</option><option>Mista</option></select></div>
+      </div>
+
+      <!-- Contenuti sessione -->
       <div class="fg">
         <div class="flex items-center" style="justify-content:space-between;margin-bottom:6px">
           <label class="fl" style="margin:0">Contenuti sessione</label>
@@ -1428,25 +1460,23 @@ textarea.fc{min-height:68px;resize:vertical}
         <div id="ss-arg-list" style="border:1px solid var(--border);border-radius:var(--r);padding:8px;background:var(--surface2);min-height:44px"></div>
       </div>
 
-      <div class="fg">
-        <div class="flex items-center" style="justify-content:space-between;margin-bottom:6px">
-          <label class="fl" style="margin:0">Partecipanti</label>
-          <span class="text-xs text-muted" id="cnt-part">0 selezionati</span>
-        </div>
-        <div class="chip-list" id="chip-part"></div>
-      </div>
+      <!-- Stato + Note -->
       <div class="fr2">
         <div class="fg"><label class="fl">Stato</label><select class="fc" id="ss-stato"><option value="pianificata">Pianificata</option><option value="completata">Completata</option></select></div>
         <div class="fg"><label class="fl">Note</label><input class="fc" id="ss-note"></div>
       </div>
+
+      <!-- Fondimpresa -->
       <div class="fg" style="margin-top:4px">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
           <input type="checkbox" id="ss-fondimpresa" style="width:16px;height:16px">
-          <span>🏛 Corso <strong>Fondimpresa</strong> — allega Procedura PROC-FORM-01 alla lettera di incarico</span>
+          <span>🏛 Corso <strong>Fondimpresa</strong> — allega PROC-FORM-01</span>
         </label>
       </div>
+
+      <!-- Intestazione attestato -->
       <div class="fg" style="margin-top:4px">
-        <label class="fl">🏷️ Intestazione attestato (nome su attestato)</label>
+        <label class="fl">🏷️ Intestazione attestato</label>
         <select class="fc" id="ss-intestazione-tipo" onchange="onIntestazioneChange()" style="margin-bottom:6px">
           <option value="framyx">Framyx Srl (default)</option>
           <option value="cliente">Azienda cliente (nome automatico)</option>
@@ -2509,7 +2539,7 @@ function popSessSelects(){
   // Docenti: ordine alfabetico per cognome
   const docOrd=db.docenti().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'));
   document.getElementById('ss-doc').innerHTML='<option value="">Seleziona docente...</option>'+docOrd.map(d=>`<option value="${d.id}">${d.cognome} ${d.nome}</option>`).join('');
-  selPart=[]; renderArgS([]); document.getElementById('chip-part').innerHTML=''; document.getElementById('cnt-part').textContent='0 selezionati';
+  selPart=[]; renderArgS([]); const _cp=document.getElementById('chip-part'); if(_cp) _cp.innerHTML=''; document.getElementById('cnt-part').textContent='0 selezionati';
   // Città attestato default Valbrenta (VI)
   const cittaEl=document.getElementById('ss-citta');
   if(cittaEl&&!cittaEl.value) cittaEl.value='Valbrenta (VI)';
@@ -2559,42 +2589,87 @@ function addArgS(){ const list=document.getElementById('ss-arg-list'); const i=l
 function removeArgS(i){ document.getElementById('ss-arg-row-'+i)?.remove() }
 function getArgS(){ return Array.from(document.getElementById('ss-arg-list').querySelectorAll('input[id^=ss-arg-]')).map(x=>x.value.trim()).filter(Boolean) }
 
-function renderChip(azId,sel){
-  const lav=azId?db.lavoratori().filter(l=>l.aziendaId===azId).slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it')):[];
-  const cntEl=document.getElementById('cnt-part');
-  const chipEl=document.getElementById('chip-part');
-  if(!lav.length){
-    chipEl.innerHTML='<p class="text-xs text-muted" style="padding:4px">'+( azId?'Nessun lavoratore per questa azienda':'Seleziona prima un\'azienda')+'</p>';
-    if(cntEl) cntEl.textContent='0 selezionati';
+function renderChip(azId, sel){
+  const toolbar = document.getElementById('part-toolbar');
+  const lista   = document.getElementById('part-lista');
+  const cntEl   = document.getElementById('cnt-part');
+  const riepiEl = document.getElementById('part-riepilogo');
+  if(!lista) return;
+
+  const lav = azId
+    ? db.lavoratori().filter(l=>l.aziendaId===azId)
+        .slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'))
+    : [];
+
+  if(!azId || !lav.length){
+    if(toolbar) toolbar.style.display='none';
+    if(riepiEl) riepiEl.style.display='none';
+    lista.innerHTML='<div style="padding:12px;text-align:center;color:var(--text2);font-size:12px">'+(azId?'Nessun lavoratore per questa azienda — clicca + Nuovo':'Seleziona prima un\'azienda')+'</div>';
+    if(cntEl) cntEl.textContent=azId?'0 selezionati':'Seleziona prima un\'azienda';
     return;
   }
-  const tuttiSel=lav.every(l=>sel.includes(l.id));
-  chipEl.innerHTML=`
-    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
-      <button class="btn btn-xs btn-primary" onclick="selezionaTutti()">${tuttiSel?'✕ Deseleziona tutti':'✅ Seleziona tutti'}</button>
-      <button class="btn btn-xs" onclick="aggiungiLavoratoreQuick()" title="Aggiungi nuovo lavoratore">+ Nuovo lavoratore</button>
-      <span class="text-xs text-muted">${sel.length}/${lav.length} selezionati</span>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${lav.map(l=>`<div class="chip ${sel.includes(l.id)?'on':''}" onclick="togglePart('${l.id}')" title="${l.mansione||''}">${l.cognome} ${l.nome}</div>`).join('')}
-    </div>`;
-  if(cntEl) cntEl.textContent=sel.length+' selezionati';
+
+  // Toolbar
+  if(toolbar){ toolbar.style.display='flex'; }
+
+  // Lista righe con checkbox
+  const q=(document.getElementById('part-cerca')?.value||'').toLowerCase();
+  const lavFilt=q?lav.filter(l=>(l.cognome+' '+l.nome+' '+(l.cf||'')).toLowerCase().includes(q)):lav;
+
+  lista.innerHTML=lavFilt.length ? lavFilt.map(l=>`
+    <div onclick="togglePart('${l.id}')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--border);background:${sel.includes(l.id)?'#EBF5FF':'white'};transition:background .1s"
+      onmouseover="this.style.background=this.style.background==='rgb(235, 245, 255)'?'#EBF5FF':'#F5F5F5'"
+      onmouseout="this.style.background='${sel.includes(l.id)?'#EBF5FF':'white'}'">
+      <div style="width:18px;height:18px;border:2px solid ${sel.includes(l.id)?'#1A56DB':'#CCC'};border-radius:3px;background:${sel.includes(l.id)?'#1A56DB':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${sel.includes(l.id)?'<svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:${sel.includes(l.id)?'700':'500'};font-size:13px">${l.cognome} ${l.nome}</div>
+        <div style="font-size:11px;color:var(--text2)">${l.mansione||'—'}${l.cf?' · '+l.cf:''}</div>
+      </div>
+    </div>`).join('')
+    : '<div style="padding:12px;text-align:center;color:var(--text2);font-size:12px">Nessun risultato</div>';
+
+  // Contatore
+  if(cntEl) cntEl.textContent=sel.length+' / '+lav.length+' selezionati';
+
+  // Riepilogo selezionati
+  const selNomi=sel.map(id=>lav.find(l=>l.id===id)).filter(Boolean).map(l=>l.cognome+' '+l.nome);
+  if(riepiEl){
+    if(selNomi.length){
+      riepiEl.style.display='block';
+      riepiEl.innerHTML='<strong>Selezionati:</strong> '+selNomi.join(', ');
+    } else {
+      riepiEl.style.display='none';
+    }
+  }
 }
+
+function filtraPartecipanti(){ renderChip(v('ss-az'), selPart); }
+
 function selezionaTutti(){
   const azId=v('ss-az');
-  const lav=azId?db.lavoratori().filter(l=>l.aziendaId===azId):[];
+  const q=(document.getElementById('part-cerca')?.value||'').toLowerCase();
+  const lav=azId?db.lavoratori().filter(l=>l.aziendaId===azId).filter(l=>!q||(l.cognome+' '+l.nome).toLowerCase().includes(q)):[];
   const tuttiSel=lav.every(l=>selPart.includes(l.id));
-  selPart=tuttiSel?selPart.filter(id=>!lav.find(l=>l.id===id)):([...new Set([...selPart,...lav.map(l=>l.id)])]);
+  if(tuttiSel) selPart=selPart.filter(id=>!lav.find(l=>l.id===id));
+  else selPart=[...new Set([...selPart,...lav.map(l=>l.id)])];
   renderChip(azId,selPart);
 }
+
+function deselezionaTutti(){
+  const azId=v('ss-az');
+  const lav=azId?db.lavoratori().filter(l=>l.aziendaId===azId):[];
+  selPart=selPart.filter(id=>!lav.find(l=>l.id===id));
+  renderChip(azId,selPart);
+}
+
 function aggiungiLavoratoreQuick(){
   const azId=v('ss-az');
-  // Pre-seleziona azienda nel modal lavoratore e apri
   closeM('m-sessione');
   openM('m-lavoratore');
   setTimeout(()=>{
     if(azId) document.getElementById('lav-az').value=azId;
-    // Dopo salvataggio torna alla sessione
     window._afterLavSave=()=>{ closeM('m-lavoratore'); openM('m-sessione'); renderChip(azId,selPart); };
   },50);
 }
@@ -2637,42 +2712,57 @@ function onIntestazioneChange(){
   document.getElementById('ss-intestazione-custom').style.display=tipo==='custom'?'':'none';
 }
 
-function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note','ss-intestazione-custom','ss-citta'); document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; document.getElementById('ss-intestazione-tipo').value='framyx'; document.getElementById('ss-intestazione-custom').style.display='none'; const fEl=document.getElementById('ss-fondimpresa'); if(fEl) fEl.checked=false; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; document.getElementById('chip-part').innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso'; renderGiornate([]); }
+function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note','ss-intestazione-custom','ss-citta'); document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; document.getElementById('ss-intestazione-tipo').value='framyx'; document.getElementById('ss-intestazione-custom').style.display='none'; const fEl=document.getElementById('ss-fondimpresa'); if(fEl) fEl.checked=false; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; const _cp2=document.getElementById('chip-part'); if(_cp2) _cp2.innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso'; renderGiornate([]); }
 function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().slice().sort((a,b)=>b.data.localeCompare(a.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
 function editSess(id){
   const s=db.sessioni().find(x=>x.id===id); if(!s) return;
+  // Prima apri il modal e ricostruisci i select
   popSessSelects();
-  // Ripristina tutti i campi
-  document.getElementById('ss-id').value=s.id;
-  document.getElementById('ss-corso').value=s.corsoId||'';
-  document.getElementById('ss-az').value=s.aziendaId||'';
-  document.getElementById('ss-sede').value=s.sede||'';
-  document.getElementById('ss-doc').value=s.docenteId||'';
-  document.getElementById('ss-mod').value=s.modalita||'In presenza';
-  document.getElementById('ss-stato').value=s.stato||'pianificata';
-  document.getElementById('ss-note').value=s.note||'';
-  document.getElementById('ss-citta').value=s.cittaAttestato||'Valbrenta (VI)';
-  // Fondimpresa
-  const fEl=document.getElementById('ss-fondimpresa');
-  if(fEl) fEl.checked=s.fondimpresa||false;
-  // Intestazione
-  const intTipo=s.intestazioneTipo||'framyx';
-  document.getElementById('ss-intestazione-tipo').value=intTipo;
-  const custEl=document.getElementById('ss-intestazione-custom');
-  custEl.value=s.intestazioneCustom||'';
-  custEl.style.display=intTipo==='custom'?'':'none';
-  // Argomenti
-  renderArgS(s.argomenti||[]);
-  // Giornate
-  const giornate=s.giornate&&s.giornate.length?s.giornate:[{data:s.data||'',ini:s.oraInizio||'09:00',fine:s.oraFine||'17:00'}];
-  setTimeout(()=>renderGiornate(giornate),30);
-  // Partecipanti — DOPO popSessSelects che azzera selPart
-  selPart=[...(s.partecipanti||[])];
-  renderChip(s.aziendaId, selPart);
-  // Scheda corso
-  if(s.corsoId) setTimeout(()=>onCorsoChange(),30);
   document.getElementById('m-sess-t').textContent='Modifica sessione';
   openM('m-sessione');
+  // Poi ripristina TUTTO con setTimeout per dare tempo ai select di renderizzare
+  setTimeout(()=>{
+    // Campi base
+    document.getElementById('ss-id').value=s.id;
+    document.getElementById('ss-sede').value=s.sede||'';
+    document.getElementById('ss-mod').value=s.modalita||'In presenza';
+    document.getElementById('ss-stato').value=s.stato||'pianificata';
+    document.getElementById('ss-note').value=s.note||'';
+    document.getElementById('ss-citta').value=s.cittaAttestato||'Valbrenta (VI)';
+    // Select: corso
+    const selCorso=document.getElementById('ss-corso');
+    if(selCorso) selCorso.value=s.corsoId||'';
+    // Select: azienda
+    const selAz=document.getElementById('ss-az');
+    if(selAz) selAz.value=s.aziendaId||'';
+    // Select: docente
+    const selDoc=document.getElementById('ss-doc');
+    if(selDoc) selDoc.value=s.docenteId||'';
+    // Fondimpresa
+    const fEl=document.getElementById('ss-fondimpresa');
+    if(fEl) fEl.checked=s.fondimpresa||false;
+    // Intestazione
+    const intTipo=s.intestazioneTipo||'framyx';
+    const selInt=document.getElementById('ss-intestazione-tipo');
+    if(selInt) selInt.value=intTipo;
+    const custEl=document.getElementById('ss-intestazione-custom');
+    if(custEl){ custEl.value=s.intestazioneCustom||''; custEl.style.display=intTipo==='custom'?'':'none'; }
+    // Argomenti
+    renderArgS(s.argomenti||[]);
+    // Giornate
+    const giornate=s.giornate&&s.giornate.length?s.giornate:[{data:s.data||'',ini:s.oraInizio||'09:00',fine:s.oraFine||'17:00'}];
+    renderGiornate(giornate);
+    // Partecipanti
+    selPart=[...(s.partecipanti||[])];
+    renderChip(s.aziendaId, selPart);
+    // Scheda corso
+    if(s.corsoId) onCorsoChange();
+    // Aggiorna sede se non impostata
+    if(!s.sede){
+      const az=db.aziende().find(a=>a.id===s.aziendaId);
+      if(az?.indirizzo) document.getElementById('ss-sede').value=az.indirizzo+(az.comune?' — '+az.comune:'');
+    }
+  }, 80);
 }
 function delSess(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('sessioni',_id); db.save.sessioni(db.sessioni().filter(s=>s.id!==id)); renderSessioni(); renderDashboard(); toast('Eliminata','🗑') }) }
 function goDoc(sid){ goTo('documenti'); setTimeout(()=>{ const s=document.getElementById('fd-sess'); if(s){ s.value=sid; onDocSessChange() } },50) }
