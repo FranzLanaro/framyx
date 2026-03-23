@@ -4,7 +4,67 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestionale Formazione — Framyx</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer>
+function generaAttestati(){
+  try{
+    const sel = document.getElementById('fd-sess');
+    if(!sel || !sel.value){
+      alert('Seleziona una sessione');
+      return;
+    }
+
+    const sessioni = db.sessioni();
+    const lavoratori = db.lavoratori();
+
+    const sess = sessioni.find(s => s.id === sel.value);
+    if(!sess){
+      alert('Sessione non trovata');
+      return;
+    }
+
+    if(!sess.partecipanti || !sess.partecipanti.length){
+      alert('Nessun partecipante nella sessione');
+      return;
+    }
+
+    let html = '';
+
+    sess.partecipanti.forEach(id => {
+      const lav = lavoratori.find(l => l.id === id);
+      if(!lav) return;
+
+      html += `
+        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
+          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
+          <p style="text-align:center">Si certifica che</p>
+          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
+          <p style="text-align:center">ha partecipato al corso</p>
+          <h3 style="text-align:center">${sess.corso || ''}</h3>
+          <p style="text-align:center">Data: ${sess.data || ''}</p>
+        </div>
+      `;
+    });
+
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Popup bloccato dal browser');
+      return;
+    }
+
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(()=>{
+      win.print();
+    }, 500);
+
+  }catch(e){
+    console.error('Errore generaAttestati:', e);
+    alert('Errore nella generazione attestati');
+  }
+}
+
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -231,9 +291,189 @@ textarea.fc{min-height:68px;resize:vertical}
 .login-error { color: #C0392B; font-size: 12px; margin-top: 8px; display: none; text-align: center; }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+function generaAttestati(){
+  try{
+    const sel = document.getElementById('fd-sess');
+    if(!sel || !sel.value){
+      alert('Seleziona una sessione');
+      return;
+    }
+
+    const sessioni = db.sessioni();
+    const lavoratori = db.lavoratori();
+
+    const sess = sessioni.find(s => s.id === sel.value);
+    if(!sess){
+      alert('Sessione non trovata');
+      return;
+    }
+
+    if(!sess.partecipanti || !sess.partecipanti.length){
+      alert('Nessun partecipante nella sessione');
+      return;
+    }
+
+    let html = '';
+
+    sess.partecipanti.forEach(id => {
+      const lav = lavoratori.find(l => l.id === id);
+      if(!lav) return;
+
+      html += `
+        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
+          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
+          <p style="text-align:center">Si certifica che</p>
+          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
+          <p style="text-align:center">ha partecipato al corso</p>
+          <h3 style="text-align:center">${sess.corso || ''}</h3>
+          <p style="text-align:center">Data: ${sess.data || ''}</p>
+        </div>
+      `;
+    });
+
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Popup bloccato dal browser');
+      return;
+    }
+
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(()=>{
+      win.print();
+    }, 500);
+
+  }catch(e){
+    console.error('Errore generaAttestati:', e);
+    alert('Errore nella generazione attestati');
+  }
+}
+
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+function generaAttestati(){
+  try{
+    const sel = document.getElementById('fd-sess');
+    if(!sel || !sel.value){
+      alert('Seleziona una sessione');
+      return;
+    }
+
+    const sessioni = db.sessioni();
+    const lavoratori = db.lavoratori();
+
+    const sess = sessioni.find(s => s.id === sel.value);
+    if(!sess){
+      alert('Sessione non trovata');
+      return;
+    }
+
+    if(!sess.partecipanti || !sess.partecipanti.length){
+      alert('Nessun partecipante nella sessione');
+      return;
+    }
+
+    let html = '';
+
+    sess.partecipanti.forEach(id => {
+      const lav = lavoratori.find(l => l.id === id);
+      if(!lav) return;
+
+      html += `
+        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
+          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
+          <p style="text-align:center">Si certifica che</p>
+          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
+          <p style="text-align:center">ha partecipato al corso</p>
+          <h3 style="text-align:center">${sess.corso || ''}</h3>
+          <p style="text-align:center">Data: ${sess.data || ''}</p>
+        </div>
+      `;
+    });
+
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Popup bloccato dal browser');
+      return;
+    }
+
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(()=>{
+      win.print();
+    }, 500);
+
+  }catch(e){
+    console.error('Errore generaAttestati:', e);
+    alert('Errore nella generazione attestati');
+  }
+}
+
+</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+function generaAttestati(){
+  try{
+    const sel = document.getElementById('fd-sess');
+    if(!sel || !sel.value){
+      alert('Seleziona una sessione');
+      return;
+    }
+
+    const sessioni = db.sessioni();
+    const lavoratori = db.lavoratori();
+
+    const sess = sessioni.find(s => s.id === sel.value);
+    if(!sess){
+      alert('Sessione non trovata');
+      return;
+    }
+
+    if(!sess.partecipanti || !sess.partecipanti.length){
+      alert('Nessun partecipante nella sessione');
+      return;
+    }
+
+    let html = '';
+
+    sess.partecipanti.forEach(id => {
+      const lav = lavoratori.find(l => l.id === id);
+      if(!lav) return;
+
+      html += `
+        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
+          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
+          <p style="text-align:center">Si certifica che</p>
+          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
+          <p style="text-align:center">ha partecipato al corso</p>
+          <h3 style="text-align:center">${sess.corso || ''}</h3>
+          <p style="text-align:center">Data: ${sess.data || ''}</p>
+        </div>
+      `;
+    });
+
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Popup bloccato dal browser');
+      return;
+    }
+
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(()=>{
+      win.print();
+    }, 500);
+
+  }catch(e){
+    console.error('Errore generaAttestati:', e);
+    alert('Errore nella generazione attestati');
+  }
+}
+
+</script>
 </head>
 <body>
 
@@ -1599,18 +1839,9 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
 // ══════════════════════════════════════════════
 // STORE — Supabase + localStorage cache
 // ══════════════════════════════════════════════
-function safeSetItem(key, value){
-  try {
-    localStorage.setItem(key, value);
-    return true;
-  } catch(e) {
-    console.warn('localStorage setItem fallito:', key, e && e.message ? e.message : e);
-    return false;
-  }
-}
 const LS = {
   g: k => { try { return JSON.parse(localStorage.getItem('frm_'+k)||'[]') } catch(e) { return [] } },
-  s: (k,v) => safeSetItem('frm_'+k, JSON.stringify(v))
+  s: (k,v) => localStorage.setItem('frm_'+k, JSON.stringify(v))
 };
 
 // Cache locale per velocità UI
@@ -1706,7 +1937,7 @@ async function loadFromSupabase() {
     // piani_fondo
     const {data: fd} = await supa.from('piani_fondo').select('data');
     const fondo = (fd||[]).map(r=>r.data).filter(Boolean);
-    safeSetItem('frm_fondo', JSON.stringify(fondo));
+    localStorage.setItem('frm_fondo', JSON.stringify(fondo));
     showSyncStatus('ok');
     // Nascondi la barra dopo 4 secondi se tutto ok
     setTimeout(()=>{
@@ -4503,7 +4734,7 @@ function getFascicolo(docId){
   try{ return JSON.parse(localStorage.getItem('frm_fasc_'+docId)||'{}') }catch(e){ return {} }
 }
 function saveFascicolo(docId, data){
-  safeSetItem('frm_fasc_'+docId, JSON.stringify(data));
+  localStorage.setItem('frm_fasc_'+docId, JSON.stringify(data));
 }
 
 function apriFascicolo(docId){
@@ -4787,7 +5018,7 @@ function getListino(){
   try{ const s=JSON.parse(localStorage.getItem('frm_listino')||'null'); return s||LISTINO_DEFAULT; }
   catch(e){ return LISTINO_DEFAULT; }
 }
-function saveListino(l){ safeSetItem('frm_listino', JSON.stringify(l)); }
+function saveListino(l){ localStorage.setItem('frm_listino', JSON.stringify(l)); }
 
 let prevRighe = [];
 
@@ -4954,7 +5185,7 @@ function getCatalogoOfferte(){
     return s||CATALOGO_OFFERTE_DEFAULT;
   }catch(e){ return CATALOGO_OFFERTE_DEFAULT; }
 }
-function saveCatalogoOfferte(c){ safeSetItem('frm_catalogo_offerte',JSON.stringify(c)); }
+function saveCatalogoOfferte(c){ localStorage.setItem('frm_catalogo_offerte',JSON.stringify(c)); }
 
 function renderOfferte(){
   // Riepilogo stati cliccabili
@@ -5741,7 +5972,7 @@ function salvaPrevBozza(){
     noteCompensi:document.getElementById('prev-note-compensi').value,
   });
   if(bozze.length>20) bozze.splice(20);
-  safeSetItem('frm_prev_bozze', JSON.stringify(bozze));
+  localStorage.setItem('frm_prev_bozze', JSON.stringify(bozze));
   renderBozzePrev();
   toast('Bozza salvata','💾');
 }
@@ -5784,7 +6015,7 @@ function caricaBozza(id){
 function deleteBozza(id){
   let bozze=JSON.parse(localStorage.getItem('frm_prev_bozze')||'[]');
   bozze=bozze.filter(b=>b.id!==id);
-  safeSetItem('frm_prev_bozze', JSON.stringify(bozze));
+  localStorage.setItem('frm_prev_bozze', JSON.stringify(bozze));
   renderBozzePrev();
 }
 
@@ -6343,7 +6574,7 @@ function generaLettIncarico2(){
 // ══ GESTIONE INCARICHI ATTIVI (CONTRATTI) ══
 
 function dbContratti(){ return JSON.parse(localStorage.getItem('frm_contratti')||'[]'); }
-function saveContratti(c){ safeSetItem('frm_contratti',JSON.stringify(c)); }
+function saveContratti(c){ localStorage.setItem('frm_contratti',JSON.stringify(c)); }
 
 let ctAppuntamenti=[], ctDocumenti=[], ctEditId=null;
 
@@ -6706,7 +6937,7 @@ function salvaConfigEmail(){
     tplOff:    document.getElementById('ejs-tpl-off')?.value||'',
     fromEmail: document.getElementById('ejs-from')?.value||'',
   };
-  safeSetItem('frm_email_cfg', JSON.stringify(cfg));
+  localStorage.setItem('frm_email_cfg', JSON.stringify(cfg));
   if(cfg.publicKey) emailjs.init(cfg.publicKey);
   toast('Configurazione email salvata','✅');
 }
@@ -6932,7 +7163,7 @@ function getFascicoloAz(azId){
 function saveFascicoloAz(azId, data){
   const all=JSON.parse(localStorage.getItem('frm_fascicoli_az')||'{}');
   all[azId]=data;
-  safeSetItem('frm_fascicoli_az', JSON.stringify(all));
+  localStorage.setItem('frm_fascicoli_az', JSON.stringify(all));
 }
 
 function renderFascicolo(){
@@ -7589,7 +7820,7 @@ function salvaImpostazioni(){
   cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
   const logoImg=document.getElementById('logo-img');
   if(logoImg&&logoImg.src&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
-  safeSetItem('frm_att_config', JSON.stringify(cfg));
+  localStorage.setItem('frm_att_config', JSON.stringify(cfg));
   toast('Impostazioni salvate','💾');
 }
 function resetImpostazioni(){
@@ -7598,7 +7829,7 @@ function resetImpostazioni(){
   toast('Impostazioni ripristinate','↩');
 }
 function loadLogo(input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ document.getElementById('logo-img').src=e.target.result; document.getElementById('logo-img').style.display='block'; document.getElementById('logo-placeholder').style.display='none'; }; r.readAsDataURL(f); input.value=''; }
-function clearLogo(){ document.getElementById('logo-img').src=''; document.getElementById('logo-img').style.display='none'; document.getElementById('logo-placeholder').style.display='block'; const cfg=getAttConfig(); delete cfg.logo; safeSetItem('frm_att_config',JSON.stringify(cfg)); }
+function clearLogo(){ document.getElementById('logo-img').src=''; document.getElementById('logo-img').style.display='none'; document.getElementById('logo-placeholder').style.display='block'; const cfg=getAttConfig(); delete cfg.logo; localStorage.setItem('frm_att_config',JSON.stringify(cfg)); }
 
 // ══ FILTERS ══
 function updateFilters(){ const opts='<option value="">Tutte le aziende</option>'+db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it')).map(a=>`<option value="${a.id}">${a.nome}</option>`).join(''); ['fl-az','fs-az','fsc-az'].forEach(id=>{ const e=document.getElementById(id); if(e) e.innerHTML=opts }) }
@@ -7626,7 +7857,7 @@ function loadDemo(){
 const dbFondo = {
   get: () => { try { return JSON.parse(localStorage.getItem('frm_fondo')||'[]') } catch(e){ return [] } },
   save: async v => {
-    safeSetItem('frm_fondo', JSON.stringify(v));
+    localStorage.setItem('frm_fondo', JSON.stringify(v));
     try {
       const rows = v.map(r => ({id: r.id, data: r, updated_at: new Date().toISOString()}));
       await supa.from('piani_fondo').upsert(rows, {onConflict:'id'});
@@ -7997,7 +8228,7 @@ async function init() {
   updateFilters();
   renderDashboard();
   // Auto-backup silenzioso all'apertura
-  // Auto-backup automatico disattivato per evitare saturazione localStorage
+  // setTimeout(autoBackup, 3000);
 }
 
 function autoBackup(){
@@ -8014,14 +8245,9 @@ function autoBackup(){
       if(d&&d.length){ backup[t]=d; hasDati=true; }
     });
     if(!hasDati) return;
-    const payload = JSON.stringify(backup);
-    if(payload.length > 400000){
-      console.warn('Auto-backup saltato: payload troppo grande per localStorage');
-      return;
-    }
     // Salva ultimi 7 backup in localStorage con timestamp
     const key='frm_autobackup_'+new Date().toISOString().slice(0,10);
-    safeSetItem(key, payload);
+    localStorage.setItem(key, JSON.stringify(backup));
     // Mantieni solo ultimi 7 giorni
     const allKeys=Object.keys(localStorage).filter(k=>k.startsWith('frm_autobackup_'));
     allKeys.sort().reverse().slice(7).forEach(k=>localStorage.removeItem(k));
@@ -8055,6 +8281,66 @@ function ripristinaAutoBackup(){
 
 // Check if already logged in this session
 init();
+
+
+function generaAttestati(){
+  try{
+    const sel = document.getElementById('fd-sess');
+    if(!sel || !sel.value){
+      alert('Seleziona una sessione');
+      return;
+    }
+
+    const sessioni = db.sessioni();
+    const lavoratori = db.lavoratori();
+
+    const sess = sessioni.find(s => s.id === sel.value);
+    if(!sess){
+      alert('Sessione non trovata');
+      return;
+    }
+
+    if(!sess.partecipanti || !sess.partecipanti.length){
+      alert('Nessun partecipante nella sessione');
+      return;
+    }
+
+    let html = '';
+
+    sess.partecipanti.forEach(id => {
+      const lav = lavoratori.find(l => l.id === id);
+      if(!lav) return;
+
+      html += `
+        <div style="page-break-after:always; padding:40px; font-family:sans-serif">
+          <h1 style="text-align:center">ATTESTATO DI PARTECIPAZIONE</h1>
+          <p style="text-align:center">Si certifica che</p>
+          <h2 style="text-align:center">${lav.nome || ''} ${lav.cognome || ''}</h2>
+          <p style="text-align:center">ha partecipato al corso</p>
+          <h3 style="text-align:center">${sess.corso || ''}</h3>
+          <p style="text-align:center">Data: ${sess.data || ''}</p>
+        </div>
+      `;
+    });
+
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Popup bloccato dal browser');
+      return;
+    }
+
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(()=>{
+      win.print();
+    }, 500);
+
+  }catch(e){
+    console.error('Errore generaAttestati:', e);
+    alert('Errore nella generazione attestati');
+  }
+}
 
 </script>
 
