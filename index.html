@@ -340,6 +340,7 @@ textarea.fc{min-height:68px;resize:vertical}
     <!-- ═══ AZIENDE ═══ -->
     <div class="page" id="page-aziende">
       <div class="card"><div class="card-header"><span class="card-title">Elenco aziende</span><div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" onclick="openM('m-azienda')">+ Nuova azienda</button><button class="btn btn-danger btn-sm" onclick="delSelAz()" id="btn-del-sel-az" style="display:none">🗑 Elimina selezionate</button><button class="btn btn-danger btn-sm" onclick="delAllAz()">🗑 Elimina tutte</button></div></div>
+      <div id="dup-panel" style="display:none;margin-bottom:12px"></div>
       <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-az-all" onchange="toggleAllAz(this)"></th><th>Ragione sociale</th><th>P.IVA</th><th>Referente</th><th>Via / Indirizzo</th><th>Città</th><th>Lavoratori</th><th></th></tr></thead><tbody id="tb-aziende"></tbody></table></div>
     </div>
 
@@ -349,7 +350,7 @@ textarea.fc{min-height:68px;resize:vertical}
         <select class="fc" id="fl-az" onchange="renderLavoratori()"><option value="">Tutte le aziende</option></select>
         <input class="fc" id="fl-q" placeholder="Cerca nome / CF..." oninput="renderLavoratori()" style="max-width:200px">
       </div>
-      <div class="card"><div class="card-header"><span class="card-title">Lavoratori</span><div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" onclick="openM('m-lavoratore')">+ Nuovo</button><button class="btn btn-danger btn-sm" onclick="delSelLav()" id="btn-del-sel-lav" style="display:none">🗑 Elimina selezionati</button><button class="btn btn-danger btn-sm" onclick="delAllLav()">🗑 Elimina tutti</button></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Lavoratori</span><div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" onclick="openM('m-lavoratore')">+ Nuovo</button><button class="btn btn-xs" style="background:#C0392B;color:white" onclick="trovaDuplicatiLavoratori()">🔍 Trova duplicati</button><button class="btn btn-danger btn-sm" onclick="delSelLav()" id="btn-del-sel-lav" style="display:none">🗑 Elimina selezionati</button><button class="btn btn-danger btn-sm" onclick="delAllLav()">🗑 Elimina tutti</button></div></div>
       <table class="tbl"><thead><tr><th style="width:32px"><input type="checkbox" id="chk-lav-all" onchange="toggleAllLav(this)"></th><th>Cognome</th><th>Nome</th><th>Azienda</th><th>C.F.</th><th>Mansione</th><th></th></tr></thead><tbody id="tb-lav"></tbody></table></div>
     </div>
 
@@ -2362,6 +2363,114 @@ function fascicoloFormativoModal(){
   closeM('m-lavoratore');
   fascicoloFormativo(id);
 }
+
+
+function trovaDuplicatiLavoratori(){
+  const tutti = db.lavoratori();
+  const panel = document.getElementById('dup-panel');
+  if(!panel) return;
+
+  // Raggruppa per CF (se valido) o per cognome+nome+azienda
+  const gruppi = {};
+
+  tutti.forEach(l=>{
+    const cf = (l.cf||'').toUpperCase().trim();
+    let key;
+    if(cf.length===16){
+      key = 'CF:'+cf;
+    } else {
+      key = 'NM:'+(l.cognome||'').toUpperCase().trim()+'|'+(l.nome||'').toUpperCase().trim()+'|'+(l.aziendaId||'');
+    }
+    if(!gruppi[key]) gruppi[key]=[];
+    gruppi[key].push(l);
+  });
+
+  // Tieni solo i gruppi con più di 1 record
+  const duplicati = Object.entries(gruppi).filter(([,g])=>g.length>1);
+
+  if(!duplicati.length){
+    panel.style.display='block';
+    panel.innerHTML='<div style="background:#EAF5EE;border:1px solid #A8D5B5;border-radius:6px;padding:10px 14px;font-size:12px">✅ Nessun lavoratore duplicato trovato tra i '+tutti.length+' in archivio.</div>';
+    setTimeout(()=>{ panel.style.display='none'; }, 4000);
+    return;
+  }
+
+  const totDup = duplicati.reduce((s,[,g])=>s+g.length-1, 0);
+  let html = `<div style="background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;padding:10px 14px;margin-bottom:8px;font-size:12px">
+    ⚠️ Trovati <strong>${duplicati.length} gruppi duplicati</strong> (${totDup} record extra da rimuovere).<br>
+    <small>Per ogni gruppo: il primo record è evidenziato in verde — gli altri sono i duplicati. Clicca ✕ per eliminare.</small>
+    <button class="btn btn-xs btn-danger" style="margin-left:10px" onclick="eliminaTuttiDuplicati()">🗑 Elimina tutti i duplicati automaticamente</button>
+    <button class="btn btn-xs" style="margin-left:6px" onclick="document.getElementById('dup-panel').style.display='none'">✕ Chiudi</button>
+  </div>`;
+
+  html += '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:6px">';
+  html += '<table class="tbl" style="margin:0">';
+  html += '<thead><tr><th>Cognome Nome</th><th>CF</th><th>Azienda</th><th>Mansione</th><th style="width:40px">Corso</th><th style="width:60px"></th></tr></thead><tbody>';
+
+  duplicati.forEach(([key, gruppo])=>{
+    const tipo = key.startsWith('CF:') ? '🔑 Stesso CF' : '👤 Stesso nome+azienda';
+    html += `<tr style="background:#484F54;color:white"><td colspan="6" style="padding:4px 10px;font-size:10px;font-weight:700">${tipo}: ${gruppo.length} record</td></tr>`;
+    gruppo.forEach((l,i)=>{
+      const az = db.aziende().find(a=>a.id===l.aziendaId)||{};
+      // Conta sessioni collegate
+      const nSess = db.sessioni().filter(s=>(s.partecipanti||[]).includes(l.id)).length;
+      const isFirst = i===0;
+      html += `<tr style="background:${isFirst?'#EAF5EE':'white'}">
+        <td style="font-weight:${isFirst?'700':'400'}">${isFirst?'✓ ':''} ${l.cognome||''} ${l.nome||''}</td>
+        <td style="font-family:monospace;font-size:10px">${l.cf||'—'}</td>
+        <td style="font-size:11px">${az.nome||'—'}</td>
+        <td style="font-size:11px">${l.mansione||'—'}</td>
+        <td style="text-align:center;font-size:11px">${nSess>0?'<span class="badge bb">'+nSess+'</span>':''}</td>
+        <td>${isFirst?'<span style="font-size:10px;color:var(--green)">mantieni</span>':
+          `<button class="btn btn-xs btn-danger" onclick="eliminaDuplicatoLav('${l.id}','${key.replace(/'/g,"\\'")}')">✕ Elimina</button>`}
+        </td>
+      </tr>`;
+    });
+  });
+
+  html += '</tbody></table></div>';
+  panel.style.display='block';
+  panel.innerHTML=html;
+  panel.scrollIntoView({behavior:'smooth'});
+
+  // Salva lista duplicati per eliminazione massiva
+  window._dupGroups = duplicati;
+}
+
+async function eliminaDuplicatoLav(lavId, groupKey){
+  // Controlla se ha sessioni collegate e avvisa
+  const nSess = db.sessioni().filter(s=>(s.partecipanti||[]).includes(lavId)).length;
+  if(nSess>0){
+    if(!confirm('Questo lavoratore è presente in '+nSess+' sessioni.\nEliminandolo non comparirà nei registri di quelle sessioni.\nContinuare?')) return;
+    // Rimuovilo anche dalle sessioni
+    const sess = db.sessioni().map(s=>({...s, partecipanti:(s.partecipanti||[]).filter(id=>id!==lavId)}));
+    db.save.sessioni(sess);
+  }
+  // Elimina lavoratore
+  await supaDelete('lavoratori', lavId);
+  db.save.lavoratori(db.lavoratori().filter(l=>l.id!==lavId));
+  toast('Lavoratore eliminato ✓');
+  renderLavoratori();
+  trovaDuplicatiLavoratori(); // aggiorna il pannello
+}
+
+async function eliminaTuttiDuplicati(){
+  if(!window._dupGroups||!window._dupGroups.length) return;
+  const toDelete = window._dupGroups.flatMap(([,g])=>g.slice(1).map(l=>l.id));
+  if(!confirm('Eliminare automaticamente '+toDelete.length+' record duplicati?\nVerrà mantenuto il primo record per ogni gruppo.\n\nATTENZIONE: i lavoratori eliminati verranno rimossi anche dalle sessioni.')) return;
+  // Rimuovi dalle sessioni
+  const sess = db.sessioni().map(s=>({...s, partecipanti:(s.partecipanti||[]).filter(id=>!toDelete.includes(id))}));
+  db.save.sessioni(sess);
+  // Elimina lavoratori
+  for(const id of toDelete){
+    await supaDelete('lavoratori', id);
+  }
+  db.save.lavoratori(db.lavoratori().filter(l=>!toDelete.includes(l.id)));
+  toast('Eliminati '+toDelete.length+' duplicati ✓','🗑');
+  renderLavoratori();
+  trovaDuplicatiLavoratori();
+}
+
 
 function renderLavoratori(){
   const faz=v('fl-az'), q=(v('fl-q')||'').toLowerCase();
