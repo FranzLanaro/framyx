@@ -1132,6 +1132,8 @@ textarea.fc{min-height:68px;resize:vertical}
           <div style="background:var(--green-bg);border:1px solid #A8D5B5;border-radius:var(--r);padding:12px 16px;margin-bottom:14px">
             <div style="font-weight:600;color:var(--green);margin-bottom:4px">✅ Database connesso</div>
             <div style="font-size:12px;color:var(--text2)">Progetto: <strong>jmdoeqzsyrjhcvacqhub</strong></div>
+            <button class="btn btn-xs" style="margin-top:8px" onclick="testConnessioneDettagliata()">🔍 Test connessione dettagliato</button>
+            <div id="conn-test-result" style="margin-top:8px;font-size:11px"></div>
             <div style="font-size:12px;color:var(--text2)">URL: <code style="font-size:11px">https://jmdoeqzsyrjhcvacqhub.supabase.co</code></div>
           </div>
           <div class="flex gap-2" style="flex-wrap:wrap">
@@ -1584,7 +1586,15 @@ textarea.fc{min-height:68px;resize:vertical}
 // ══════════════════════════════════════════════
 const SUPA_URL = 'https://jmdoeqzsyrjhcvacqhub.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  global: {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY
+    }
+  },
+  auth: { persistSession: false }
+});
 
 // ══════════════════════════════════════════════
 // STORE — Supabase + localStorage cache
@@ -1631,21 +1641,25 @@ async function supaUpsert(table, records) {
 async function loadFromSupabase() {
   showSyncStatus('loading');
   try {
-    // Test connessione rapido prima di tutto
+    // Test connessione — chiave nell'URL come fallback sicuro
     const testConn = await Promise.race([
-      supa.from('aziende').select('data').limit(1),
-      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000))
+      fetch(SUPA_URL+'/rest/v1/aziende?select=id&limit=1&apikey='+SUPA_KEY, {
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}
+      }),
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),10000))
     ]);
-    if(testConn.error) throw testConn.error;
+    if(!testConn.ok) throw new Error('HTTP '+testConn.status);
 
-    // Tabelle grandi: usa paginazione da 1000
+    // Tabelle grandi: fetch diretto con paginazione da 1000
     async function fetchAll(table){
       let all=[], from=0, step=1000;
       while(true){
-        const {data,error}=await supa.from(table).select('data').range(from, from+step-1);
-        if(error){ console.warn(table,error.message); break; }
+        const url=SUPA_URL+'/rest/v1/'+table+'?select=data&limit='+step+'&offset='+from+'&apikey='+SUPA_KEY;
+        const resp=await fetch(url,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+        if(!resp.ok){ console.warn(table,'HTTP',resp.status); break; }
+        const data=await resp.json();
         if(!data||!data.length) break;
-        all=all.concat((data||[]).map(r=>r.data).filter(Boolean));
+        all=all.concat(data.map(r=>r.data).filter(Boolean));
         if(data.length<step) break;
         from+=step;
       }
@@ -7453,6 +7467,51 @@ function riparaDuplicati(){
   }
   toast(changed>0?'Rimossi '+totRimossi+' duplicati da '+changed+' sessioni':'Nessun duplicato trovato');
   renderSessioni();
+}
+
+
+async function testConnessioneDettagliata(){
+  const el = document.getElementById('conn-test-result');
+  if(el) el.innerHTML = '🔄 Test in corso...';
+  const steps = [];
+  
+  // Step 1: DNS / raggiungibilità
+  try {
+    const t0 = Date.now();
+    const r = await Promise.race([
+      fetch(SUPA_URL+'/rest/v1/', {headers:{'apikey':SUPA_KEY}}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout 10s')),10000))
+    ]);
+    steps.push('✅ Connessione TCP: OK ('+( Date.now()-t0)+'ms) — HTTP '+r.status);
+  } catch(e) {
+    steps.push('❌ Connessione TCP: FALLITA — '+e.message);
+    steps.push('💡 Possibili cause: firewall aziendale, VPN, Supabase in pausa');
+    if(el) el.innerHTML = steps.map(s=>`<div>${s}</div>`).join('');
+    return;
+  }
+
+  // Step 2: autenticazione
+  try {
+    const r2 = await fetch(SUPA_URL+'/rest/v1/aziende?select=id&limit=1', {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    const txt = await r2.text();
+    if(r2.ok) steps.push('✅ Autenticazione: OK — '+r2.status);
+    else steps.push('❌ Autenticazione: FALLITA — '+r2.status+' '+txt.slice(0,100));
+  } catch(e) {
+    steps.push('❌ Query: '+e.message);
+  }
+
+  // Step 3: supabase-js client
+  try {
+    const {data,error} = await supa.from('aziende').select('id').limit(1);
+    if(error) steps.push('❌ Supabase-js: '+error.message);
+    else steps.push('✅ Supabase-js: OK — '+JSON.stringify(data).slice(0,50));
+  } catch(e) {
+    steps.push('❌ Supabase-js eccezione: '+e.message);
+  }
+
+  if(el) el.innerHTML = steps.map(s=>`<div style="margin-bottom:4px">${s}</div>`).join('');
 }
 
 function renderImpostazioni(){
