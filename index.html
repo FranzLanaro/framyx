@@ -1769,7 +1769,7 @@ function importLavoratoriFile(f){
       // Skip true duplicates (same CF or same nome+cognome+azienda)
       const dup = lav.find(l=> (cf && l.cf && l.cf===cf) || (l.nome.toLowerCase()===nome.toLowerCase() && l.cognome.toLowerCase()===cognome.toLowerCase() && l.aziendaId===(azObj?.id||'')));
       if(dup){ skip++; return; }
-      lav.push({ id:uid(), nome:normalizzaNome(nome), cognome:normalizzaNome(cognome), aziendaId:azObj?.id||'', cf, nascita:get(row,iNascita), luogoNascita:toTitleCase(get(row,iLuogo)), mansione:toTitleCase(get(row,iMansione)), ateco:get(row,iAteco), email:get(row,iEmail) });
+      lav.push({ id:uid(), nome:toUpperNome(nome), cognome:toUpperNome(cognome), aziendaId:azObj?.id||'', cf, nascita:get(row,iNascita), luogoNascita:toTitleCase(get(row,iLuogo)), mansione:toTitleCase(get(row,iMansione)), ateco:get(row,iAteco), email:get(row,iEmail) });
       added++;
     });
     db.save.lavoratori(lav);
@@ -1858,7 +1858,7 @@ function diffDays(d){ const t=new Date();t.setHours(0,0,0,0); const dt=new Date(
 function addYears(d,y){ const dt=new Date(d); dt.setFullYear(dt.getFullYear()+y); return dt.toISOString().slice(0,10) }
 function gAz(id){ return db.aziende().find(x=>x.id===id)?.nome||'—' }
 function gCorso(id){ return db.corsi().find(x=>x.id===id)?.titolo||'—' }
-function gDoc(id){ const d=db.docenti().find(x=>x.id===id); return d?d.nome+' '+d.cognome:'—' }
+function gDoc(id){ const d=db.docenti().find(x=>x.id===id); return d?(d.cognome||'')+' '+(d.nome||''):'—' }
 function gLav(id){ const l=db.lavoratori().find(x=>x.id===id); return l?l.cognome+' '+l.nome:'—' }
 function v(id){ const e=document.getElementById(id); return e?e.value.trim():'' }
 function sv(map){ Object.entries(map).forEach(([p,fields])=>Object.entries(fields).forEach(([k,val])=>{ const e=document.getElementById(p+'-'+k); if(e) e.value=val })) }
@@ -2240,7 +2240,7 @@ function renderLavoratori(){
     </tr>`;
   }).join('')
 }
-function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); const _nome=normalizzaNome(v('lav-nome')),_cog=normalizzaNome(v('lav-cognome')),_luogo=normalizzaNome(v('lav-luogo')),_mans=normalizzaNome(v('lav-mansione')); lav.push({id,nome:_nome,cognome:_cog,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:_luogo,mansione:_mans,ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato'); if(window._afterLavSave){ window._afterLavSave(); window._afterLavSave=null; } }
+function salvaLavoratore(){ const id=v('lav-id')||uid(),nome=v('lav-nome'),cognome=v('lav-cognome'),azId=v('lav-az'); if(!nome||!cognome||!azId){alert('Nome, cognome e azienda obbligatori');return} const lav=db.lavoratori().filter(l=>l.id!==id); const _nome=toUpperNome(v('lav-nome')),_cog=toUpperNome(v('lav-cognome')),_luogo=normalizzaNome(v('lav-luogo')),_mans=normalizzaNome(v('lav-mansione')); lav.push({id,nome:_nome,cognome:_cog,aziendaId:azId,cf:v('lav-cf').toUpperCase(),nascita:v('lav-nascita'),luogoNascita:_luogo,mansione:_mans,ateco:v('lav-ateco'),email:v('lav-email')}); db.save.lavoratori(lav); closeM('m-lavoratore'); clr('lav-id','lav-nome','lav-cognome','lav-cf','lav-nascita','lav-luogo','lav-mansione','lav-ateco','lav-email'); document.getElementById('lav-az').value=''; document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; renderLavoratori(); toast('Lavoratore salvato'); if(window._afterLavSave){ window._afterLavSave(); window._afterLavSave=null; } }
 function editLav(id){ const l=db.lavoratori().find(x=>x.id===id); if(!l) return; popLavAz(); sv({'lav':{id:l.id,nome:l.nome,cognome:l.cognome,cf:l.cf||'',nascita:l.nascita||'',luogo:l.luogoNascita||'',mansione:l.mansione||'',ateco:l.ateco||'',email:l.email||''}}); document.getElementById('lav-az').value=l.aziendaId; document.getElementById('m-lav-t').textContent='Modifica lavoratore'; openM('m-lavoratore') }
 function delLav(id){ confDel('Eliminare?',async ()=>{ const _id=id; await supaDelete('lavoratori',_id); db.save.lavoratori(db.lavoratori().filter(l=>l.id!==id)); renderLavoratori(); toast('Eliminato','🗑') }) }
 function delAllLav(){ const lav=db.lavoratori(); if(!lav.length){toast('Nessun lavoratore da eliminare','ℹ️');return} confDel(`Eliminare tutti i ${lav.length} lavoratori?`, async ()=>{ await Promise.all(lav.map(l=>supaDelete('lavoratori',l.id))); db.save.lavoratori([]); renderLavoratori(); toast(`${lav.length} lavoratori eliminati`,'🗑') }) }
@@ -2394,7 +2394,7 @@ function importStoricoFile(f){
       sg.lavoratori.forEach(lRaw=>{
         if(!lRaw.cognome) return;
         let lav=lavoratori.find(l=>(lRaw.cf&&l.cf&&l.cf===lRaw.cf)||(l.cognome.toLowerCase()===lRaw.cognome.toLowerCase()&&((!lRaw.nome)||l.nome.toLowerCase()===lRaw.nome.toLowerCase())));
-        if(!lav){ lav={id:uid(),nome:normalizzaNome(lRaw.nome),cognome:normalizzaNome(lRaw.cognome),aziendaId:azId,cf:lRaw.cf,nascita:lRaw.nascita,luogoNascita:'',mansione:toTitleCase(lRaw.mansione),ateco:'',email:''}; lavoratori.push(lav); cntLav++; }
+        if(!lav){ lav={id:uid(),nome:toUpperNome(lRaw.nome),cognome:toUpperNome(lRaw.cognome),aziendaId:azId,cf:lRaw.cf,nascita:lRaw.nascita,luogoNascita:'',mansione:toTitleCase(lRaw.mansione),ateco:'',email:''}; lavoratori.push(lav); cntLav++; }
         if(!sess.partecipanti.includes(lav.id)){ sess.partecipanti.push(lav.id); cntPart++; }
       });
     });
@@ -2919,10 +2919,10 @@ ${argHTML(s.argomenti||[])}</div>
 <td style="color:white;font-size:11px;font-weight:700">Docente: ${doc.nome?doc.nome+' '+doc.cognome:''}</td>
 </tr></table></div>
 <table style="width:100%;border-collapse:collapse">
-<thead><tr style="background:#484F54;color:white"><th style="padding:6px 10px;font-size:11px;width:36px">N°</th><th style="padding:6px 10px;font-size:11px;text-align:left">Cognome Nome</th><th style="padding:6px 10px;font-size:11px;width:180px">Firma</th><th style="padding:6px 10px;font-size:11px;width:70px">Entrata</th><th style="padding:6px 10px;font-size:11px;width:70px">Uscita</th><th style="padding:6px 10px;font-size:11px;width:80px">Esito</th></tr></thead>
+<thead><tr style="background:#484F54;color:white"><th style="padding:6px 10px;font-size:11px;width:32px">N°</th><th style="padding:6px 10px;font-size:11px;text-align:left">Cognome e Nome</th><th style="padding:6px 10px;font-size:11px;width:50px;text-align:center">Ora<br>ingresso</th><th style="padding:6px 10px;font-size:11px;width:100px">Firma<br>entrata</th><th style="padding:6px 10px;font-size:11px;width:50px;text-align:center">Ora<br>uscita</th><th style="padding:6px 10px;font-size:11px;width:100px">Firma<br>uscita</th><th style="padding:6px 10px;font-size:11px;width:80px">Note</th></tr></thead>
 <tbody>
-${pp.map((l,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}"><td style="padding:7px 10px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td><td style="padding:7px 10px;border:1px solid #ddd">${l.cognome} ${l.nome}</td><td style="border:1px solid #ddd"></td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center">${s.oraInizio||''}</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center">${s.oraFine||''}</td><td style="border:1px solid #ddd"></td></tr>`).join('')}
-${Array.from({length:Math.max(0,12-pp.length)},(_,i)=>`<tr style="background:${(pp.length+i)%2?'#f9f9f9':'white'}"><td style="padding:7px 10px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td><td style="border:1px solid #ddd;height:26px"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
+${pp.map((l,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'}"><td style="padding:7px 8px;text-align:center;border:1px solid #ddd;font-weight:700">${i+1}</td><td style="padding:7px 8px;border:1px solid #ddd;font-weight:600">${(l.cognome||'').toUpperCase()} ${(l.nome||'').toUpperCase()}</td><td style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px">${s.oraInizio||''}</td><td style="border:1px solid #ddd;height:28px"></td><td style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px">${s.oraFine||''}</td><td style="border:1px solid #ddd;height:28px"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
+${Array.from({length:Math.max(0,12-pp.length)},(_,i)=>`<tr style="background:${(pp.length+i)%2?'#f9f9f9':'white'}"><td style="padding:7px 8px;text-align:center;border:1px solid #ddd;color:#ccc">${pp.length+i+1}</td><td style="border:1px solid #ddd;height:28px"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td><td style="border:1px solid #ddd"></td></tr>`).join('')}
 </tbody></table></div>
 <div style="border:1px solid #ddd;border-top:3px solid #FDC400;background:#FFFBE6;padding:9px 14px;font-size:11px;color:#666">
 È allegata al presente registro la lista completa di firma dei partecipanti; tale lista costituisce parte integrante del registro e deve essere conservata ai sensi dell'art. 37 D.Lgs. 81/08.</div></div>`;
@@ -2931,57 +2931,152 @@ ${Array.from({length:Math.max(0,12-pp.length)},(_,i)=>`<tr style="background:${(
 
 function generaAttestati(){
   const s=gSess(); if(!s) return;
-  const corso=db.corsi().find(c=>c.id===s.corsoId)||{}, az=db.aziende().find(a=>a.id===s.aziendaId)||{}, doc=db.docenti().find(d=>d.id===s.docenteId)||{};
+  const corso=db.corsi().find(c=>c.id===s.corsoId)||{};
+  const az=db.aziende().find(a=>a.id===s.aziendaId)||{};
+  const doc=db.docenti().find(d=>d.id===s.docenteId)||{};
   const pp=(s.partecipanti||[]).map(id=>db.lavoratori().find(l=>l.id===id)).filter(Boolean);
-  if(!pp.length){ toast('Nessun partecipante nella sessione — aggiungi i lavoratori prima di generare gli attestati','⚠️'); return; }
+  if(!pp.length){ toast('Nessun partecipante — aggiungi i lavoratori prima','⚠️'); return; }
   const cfg=getAttConfig();
   const scad=corso.validita?addYears(s.data,corso.validita):null;
-  const luogo=s.cittaAttestato||cfg.cittaDefault||(az.comune||az.indirizzo||'_______________');
-  // Intestazione: usa quella della sessione se impostata
+  const luogo=s.cittaAttestato||cfg.cittaDefault||az.comune||'_______________';
   const _intTipo=s.intestazioneTipo||'framyx';
-  const _az=db.aziende().find(a=>a.id===s.aziendaId)||{};
-  const attAzNome=_intTipo==='cliente'?(_az.nome||'Azienda cliente'):_intTipo==='custom'?(s.intestazioneCustom||cfg.aziendaNome||'Framyx Srl — Società Benefit'):(cfg.aziendaNome||'Framyx Srl — Società Benefit');
-  const attIntestazione=cfg.intestazione||'ATTESTATO DI PARTECIPAZIONE';
-  const attSottotitolo=cfg.sottotitolo||"CON VERIFICA DELL'APPRENDIMENTO";
-  const attFooter=cfg.footer||'';
+  const attAzNome=_intTipo==='cliente'?(az.nome||'Azienda cliente'):_intTipo==='custom'?(s.intestazioneCustom||cfg.aziendaNome||'Framyx Srl SB'):(cfg.aziendaNome||'Framyx Srl SB');
   const attLogo=cfg.logo||'';
-  const html=pp.map(l=>`<div style="page-break-after:always;font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto 32px;padding:36px 40px;border:2px solid #FDC400;background:white">
-<div style="text-align:center;border-bottom:3px solid #FDC400;padding-bottom:14px;margin-bottom:18px">
-${attLogo?`<img src="${attLogo}" style="max-height:60px;max-width:200px;display:block;margin:0 auto 8px">`:``}
-<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#484F54;margin-bottom:5px">${attAzNome}</div>
-<div style="font-size:21px;font-weight:700">${attIntestazione}</div>
-<div style="font-size:12px;color:#888;margin-top:3px">${attSottotitolo}</div>
-</div>
-<div style="text-align:center;background:#FDC400;padding:11px 18px;margin-bottom:18px;border-radius:3px">
-<div style="font-size:13px;font-weight:700">${corso.titolo||'—'}</div>
-${corso.norma?`<div style="font-size:10px;color:#484F54;margin-top:2px">(${corso.norma})</div>`:''}
-</div>
-<div style="text-align:center;margin-bottom:14px">
-<div style="font-size:12px;color:#555;margin-bottom:5px">RICONOSCIMENTO A:</div>
-<div style="font-size:23px;font-weight:700;border-bottom:2px solid #FDC400;display:inline-block;padding-bottom:4px">${l.nome} ${l.cognome}</div>
-</div>
-<div style="text-align:center;font-size:12px;color:#555;margin-bottom:14px;line-height:1.7">
-${l.luogoNascita?`LUOGO DI NASCITA: <strong>${l.luogoNascita}</strong>,`:''} ${l.nascita?`DATA DI NASCITA: <strong>${new Date(l.nascita).toLocaleDateString('it-IT')}</strong>,`:''}
-${l.cf?`<br>C.F.: <strong style="font-family:monospace">${l.cf}</strong>,`:''}
-${l.mansione?`<br>Mansione: Add. ${l.mansione} della ditta <strong>${az.nome||''}</strong>${l.ateco?`, Cod. ATECO ${l.ateco}`:''}`:''}
-</div>
-<div style="text-align:center;font-size:12px;color:#555;margin-bottom:16px;line-height:1.8">
-ha frequentato e superato positivamente il corso di formazione di n. <strong>${corso.durata||'—'} ore</strong><br>
-per lavoratori che si è svolto ${s.giornate&&s.giornate.length>1?`nei giorni <strong>${s.giornate.map(g=>fmt(g.data)).join(', ')}</strong>`:s.data?`il giorno <strong>${fmt(s.data)}</strong>`:''}<br>
-c/o la ditta <strong>${az.nome||'—'}</strong>${s.sede?` sita in ${s.sede}`:''}
-</div>
-<div style="display:flex;justify-content:space-between;margin-bottom:16px">
-<div style="text-align:center;width:44%"><div style="border-top:1px solid #999;padding-top:6px"><div style="font-size:11px;color:#888;margin-bottom:3px">Il Docente</div><div style="font-weight:700;margin-bottom:4px">${doc.nome?doc.nome+' '+doc.cognome:''}</div>${doc.firma?`<img src="${doc.firma}" style="max-height:44px;max-width:160px;display:block;margin:0 auto 4px">` :'<div style="height:44px"></div>'}<div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma</div></div></div>
-<div style="text-align:center;width:44%"><div style="border-top:1px solid #999;padding-top:6px"><div style="font-size:11px;color:#888;margin-bottom:3px">Il Resp. del Progetto Formativo</div><div style="font-weight:700;margin-bottom:4px">${doc.resp||''}</div>${doc.firmaResp?`<img src="${doc.firmaResp}" style="max-height:44px;max-width:160px;display:block;margin:0 auto 4px">` :'<div style="height:44px"></div>'}<div style="border-top:1px solid #ccc;font-size:10px;color:#aaa;padding-top:3px">Firma</div></div></div>
-</div>
-<div style="text-align:right;font-size:12px;color:#555;margin-bottom:16px">${luogo}, ${fmt(s.data)}</div>
-<div style="border-top:2px solid #FDC400;padding-top:10px">
-<div style="font-size:11px;font-weight:700;color:#484F54;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Contenuti del corso</div>
-${argHTML(s.argomenti||[])}</div>
-${scad?`<div style="margin-top:10px;padding:6px 12px;background:${diffDays(scad)<0?'#FDECEA':diffDays(scad)<=60?'#FFF3E0':diffDays(scad)<=90?'#FFFDE7':'#EAF5EE'};border-left:3px solid ${diffDays(scad)<0?'#C0392B':diffDays(scad)<=30?'#C0392B':diffDays(scad)<=60?'#E67E22':diffDays(scad)<=90?'#F39C12':'#2D7D46'};font-size:11px"><strong>Scadenza rinnovo:</strong> ${fmt(scad)} — ${diffDays(scad)<0?'SCADUTO':diffDays(scad)<=30?'entro 30gg':diffDays(scad)<=60?'entro 60gg':diffDays(scad)<=90?'entro 90gg':''}</div>`:''}
-${attFooter?`<div style="margin-top:10px;padding:8px 12px;border-top:1px solid #eee;font-size:10px;color:#888;text-align:center">${attFooter}</div>`:''}
-</div>`).join('');
-  preview(html||'<p>Nessun partecipante</p>');
+  const attFooter=cfg.footer||'';
+
+  const html=pp.map(l=>{
+    const nomeCognome=(l.cognome||'').toUpperCase()+' '+(l.nome||'').toUpperCase();
+    const scadColor=scad?(diffDays(scad)<0?'#C0392B':diffDays(scad)<=90?'#D4620A':'#2D7D46'):'#2D7D46';
+    const scadBg=scad?(diffDays(scad)<0?'#FDECEA':diffDays(scad)<=90?'#FFF3E0':'#EAF5EE'):'#EAF5EE';
+
+    // ── PAGINA 1: Attestato ──
+    const pag1=`<div style="font-family:Helvetica,Arial,sans-serif;background:white;padding:20mm 18mm;min-height:257mm;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;border:3px solid #FDC400">
+
+      <!-- Header -->
+      <div style="text-align:center;border-bottom:2px solid #FDC400;padding-bottom:8mm;margin-bottom:8mm">
+        ${attLogo?`<img src="${attLogo}" style="max-height:55px;max-width:200px;display:block;margin:0 auto 6px">`:``}
+        <div style="font-size:10pt;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#484F54">${attAzNome}</div>
+      </div>
+
+      <!-- Titolo attestato -->
+      <div style="text-align:center;margin-bottom:8mm">
+        <div style="font-size:32pt;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:#1A1916;line-height:1.1">ATTESTATO</div>
+        <div style="font-size:14pt;font-weight:700;letter-spacing:2px;color:#484F54;margin-top:3mm">DI PARTECIPAZIONE</div>
+        <div style="font-size:9pt;color:#888;margin-top:2mm">CON VERIFICA DELL'APPRENDIMENTO</div>
+      </div>
+
+      <!-- Si certifica che -->
+      <div style="text-align:center;margin-bottom:6mm">
+        <div style="font-size:11pt;color:#555;margin-bottom:4mm">Si certifica che</div>
+        <div style="font-size:26pt;font-weight:900;color:#1A1916;letter-spacing:2px;border-bottom:3px solid #FDC400;display:inline-block;padding-bottom:3mm;line-height:1.2">${nomeCognome}</div>
+        ${l.nascita||l.cf?`<div style="font-size:10pt;color:#555;margin-top:3mm">${l.nascita?'nato/a il '+new Date(l.nascita).toLocaleDateString('it-IT'):''}${l.nascita&&l.cf?' · ':''}${l.cf?'C.F. '+l.cf:''}</div>`:''}
+        ${l.mansione?`<div style="font-size:10pt;color:#555;margin-top:1mm">${l.mansione} presso <strong>${az.nome||''}</strong></div>`:''}
+      </div>
+
+      <!-- Corso -->
+      <div style="background:#FDC400;padding:6mm 10mm;text-align:center;margin-bottom:6mm;border-radius:3px">
+        <div style="font-size:9pt;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#484F54;margin-bottom:2mm">ha partecipato al corso</div>
+        <div style="font-size:16pt;font-weight:900;color:#1A1916;line-height:1.3">${corso.titolo||'—'}</div>
+        ${corso.norma?`<div style="font-size:9pt;color:#484F54;margin-top:2mm">${corso.norma}</div>`:''}
+      </div>
+
+      <!-- Dettagli corso -->
+      <div style="text-align:center;font-size:10pt;color:#555;margin-bottom:6mm;line-height:2">
+        <strong>Durata:</strong> ${corso.durata||'—'} ore &nbsp;·&nbsp;
+        ${s.giornate&&s.giornate.length>1
+          ?`<strong>Date:</strong> ${s.giornate.map(g=>fmt(g.data)).join(', ')}`
+          :`<strong>Data:</strong> ${fmt(s.data)}`}
+        &nbsp;·&nbsp; <strong>Sede:</strong> ${s.sede||az.nome||'—'}
+      </div>
+
+      <!-- Scadenza -->
+      ${scad?`<div style="text-align:center;margin-bottom:6mm">
+        <span style="background:${scadBg};color:${scadColor};font-weight:700;font-size:10pt;padding:3mm 8mm;border-radius:4px;border:1.5px solid ${scadColor}">
+          Validità: ${corso.validita} anni &nbsp;·&nbsp; Scadenza rinnovo: ${fmt(scad)}
+        </span>
+      </div>`:''}
+
+      <!-- Firme -->
+      <div style="display:flex;justify-content:space-around;margin-top:4mm">
+        <div style="text-align:center;width:40%">
+          <div style="font-size:9pt;color:#888;margin-bottom:2mm">Il Docente</div>
+          <div style="font-weight:700;font-size:10pt;margin-bottom:2mm">${doc.cognome?doc.cognome+' '+doc.nome:''}</div>
+          ${doc.firma?`<img src="${doc.firma}" style="max-height:40px;max-width:140px;display:block;margin:0 auto 3mm">`:doc.cognome?`<div style="height:40px"></div>`:''}
+          <div style="border-top:1px solid #CCC;padding-top:2mm;font-size:9pt;color:#888">${luogo}, ${fmt(s.data)}</div>
+        </div>
+        <div style="text-align:center;width:40%">
+          <div style="font-size:9pt;color:#888;margin-bottom:2mm">Il Resp. Progetto Formativo</div>
+          <div style="font-weight:700;font-size:10pt;margin-bottom:2mm">${doc.resp||''}</div>
+          ${doc.firmaResp?`<img src="${doc.firmaResp}" style="max-height:40px;max-width:140px;display:block;margin:0 auto 3mm">`:doc.firmaResp!==undefined?`<div style="height:40px"></div>`:'<div style="height:40px"></div>'}
+          <div style="border-top:1px solid #CCC;padding-top:2mm;font-size:9pt;color:#888">Firma</div>
+        </div>
+      </div>
+
+      ${attFooter?`<div style="text-align:center;font-size:8pt;color:#888;border-top:1px solid #EEE;padding-top:3mm;margin-top:4mm">${attFooter}</div>`:''}
+    </div>`;
+
+    // ── PAGINA 2: Contenuti del corso (retro) ──
+    const argomenti=s.argomenti||[];
+    const pag2=`<div style="font-family:Helvetica,Arial,sans-serif;background:white;padding:18mm;min-height:257mm;box-sizing:border-box">
+      <!-- Header mini -->
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2pt solid #FDC400;padding-bottom:4mm;margin-bottom:6mm">
+        <div>
+          ${attLogo?`<img src="${attLogo}" style="max-height:28px;display:block;margin-bottom:2px">`:``}
+          <div style="font-size:8pt;color:#888">${attAzNome}</div>
+        </div>
+        <div style="text-align:right;font-size:9pt;color:#555">
+          <div style="font-weight:700">${nomeCognome}</div>
+          <div>${corso.titolo||''}</div>
+        </div>
+      </div>
+
+      <div style="font-size:14pt;font-weight:900;color:#1A1916;margin-bottom:5mm;text-transform:uppercase;letter-spacing:1px">Contenuti del corso</div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:6mm">
+        <tr style="background:#484F54;color:white">
+          <th style="padding:4pt 10pt;text-align:left;font-size:9pt;width:60%">Argomento</th>
+          <th style="padding:4pt 10pt;text-align:left;font-size:9pt">Riferimento normativo</th>
+        </tr>
+        ${argomenti.length?argomenti.map((a,i)=>`
+        <tr style="background:${i%2?'#FAFAFA':'white'}">
+          <td style="padding:5pt 10pt;border:0.5pt solid #E0E0E0;font-size:9.5pt">${a}</td>
+          <td style="padding:5pt 10pt;border:0.5pt solid #E0E0E0;font-size:9pt;color:#666">${corso.norma||''}</td>
+        </tr>`).join('')
+        :`<tr><td colspan="2" style="padding:10pt;font-size:9pt;color:#888;font-style:italic">Argomenti non specificati</td></tr>`}
+      </table>
+
+      <!-- Info sessione -->
+      <div style="background:#FFF8E1;border:1pt solid #FDC400;border-radius:4px;padding:4mm 6mm;font-size:9pt;margin-bottom:6mm">
+        <div style="font-weight:700;margin-bottom:2mm">Informazioni sulla sessione</div>
+        <div style="display:flex;gap:10mm;flex-wrap:wrap;color:#555">
+          <span><strong>Data:</strong> ${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join(', '):fmt(s.data)}</span>
+          <span><strong>Durata:</strong> ${corso.durata||'—'} ore</span>
+          <span><strong>Sede:</strong> ${s.sede||az.comune||'—'}</span>
+          <span><strong>Docente:</strong> ${doc.cognome?doc.cognome+' '+doc.nome:'—'}</span>
+          <span><strong>Modalità:</strong> ${s.modalita||'In presenza'}</span>
+        </div>
+      </div>
+
+      <!-- Firma partecipante sul retro -->
+      <div style="margin-top:10mm;border-top:1pt solid #CCC;padding-top:5mm">
+        <div style="display:flex;justify-content:space-between">
+          <div style="text-align:center;width:45%">
+            <div style="font-size:9pt;color:#888;margin-bottom:8mm">Firma del partecipante per presa visione</div>
+            <div style="border-top:1pt solid #CCC;padding-top:2mm;font-size:9pt;color:#888">${nomeCognome}</div>
+          </div>
+          <div style="text-align:center;width:45%">
+            <div style="font-size:9pt;color:#888;margin-bottom:8mm">${luogo}, ${fmt(s.data)}</div>
+            <div style="border-top:1pt solid #CCC;padding-top:2mm;font-size:9pt;color:#888">Data e firma</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    return `<div style="page-break-after:always">${pag1}</div><div style="page-break-after:always">${pag2}</div>`;
+  }).join('');
+
+  stampaPDF(html, 'Attestati_'+(corso.titolo||'corso').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)+'_'+fmt(s.data)+'.pdf', true);
+  toast('Attestati generati ('+pp.length+')','🏆');
 }
 
 function generaVerbale(){
@@ -3592,7 +3687,8 @@ function toTitleCase(str){
     return lower.has(w) ? w : w.charAt(0).toUpperCase()+w.slice(1);
   });
 }
-function normalizzaNome(str){ return toTitleCase(str.trim()); }
+function normalizzaNome(str){ return toTitleCase((str||'').trim()); }
+function toUpperNome(str){ return (str||'').trim().toUpperCase(); }
 
 // ══ LETTERA INCARICO ══
 function onLettTipoChange(){
@@ -6675,7 +6771,7 @@ async function importaStoricoJSON(input){
       ? lavNew.find(x=>x.cf&&x.cf.toUpperCase()===l.cf.toUpperCase())
       : lavNew.find(x=>x.cognome.toLowerCase()===l.cognome.toLowerCase()&&x.nome.toLowerCase()===l.nome.toLowerCase()&&x.aziendaId===azObj?.id);
     if(!exists){
-      lavNew.push({id:uid(),cognome:l.cognome,nome:l.nome,cf:l.cf||'',
+      lavNew.push({id:uid(),cognome:toUpperNome(l.cognome),nome:toUpperNome(l.nome),cf:l.cf||'',
         nascita:l.nascita||'',luogoNascita:l.luogoNascita||'',
         mansione:l.mansione||'',ateco:l.ateco||'',email:'',
         aziendaId:azObj?.id||''});
