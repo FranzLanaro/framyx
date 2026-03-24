@@ -3616,7 +3616,7 @@ function generaAttestati(){
 
     // PAG 1 — attestato
     const pag1=
-      '<div style="width:210mm;background:white;padding:12mm 16mm 10mm;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always;font-family:Helvetica,Arial,sans-serif;color:#222;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+
+      '<div style="width:210mm;min-height:297mm;background:white;padding:12mm 16mm 10mm;display:flex;flex-direction:column;justify-content:space-between;font-family:Helvetica,Arial,sans-serif;color:#222;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+
 
       // Header
       '<div style="display:flex;justify-content:space-between;align-items:center">'+
@@ -3716,11 +3716,13 @@ function generaAttestati(){
       '</div>'+
       '</div>';
 
-    return pag1+pag2;
+    // Wrapper: break-after:page su ogni coppia tranne l'ultima
+    const wrapper='<div style="break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+pag1+pag2+'</div>';
+    return wrapper;
   }).join('');
 
   const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Attestati</title>'
-    +'<style>@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:white}</style>'
+    +'<style>@page{size:A4 portrait;margin:0}*{box-sizing:border-box;margin:0;padding:0}html,body{background:white}div{break-inside:avoid-page}</style>'
     +'<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><'+'/script>'
     +'</head><body>'+pages
     +'<scr'+'ipt>(function(){'
