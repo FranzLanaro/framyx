@@ -3444,108 +3444,106 @@ async function generaRegistro(){
   const blocchi = [pp]; // sempre 1 solo blocco con tutti i partecipanti
 
   const paginaGiornata=(g, gIdx, ppBlocco, bIdx, totBlocchi)=>`
-<div style="font-family:Helvetica,Arial,sans-serif;width:190mm;margin:0 auto;padding:8mm 10mm;font-size:10px;color:#222;background:white;box-sizing:border-box;page-break-before:${gIdx>0||bIdx>0?'always':'avoid'}">
+<div style="font-family:Helvetica,Arial,sans-serif;width:190mm;margin:0 auto;padding:6mm 8mm;font-size:9px;color:#222;background:white;box-sizing:border-box;page-break-before:${gIdx>0||bIdx>0?'always':'avoid'}">
 
-  <!-- Header -->
-  <table style="width:100%;border-collapse:collapse;margin-bottom:8px"><tr>
-    <td style="padding:6px 10px;border:1px solid #484F54;border-bottom:3px solid #FDC400;vertical-align:top">
-      <div style="font-size:13px;font-weight:700">REGISTRO DI FORMAZIONE</div>
-      <div style="font-size:9px;color:#888">Giornata ${gIdx+1} di ${giornate.length}${totBlocchi>1?' · Foglio '+(bIdx+1)+' di '+totBlocchi:''}</div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:5px"><tr>
+    <td style="padding:5px 8px;border:1px solid #484F54;border-bottom:3px solid #FDC400;vertical-align:top">
+      <div style="font-size:12px;font-weight:700">REGISTRO DI FORMAZIONE</div>
+      <div style="font-size:8px;color:#888">Giornata ${gIdx+1} di ${giornate.length}</div>
     </td>
-    <td style="padding:6px 10px;border:1px solid #484F54;border-bottom:3px solid #FDC400;text-align:right;background:#F5F5F5;width:130px">
-      <div style="font-weight:700;font-size:11px">FR-FOR-01 Rev.01</div>
-      <div style="color:#888;font-size:9px">Framyx Srl SB</div>
+    <td style="padding:5px 8px;border:1px solid #484F54;border-bottom:3px solid #FDC400;text-align:right;background:#F5F5F5;width:120px">
+      <div style="font-weight:700;font-size:10px">FR-FOR-01 Rev.01</div>
+      <div style="color:#888;font-size:8px">Framyx Srl SB</div>
     </td>
   </tr></table>
 
-  <!-- Dati sessione (solo sul primo foglio di ogni giornata) -->
-  ${bIdx===0?`<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:8px;padding:6px 10px;background:#FAFAFA">
+  ${bIdx===0?`<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:5px;padding:4px 8px;background:#FAFAFA">
     <table style="width:100%;border-collapse:collapse">
       ${tdRow('Titolo corso',corso.titolo||'—','Data',fmt(g.data))}
       ${tdRow('Orario',(g.ini||s.oraInizio||'')+' – '+(g.fine||s.oraFine||''),'Sede',s.sede||az.comune||'')}
-      ${tdRow('Docente / Formatore',doc.cognome?(doc.cognome+' '+doc.nome):'—','Azienda',az.nome||'')}
+      ${tdRow('Docente',doc.cognome?(doc.cognome+' '+doc.nome):'—','Azienda',az.nome||'')}
       <tr>
-        <td style="padding:4px 8px;border:1px solid #FDC400;border-left:3px solid #FDC400;font-size:9px;font-weight:700;color:#6B7280">Modalità</td>
-        <td style="padding:4px 8px;border:1px solid #ddd">
-          ${['In presenza','Videoconferenza sincrona','E-learning','Mista'].map(m=>`<span style="margin-right:6px">${m===s.modalita?'☑':'☐'} ${m}</span>`).join('')}
-        </td>
-        <td style="padding:4px 8px;border:1px solid #FDC400;border-left:3px solid #FDC400;font-size:9px;font-weight:700;color:#6B7280">Rif. normativo</td>
-        <td style="padding:4px 8px;border:1px solid #ddd">${corso.norma||''}</td>
+        <td style="padding:3px 6px;border:1px solid #FDC400;border-left:3px solid #FDC400;font-size:8px;font-weight:700;color:#6B7280">Modalità</td>
+        <td style="padding:3px 6px;border:1px solid #ddd;font-size:8px">${['In presenza','Videoconf.','E-learning','Mista'].map(m=>`<span style="margin-right:5px">${m===s.modalita?'☑':'☐'} ${m}</span>`).join('')}</td>
+        <td style="padding:3px 6px;border:1px solid #FDC400;border-left:3px solid #FDC400;font-size:8px;font-weight:700;color:#6B7280">Normativa</td>
+        <td style="padding:3px 6px;border:1px solid #ddd;font-size:8px">${corso.norma||''}</td>
       </tr>
     </table>
   </div>`:''}
 
-  <!-- Lista presenze -->
-  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:8px">
-    <div style="background:#484F54;color:white;padding:4px 10px">
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:5px">
+    <div style="background:#484F54;color:white;padding:3px 8px">
       <table style="width:100%"><tr>
-        <td style="font-size:9px;font-weight:700">Data: ${fmt(g.data)}</td>
-        <td style="font-size:9px;font-weight:700">Docente: ${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
-        <td style="font-size:9px;font-weight:700">Orario: ${g.ini||s.oraInizio||''}–${g.fine||s.oraFine||''}</td>
-        <td style="font-size:9px;font-weight:700;text-align:right">Tot. partecipanti: ${pp.length}</td>
+        <td style="font-size:8px;font-weight:700">Data: ${fmt(g.data)}</td>
+        <td style="font-size:8px;font-weight:700">Docente: ${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
+        <td style="font-size:8px;font-weight:700">Orario: ${g.ini||s.oraInizio||''}–${g.fine||s.oraFine||''}</td>
+        <td style="font-size:8px;font-weight:700;text-align:right">Totale: ${pp.length}</td>
       </tr></table>
     </div>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#484F54;color:white">
-        <th style="padding:4px 6px;font-size:9px;width:22px">N°</th>
-        <th style="padding:4px 6px;font-size:9px;text-align:left">Cognome e Nome</th>
-        <th style="padding:4px 6px;font-size:9px;text-align:left;width:80px">Mansione</th>
-        <th style="padding:4px 6px;font-size:9px;width:36px;text-align:center">Ora<br>ingr.</th>
-        <th style="padding:4px 6px;font-size:9px;width:70px;text-align:center">Firma entrata</th>
-        <th style="padding:4px 6px;font-size:9px;width:36px;text-align:center">Ora<br>usc.</th>
-        <th style="padding:4px 6px;font-size:9px;width:70px;text-align:center">Firma uscita</th>
-        <th style="padding:4px 6px;font-size:9px;width:50px">Note</th>
+        <th style="padding:3px 5px;font-size:8px;width:20px">N°</th>
+        <th style="padding:3px 5px;font-size:8px;text-align:left">Cognome e Nome</th>
+        <th style="padding:3px 5px;font-size:8px;width:32px;text-align:center">Ora<br>ingr.</th>
+        <th style="padding:3px 5px;font-size:8px;width:75px;text-align:center">Firma entrata</th>
+        <th style="padding:3px 5px;font-size:8px;width:32px;text-align:center">Ora<br>usc.</th>
+        <th style="padding:3px 5px;font-size:8px;width:75px;text-align:center">Firma uscita</th>
+        <th style="padding:3px 5px;font-size:8px;width:45px">Note</th>
       </tr></thead>
       <tbody>
         ${ppBlocco.map((l,i)=>{
           const nGlobal = bIdx*BLOCCO+i+1;
           return `<tr style="background:${(bIdx*BLOCCO+i)%2?'#f9f9f9':'white'}">
-            <td style="padding:5px 6px;text-align:center;border:1px solid #ddd;font-weight:700">${nGlobal}</td>
-            <td style="padding:5px 6px;border:1px solid #ddd;font-weight:600">${(l.cognome||'').toUpperCase()} ${(l.nome||'').toUpperCase()}</td>
-            <td style="padding:5px 6px;border:1px solid #ddd;font-size:9px">${l.mansione||''}</td>
-            <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;font-size:9px">${g.ini||s.oraInizio||''}</td>
-            <td style="border:1px solid #ddd;height:24px"></td>
-            <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;font-size:9px">${g.fine||s.oraFine||''}</td>
-            <td style="border:1px solid #ddd;height:24px"></td>
+            <td style="padding:2px 5px;text-align:center;border:1px solid #ddd;font-weight:700;font-size:8px">${nGlobal}</td>
+            <td style="padding:2px 5px;border:1px solid #ddd;font-weight:600;font-size:8px">${(l.cognome||'').toUpperCase()} ${(l.nome||'').toUpperCase()}</td>
+            <td style="padding:2px 5px;border:1px solid #ddd;text-align:center;font-size:8px">${g.ini||s.oraInizio||''}</td>
+            <td style="border:1px solid #ddd;height:16px"></td>
+            <td style="padding:2px 5px;border:1px solid #ddd;text-align:center;font-size:8px">${g.fine||s.oraFine||''}</td>
+            <td style="border:1px solid #ddd;height:16px"></td>
             <td style="border:1px solid #ddd"></td>
           </tr>`;
         }).join('')}
+        ${Array.from({length:Math.max(0,BLOCCO-ppBlocco.length)},(_,i)=>`<tr style="background:${(ppBlocco.length+i)%2?'#f9f9f9':'white'}">
+            <td style="padding:2px 5px;text-align:center;border:1px solid #ddd;color:#ccc;font-size:8px">${ppBlocco.length+i+1}</td>
+            <td style="border:1px solid #ddd;height:16px"></td>
+            <td style="border:1px solid #ddd"></td>
+            <td style="border:1px solid #ddd"></td>
+            <td style="border:1px solid #ddd"></td>
+            <td style="border:1px solid #ddd"></td>
+            <td style="border:1px solid #ddd"></td>
+          </tr>`).join('')}
       </tbody>
     </table>
   </div>
 
-  <!-- Firme chiusura (solo sull'ultimo foglio di ogni giornata) -->
-  ${bIdx===totBlocchi-1?`<div style="border:1px solid #ddd;border-top:3px solid #FDC400;margin-bottom:8px">
-    <div style="background:#484F54;color:white;font-weight:700;font-size:9px;text-transform:uppercase;padding:4px 10px">Firme di chiusura giornata</div>
+  ${bIdx===totBlocchi-1?`<div style="border:1px solid #ddd;border-top:3px solid #FDC400">
+    <div style="background:#484F54;color:white;font-weight:700;font-size:8px;text-transform:uppercase;padding:3px 8px">Firme di chiusura giornata</div>
     <table style="width:100%;border-collapse:collapse">
       <tr>
-        <td style="padding:4px 10px;border:1px solid #ddd;font-size:9px;font-weight:700;color:#6B7280;width:50%">Docente / Formatore</td>
-        <td style="padding:4px 10px;border:1px solid #ddd;font-size:9px;font-weight:700;color:#6B7280">Per la Direzione — ${az.referente||az.nome||''}</td>
+        <td style="padding:3px 8px;border:1px solid #ddd;font-size:8px;font-weight:700;color:#6B7280;width:50%">Docente / Formatore</td>
+        <td style="padding:3px 8px;border:1px solid #ddd;font-size:8px;font-weight:700;color:#6B7280">Per la Direzione — ${az.referente||az.nome||''}</td>
       </tr>
       <tr>
-        <td style="padding:3px 10px;border:1px solid #ddd;font-size:9px;color:#888">${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
-        <td style="padding:3px 10px;border:1px solid #ddd;font-size:9px;color:#888">${az.referente||''}</td>
+        <td style="padding:2px 8px;border:1px solid #ddd;font-size:8px;color:#888">${doc.cognome?doc.cognome+' '+doc.nome:''}</td>
+        <td style="padding:2px 8px;border:1px solid #ddd;font-size:8px;color:#888">${az.referente||''}</td>
       </tr>
       <tr>
-        <td style="border:1px solid #ddd;height:50px;padding:4px 10px;vertical-align:bottom">
-          ${doc.firma?`<img src="${doc.firma}" style="max-height:42px;max-width:150px;display:block">`:``}
-        </td>
-        <td style="border:1px solid #ddd;height:50px"></td>
+        <td style="border:1px solid #ddd;height:40px;padding:3px 8px;vertical-align:bottom">${doc.firma?`<img src="${doc.firma}" style="max-height:32px;max-width:130px;display:block">`:''}</td>
+        <td style="border:1px solid #ddd;height:40px"></td>
       </tr>
       <tr>
-        <td style="padding:3px 10px;border:1px solid #ddd;font-size:9px;color:#aaa">Firma</td>
-        <td style="padding:3px 10px;border:1px solid #ddd;font-size:9px;color:#aaa">Firma</td>
+        <td style="padding:2px 8px;border:1px solid #ddd;font-size:8px;color:#aaa">Firma</td>
+        <td style="padding:2px 8px;border:1px solid #ddd;font-size:8px;color:#aaa">Firma</td>
       </tr>
     </table>
   </div>`:''}
 
-  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;background:#FFFBE6;padding:5px 10px;font-size:9px;color:#666">
-    Registro conservato ai sensi Art. 37 D.Lgs. 81/08 — Partecipanti: ${pp.length} — Giornata ${gIdx+1}/${giornate.length}${totBlocchi>1?' — Foglio '+(bIdx+1)+'/'+totBlocchi:''}
+  <div style="border:1px solid #ddd;border-top:3px solid #FDC400;background:#FFFBE6;padding:3px 8px;font-size:8px;color:#666;margin-top:3px">
+    Conservare ai sensi Art. 37 D.Lgs. 81/08 — ${pp.length} partecipanti — Giornata ${gIdx+1}/${giornate.length}
   </div>
 </div>`;
 
-  // Genera tutte le pagine: per ogni giornata, per ogni blocco di 20
-  const pagine = [];
+const pagine = [];
   giornate.forEach((g,gIdx)=>{
     blocchi.forEach((bl,bIdx)=>{
       pagine.push(paginaGiornata(g, gIdx, bl, bIdx, blocchi.length));
