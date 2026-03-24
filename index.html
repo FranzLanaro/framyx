@@ -3465,53 +3465,7 @@ async function generaRegistro(){
   </div>
 </div>`;
 
-
-
-// ══════════════════════════════════════════════
-// SUPABASE CONFIG
-// ══════════════════════════════════════════════
-const SUPA_URL = 'https://jmdoeqzsyrjhcvacqhub.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
-  global: {
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + SUPA_KEY
-    }
-  },
-  auth: { persistSession: false }
-});
-
-// ══════════════════════════════════════════════
-// STORE — Supabase + localStorage cache
-// ══════════════════════════════════════════════
-const LS = {
-  g: k => { try { return JSON.parse(localStorage.getItem('frm_'+k)||'[]') } catch(e) { return [] } },
-  s: (k,v) => localStorage.setItem('frm_'+k, JSON.stringify(v))
-};
-
-// Cache locale per velocità UI
-const cache = {
-  aziende: null, lavoratori: null, docenti: null,
-  corsi: null, sessioni: null, piani_fondo: null, offerte: null
-};
-
-const db = {
-  aziende:    () => cache.aziende    || LS.g('aziende'),
-  lavoratori: () => cache.lavoratori || LS.g('lavoratori'),
-  docenti:    () => cache.docenti    || LS.g('docenti'),
-  corsi:      () => cache.corsi      || LS.g('corsi'),
-  sessioni:   () => cache.sessioni   || LS.g('sessioni'),
-  offerte:    () => cache.offerte    || LS.g('offerte'),
-  save: {
-    aziende:    v => { cache.aziende=v;    LS.s('aziende',v);    supaUpsert('aziende',v).catch(e=>console.warn('sync aziende:',e)) },
-    lavoratori: v => { cache.lavoratori=v; LS.s('lavoratori',v); supaUpsert('lavoratori',v).catch(e=>console.warn('sync lav:',e)) },
-    docenti:    v => { cache.docenti=v;    LS.s('docenti',v);    supaUpsert('docenti',v).catch(e=>console.warn('sync doc:',e)) },
-    corsi:      v => { cache.corsi=v;      LS.s('corsi',v);      supaUpsert('corsi',v).catch(e=>console.warn('sync corsi:',e)) },
-    sessioni:   v => { cache.sessioni=v;   LS.s('sessioni',v);   supaUpsert('sessioni',v).catch(e=>console.warn('sync sess:',e)) },
-    offerte:    v => { cache.offerte=v;    LS.s('offerte',v);    supaUpsert('offerte',v).catch(e=>console.warn('sync off:',e)) },
-  }
-};
+;
 
 // Upsert tutti i record di una tabella
 async function supaUpsert(table, records) {
