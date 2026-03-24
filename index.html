@@ -3893,11 +3893,11 @@ async function generaGradimento(){
       <div style="font-weight:bold;font-size:8.5pt;color:#1A1916;padding:2pt 6pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:1mm">5. Commenti e suggerimenti</div>
       <table style="width:100%;border-collapse:collapse">
         <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">Cosa hai apprezzato di più del corso?</td></tr>
-        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
+        <tr><td style="padding:7pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
         <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt;background:#FAFAFA">Cosa miglioreresti?</td></tr>
-        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0;background:#FAFAFA"></td></tr>
+        <tr><td style="padding:7pt 8pt;border:0.75pt solid #E0E0E0;background:#FAFAFA"></td></tr>
         <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">Argomenti che avresti voluto approfondire:</td></tr>
-        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
+        <tr><td style="padding:7pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
       </table>
     </div>
     <div style="margin-top:2mm;display:flex;justify-content:space-between;align-items:flex-end">
@@ -3945,7 +3945,11 @@ async function generaGradimento(){
       ${footerHtml}
     </div>`).join('');
 
-  stampaPDF(html, 'Gradimento_'+( corso.titolo||'corso').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)+'_'+fmt(s.data)+'.pdf', true);
+  const _gHtml='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Gradimento</title><style>@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:white}</style></head><body>'+html+'</body></html>';
+  const _gWin=window.open('','_blank');
+  if(!_gWin){toast('Abilita i popup per questo sito','⚠️');return;}
+  _gWin.document.open();_gWin.document.write(_gHtml);_gWin.document.close();_gWin.focus();
+  setTimeout(()=>{try{_gWin.print();}catch(e){}},1500);
   toast('Questionari gradimento generati ('+targets.length+')','⭐');
 }
 
