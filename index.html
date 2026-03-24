@@ -1665,7 +1665,7 @@ async function loadFromSupabase() {
     // Test connessione con client Supabase JS
     const testResult = await Promise.race([
       supa.from('aziende').select('id').limit(1),
-      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout dopo 10s — verifica connessione internet')),10000))
     ]);
     if(testResult.error) throw testResult.error;
 
@@ -1731,9 +1731,15 @@ async function loadFromSupabase() {
     return true;
   } catch(e) {
     console.warn('Load error:', e);
+    // Mostra errore visibile all'utente
+    const msg = e && e.message ? e.message : String(e);
     showSyncStatus('error');
     const bar=document.getElementById('sync-bar');
-    if(bar) bar.style.display='block';
+    if(bar){
+      bar.style.display='block';
+      const errEl=document.getElementById('sync-msg');
+      if(errEl) errEl.innerHTML='⚠️ Errore DB: <strong>'+msg.slice(0,80)+'</strong> &nbsp;<button onclick="syncAndRefresh()" style="background:var(--accent);color:#1A1916;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">↻ Riprova</button>';
+    }
     return false;
   }
 }
@@ -8266,16 +8272,19 @@ window.openM = function(id) {
 // Add to titles
 titles['fondimpresa'] = 'Fondimpresa';
 
-// Add to renderPage
-const _origRenderPage = renderPage;
-window.renderPage = function(p) {
-  if(p === 'fondimpresa') { renderFondimpresa(); return; }
-  _origRenderPage(p);
-};
 
 
 
 // ══ INIT ══
+
+// Check browser compatibility (senza eval)
+(function(){
+  var ok = typeof Promise !== 'undefined' && typeof Symbol !== 'undefined';
+  if(!ok) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:Arial"><h2>⚠️ Browser non supportato</h2><p>Aggiorna Safari, Chrome o Firefox all\'ultima versione.</p></div>';
+  }
+})();
+
 async function init() {
   // 1. Chiudi modal
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
