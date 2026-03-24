@@ -2555,11 +2555,18 @@ function renderLavoratori(){
   let lav=db.lavoratori().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it')||(a.nome||'').localeCompare(b.nome||'','it'));
   if(faz) lav=lav.filter(l=>l.aziendaId===faz);
   if(q) lav=lav.filter(l=>((l.cognome||'')+' '+(l.nome||'')+' '+(l.cf||'')).toLowerCase().includes(q));
+  // Limita a 200 righe per non bloccare il browser — filtra per azienda o nome per vedere tutti
+  const totale=lav.length;
+  const MAX=200;
+  const troncato=(!faz&&!q&&lav.length>MAX);
+  if(troncato) lav=lav.slice(0,MAX);
   const tb=document.getElementById('tb-lav');
   if(!lav.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">👷</div><h3>Nessun lavoratore</h3></div></td></tr>';return}
+  const scAll=computeScad(); // una sola chiamata
+  const sessAll=db.sessioni().filter(s=>s.stato==='completata'); // una sola chiamata
   tb.innerHTML=lav.map(l=>{
-    const sessLav=db.sessioni().filter(s=>s.stato==='completata'&&(s.partecipanti||[]).includes(l.id));
-    const scad=computeScad().filter(x=>x.lid===l.id);
+    const sessLav=sessAll.filter(s=>(s.partecipanti||[]).includes(l.id));
+    const scad=scAll.filter(x=>x.lid===l.id);
     const scaduti=scad.filter(x=>diffDays(x.sc)<0).length;
     const inScad=scad.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=90).length;
     const badge=scaduti>0?`<span class="badge br" style="font-size:9px;margin-left:4px">🔴${scaduti}</span>`:
@@ -2578,6 +2585,12 @@ function renderLavoratori(){
       </td>
     </tr>`;
   }).join('')
+  // Messaggio se troncato
+  if(troncato){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td colspan="8" style="padding:10px 14px;background:#FFF8E1;border:1px solid #FDC400;font-size:12px;text-align:center">Mostrati i primi '+MAX+' di '+totale+' lavoratori — <strong>seleziona un\'azienda</strong> o <strong>cerca per nome</strong> per vedere tutti</td>';
+    tb.appendChild(tr);
+  }
 }
 function salvaLavoratore(){
   const id = v('lav-id') || uid();
@@ -4103,8 +4116,7 @@ function exportScadCSV(){
 // ══ DASHBOARD ══
 let _dashDebounceTimer = null;
 function renderDashboard(){
-  // Debounce: se chiamata più volte in rapida successione, esegui solo l'ultima
-  if(_dashDebounceTimer) return;
+  if(_dashDebounceTimer) clearTimeout(_dashDebounceTimer);
   _dashDebounceTimer = setTimeout(()=>{ _dashDebounceTimer=null; _renderDashboardReal(); }, 50);
 }
 function _renderDashboardReal(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad();
@@ -8164,36 +8176,31 @@ window.renderPage = function(p) {
 
 // ══ INIT ══
 async function init() {
-  // Chiudi tutti i modal all'avvio
+  // 1. Chiudi modal
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
-  // Se ci sono già dati locali, mostrali subito mentre si carica Supabase
-  const haDatiLocali = (LS.g('aziende')||[]).length > 0;
-  if(haDatiLocali){
-    cache.aziende    = LS.g('aziende')||[];
-    cache.lavoratori = LS.g('lavoratori')||[];
-    cache.docenti    = LS.g('docenti')||[];
-    cache.corsi      = LS.g('corsi')||[];
-    cache.sessioni   = LS.g('sessioni')||[];
-    cache.offerte    = LS.g('offerte')||[];
-    updateFilters(); renderDashboard();
-  }
-  // Mostra dati locali SUBITO senza aspettare Supabase
-  const bar=document.getElementById('sync-bar');
-  if(bar) bar.style.display='none'; // nascondi barra durante caricamento iniziale
-  // Carica Supabase in background — non bloccare la UI
-  loadFromSupabase().then(ok=>{
-    renderPage(currentPage);
-    updateFilters();
-    renderDashboard();
-    if(ok){ showSyncStatus('ok'); }
-    else { showSyncStatus('error'); if(bar) bar.style.display='block'; }
-  }).catch(()=>{ showSyncStatus('error'); if(bar) bar.style.display='block'; });
-  const loaded = true; // continua subito
-  if(!loaded && !haDatiLocali) loadDemo();
+
+  // 2. Carica dati locali in cache
+  const tables=['aziende','lavoratori','docenti','corsi','sessioni','offerte'];
+  tables.forEach(t=>{ const d=LS.g(t); if(d&&d.length) cache[t]=d; });
+
+  // 3. Mostra subito UI con dati locali
   updateFilters();
   renderDashboard();
-  // Auto-backup silenzioso all'apertura
-  setTimeout(autoBackup, 3000);
+  renderPage(currentPage);
+
+  // 4. Carica Supabase in background (non blocca nulla)
+  loadFromSupabase().then(ok=>{
+    updateFilters();
+    renderDashboard();
+    renderPage(currentPage);
+    if(ok) showSyncStatus('ok');
+    else { showSyncStatus('error'); const b=document.getElementById('sync-bar'); if(b) b.style.display='block'; }
+  }).catch(()=>{
+    showSyncStatus('error');
+  });
+
+  // 5. Backup silenzioso dopo 10s (non 3s)
+  setTimeout(autoBackup, 10000);
 }
 
 function autoBackup(){
