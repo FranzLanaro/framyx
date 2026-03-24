@@ -1638,21 +1638,46 @@ async function supaUpsert(table, records) {
 }
 
 // Carica tutti i dati da Supabase
-async function loadFromSupabase() {
-  showSyncStatus('loading');
-  try {
-    // Test connessione con client Supabase JS
-    const testResult = await Promise.race([
-      supa.from('aziende').select('id').limit(1),
-      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),10000))
-    ]);
-    if(testResult.error) throw testResult.error;
+async function loadFromSupabase(){
+  try{
+    const tables = ['aziende','lavoratori','docenti','corsi','sessioni','offerte'];
+    const cache = {};
 
-    // Tabelle grandi: client Supabase JS con paginazione
-    async function fetchAll(table){
-      let all=[], from=0, step=1000;
-      while(true){
-        const {data,error}=await supa.from(table).select('data').range(from, from+step-1);
+    await Promise.all(tables.map(async t => {
+      const { data, error } = await supa.from(t).select('data');
+      if(error){
+        console.error('Errore Supabase:', t, error);
+        cache[t] = [];
+        return;
+      }
+      const clean = (data || []).map(r => r.data).filter(Boolean);
+      cache[t] = clean;
+    }));
+
+    // assegna alle variabili globali
+    aziende = cache['aziende'] || [];
+    lavoratori = cache['lavoratori'] || [];
+    docenti = cache['docenti'] || [];
+    corsi = cache['corsi'] || [];
+    sessioni = cache['sessioni'] || [];
+    offerte = cache['offerte'] || [];
+
+    // resto (piani fondo ecc.)
+    try {
+      const { data: fd } = await supa.from('piani_fondo').select('data');
+      window.piani_fondo = (fd || []).map(r=>r.data).filter(Boolean);
+    } catch(e){
+      console.warn('piani_fondo non disponibile');
+      window.piani_fondo = [];
+    }
+
+    return true;
+  }catch(e){
+    console.error('Errore generale loadFromSupabase:', e);
+    return false;
+  }
+}
+=await supa.from(table).select('data').range(from, from+step-1);
         if(error){ console.warn(table, error.message); break; }
         if(!data||!data.length) break;
         all=all.concat(data.map(r=>r.data).filter(Boolean));
