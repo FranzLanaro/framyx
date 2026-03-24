@@ -3856,7 +3856,7 @@ async function generaGradimento(){
 
   const intestazioneHtml=`
     <div style="display:flex;justify-content:flex-end;margin-bottom:2mm">
-      <img src="${LOGO}" alt="Framyx" style="height:55px;max-width:180px;object-fit:contain">
+      <img src="${LOGO}" alt="Framyx" style="height:32px;max-width:140px;object-fit:contain">
     </div>
     <hr style="border:none;border-top:1.5pt solid #F5A623;margin:0 0 5mm 0">`;
 
@@ -3914,7 +3914,7 @@ async function generaGradimento(){
   const targets=pp.length?pp:[null];
 
   const html=targets.map((l,idx)=>`
-    <div style="font-family:Helvetica,Arial,sans-serif;font-size:8.5pt;color:#3D3D3D;background:white;width:190mm;margin:0 auto;padding:5mm 8mm 10mm;${idx<targets.length-1?'page-break-after:always':''}">
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:8.5pt;color:#3D3D3D;background:white;width:190mm;margin:0 auto;padding:4mm 8mm 5mm;${idx<targets.length-1?'page-break-after:always':''}">
       ${intestazioneHtml}
       <div style="margin-bottom:1mm">
         <div style="font-size:11pt;font-weight:bold;color:#1A1916;margin-bottom:1mm">Questionario di gradimento</div>
@@ -3945,7 +3945,13 @@ async function generaGradimento(){
       ${footerHtml}
     </div>`).join('');
 
-  stampaPDF(html, 'Gradimento_'+( corso.titolo||'corso').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)+'_'+fmt(s.data)+'.pdf', true);
+  const fullHtml='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Gradimento</title>'
+    +'<style>@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:white}</style>'
+    +'</head><body>'+html+'</body></html>';
+  const win=window.open('','_blank');
+  if(!win){toast('Abilita i popup per questo sito','⚠️');return;}
+  win.document.open();win.document.write(fullHtml);win.document.close();win.focus();
+  setTimeout(()=>{try{win.print();}catch(e){}},1500);
   toast('Questionari gradimento generati ('+targets.length+')','⭐');
 }
 
