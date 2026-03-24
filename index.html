@@ -298,7 +298,6 @@ textarea.fc{min-height:68px;resize:vertical}
   <!-- TOPBAR -->
   <div class="topbar">
     <span class="topbar-title" id="topbar-title">Dashboard</span>
-    <button onclick="loadFromSupabase().then(ok=>{ renderPage(currentPage);updateFilters();renderDashboard(); if(ok) toast('Dati aggiornati ✅','☁️'); else toast('Connessione fallita','⚠️'); })" title="Ricarica tutti i dati da Supabase — utile se lavori da più PC" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:var(--text2);margin-right:8px">🔄 Aggiorna</button>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="global-search" placeholder="Cerca discente, corso, azienda..." oninput="globalSearch(this.value)" onfocus="showSearch()" autocomplete="off">
@@ -1556,9 +1555,7 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="fg"><label class="fl">Codice identificativo piano</label><input class="fc" id="fo-codice" placeholder="es. 254164" style="font-family:var(--font-mono)"></div>
       </div>
       <div class="fr2">
-        <div class="fg"><label class="fl">Azienda aderente *</label>
-          <input class="fc" id="fo-az-search" placeholder="🔍 Filtra aziende..." oninput="filtraFoAz(this.value)" style="margin-bottom:4px">
-          <select class="fc" id="fo-az" style="max-height:160px"></select></div>
+        <div class="fg"><label class="fl">Azienda aderente *</label><select class="fc" id="fo-az"><option value="">Seleziona...</option></select></div>
         <div class="fg"><label class="fl">Referente di Piano</label><input class="fc" id="fo-referente" placeholder="Nome e Cognome"></div>
       </div>
 
@@ -1665,7 +1662,7 @@ async function loadFromSupabase() {
     // Test connessione con client Supabase JS
     const testResult = await Promise.race([
       supa.from('aziende').select('id').limit(1),
-      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout dopo 10s — verifica connessione internet')),10000))
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))
     ]);
     if(testResult.error) throw testResult.error;
 
@@ -1718,9 +1715,7 @@ async function loadFromSupabase() {
     // piani_fondo
     const {data: fd} = await supa.from('piani_fondo').select('data');
     const fondo = (fd||[]).map(r=>r.data).filter(Boolean);
-    if(fondo.length || !localStorage.getItem('frm_fondo')) {
-      localStorage.setItem('frm_fondo', JSON.stringify(fondo));
-    }
+    localStorage.setItem('frm_fondo', JSON.stringify(fondo));
     if(currentPage==='fondimpresa') renderFondimpresa();
     showSyncStatus('ok');
     // Nascondi la barra dopo 4 secondi se tutto ok
@@ -1731,15 +1726,9 @@ async function loadFromSupabase() {
     return true;
   } catch(e) {
     console.warn('Load error:', e);
-    // Mostra errore visibile all'utente
-    const msg = e && e.message ? e.message : String(e);
     showSyncStatus('error');
     const bar=document.getElementById('sync-bar');
-    if(bar){
-      bar.style.display='block';
-      const errEl=document.getElementById('sync-msg');
-      if(errEl) errEl.innerHTML='⚠️ Errore DB: <strong>'+msg.slice(0,80)+'</strong> &nbsp;<button onclick="syncAndRefresh()" style="background:var(--accent);color:#1A1916;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">↻ Riprova</button>';
-    }
+    if(bar) bar.style.display='block';
     return false;
   }
 }
@@ -2991,10 +2980,6 @@ function loadFirmaRespAtt(input){
     const img=document.getElementById('firma-resp-att-img');
     img.src=data; img.style.display='block';
     document.getElementById('firma-resp-att-placeholder').style.display='none';
-    // Salva automaticamente nella config
-    const cfg=getAttConfig(); cfg.firmaResp=data;
-    localStorage.setItem('frm_att_config', JSON.stringify(cfg));
-    toast('Firma salvata ✅');
   };
   r.readAsDataURL(f); input.value='';
 }
@@ -3836,6 +3821,8 @@ async function generaGradimento(){
     {
       titolo:'1. Organizzazione e logistica',
       domande:[
+        'La convocazione al corso è stata tempestiva e chiara',
+        'Il materiale didattico distribuito è stato utile',
         'L\u2019aula / ambiente formativo era adeguato (spazio, comfort, attrezzature)',
         'La durata del corso è stata adeguata agli argomenti trattati',
       ]
@@ -3870,18 +3857,18 @@ async function generaGradimento(){
 
   const intestazioneHtml=`
     <div style="display:flex;justify-content:flex-end;margin-bottom:2mm">
-      <img src="${LOGO}" alt="Framyx" style="height:30px;max-width:150px;object-fit:contain">
+      <img src="${LOGO}" alt="Framyx" style="height:55px;max-width:180px;object-fit:contain">
     </div>
     <hr style="border:none;border-top:1.5pt solid #F5A623;margin:0 0 5mm 0">`;
 
   const headerTabella=`
     <tr style="background:#F5F5F5">
-      <th style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;text-align:left;font-size:7.5pt;font-weight:bold;width:55%">Domanda</th>
-      <th style="padding:2pt 3pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:7.5pt;width:9%" title="Per niente soddisfatto">1</th>
-      <th style="padding:2pt 3pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:7.5pt;width:9%">2</th>
-      <th style="padding:2pt 3pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:7.5pt;width:9%">3</th>
-      <th style="padding:2pt 3pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:7.5pt;width:9%">4</th>
-      <th style="padding:2pt 3pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:7.5pt;width:9%" title="Molto soddisfatto">5</th>
+      <th style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;text-align:left;font-size:8.5pt;font-weight:bold;width:55%">Domanda</th>
+      <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%" title="Per niente soddisfatto">1</th>
+      <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%">2</th>
+      <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%">3</th>
+      <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%">4</th>
+      <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%" title="Molto soddisfatto">5</th>
     </tr>`;
 
   const makeScalaCerchi=()=>[1,2,3,4,5].map(v=>`
@@ -3890,72 +3877,76 @@ async function generaGradimento(){
     </td>`).join('');
 
   const sezioniHtml=sezioniDomande.map(sez=>`
-    <div style="margin-bottom:0">
-      <div style="font-weight:bold;font-size:8pt;color:#1A1916;padding:1pt 4pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:0">${sez.titolo}</div>
+    <div style="margin-bottom:1mm">
+      <div style="font-weight:bold;font-size:8.5pt;color:#1A1916;padding:2pt 6pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:1mm">${sez.titolo}</div>
       <table style="width:100%;border-collapse:collapse">
         ${headerTabella}
         ${sez.domande.map((d,i)=>`
         <tr style="background:${i%2?'#FAFAFA':'white'}">
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-size:8pt">${d}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">${d}</td>
           ${makeScalaCerchi()}
         </tr>`).join('')}
       </table>
     </div>`).join('');
 
   const footerHtml=`
-    <div style="margin-top:1mm">
-      <div style="font-weight:bold;font-size:8pt;color:#1A1916;padding:1pt 4pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:0">5. Commenti e suggerimenti</div>
+    <div style="margin-top:2mm">
+      <div style="font-weight:bold;font-size:8.5pt;color:#1A1916;padding:2pt 6pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:1mm">5. Commenti e suggerimenti</div>
       <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-size:8pt">Cosa hai apprezzato di più del corso?</td></tr>
-        <tr><td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
-        <tr><td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-size:8pt;background:#FAFAFA">Cosa miglioreresti?</td></tr>
-        <tr><td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;background:#FAFAFA"></td></tr>
-        <tr><td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-size:8pt">Argomenti che avresti voluto approfondire:</td></tr>
-        <tr><td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
+        <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">Cosa hai apprezzato di più del corso?</td></tr>
+        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
+        <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt;background:#FAFAFA">Cosa miglioreresti?</td></tr>
+        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0;background:#FAFAFA"></td></tr>
+        <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">Argomenti che avresti voluto approfondire:</td></tr>
+        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
       </table>
+    </div>
+    <div style="margin-top:2mm;display:flex;justify-content:space-between;align-items:flex-end">
+      <div style="font-size:8pt;color:#888">Compilazione facoltativa e anonima — dati utilizzati esclusivamente per il miglioramento della qualità formativa</div>
+      <div style="text-align:center;min-width:120pt">
+        <div style="border-top:0.75pt solid #CCCCCC;padding-top:2pt;font-size:8pt;color:#888">Firma (opzionale)</div>
+      </div>
+    </div>
+    <div style="margin-top:4mm;border-top:0.5pt solid #E0E0E0;padding-top:2mm;font-size:7.5pt;color:#AAAAAA;text-align:center">
+      framyx s.r.l. Società Benefit · Via Stazio, 36 – 36029 Valbrenta (VI) · P.IVA 03959010244 · roberta.sermoni@framyx.it · www.framyx.com
     </div>`;
-
 
   // Genera una copia per partecipante (o una generica se nessun partecipante)
   const targets=pp.length?pp:[null];
 
   const html=targets.map((l,idx)=>`
-    <div style="font-family:Helvetica,Arial,sans-serif;font-size:8.5pt;color:#3D3D3D;background:white;width:190mm;margin:0 auto;padding:4mm 8mm 3mm;${idx<targets.length-1?'page-break-after:always':''}">
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:8.5pt;color:#3D3D3D;background:white;width:190mm;margin:0 auto;padding:5mm 8mm 10mm;${idx<targets.length-1?'page-break-after:always':''}">
       ${intestazioneHtml}
       <div style="margin-bottom:1mm">
-        <div style="font-size:9pt;font-weight:bold;color:#1A1916;margin-bottom:0">Questionario di gradimento</div>
-        <div style="font-size:8pt;color:#888">Valutazione della qualità formativa — FR-GRD-01</div>
+        <div style="font-size:11pt;font-weight:bold;color:#1A1916;margin-bottom:1mm">Questionario di gradimento</div>
+        <div style="font-size:8.5pt;color:#888">Valutazione della qualità formativa — FR-GRD-01</div>
       </div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:1mm">
         <tr>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;color:#888;font-size:7.5pt;width:28%">Corso</td>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:8pt">${corso.titolo||'—'}</td>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;color:#888;font-size:7.5pt;width:18%">Data</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt;width:28%">Corso</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:8.5pt">${corso.titolo||'—'}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt;width:18%">Data</td>
           <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt;width:22%">${fmt(s.data)}</td>
         </tr>
         <tr style="background:#FAFAFA">
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;color:#888;font-size:7.5pt">Azienda</td>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-size:8pt">${az.nome||'—'}</td>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;color:#888;font-size:7.5pt">Formatore</td>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-size:8pt">${doc.cognome||''} ${doc.nome||''}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt">Azienda</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">${az.nome||'—'}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt">Formatore</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">${doc.cognome||''} ${doc.nome||''}</td>
         </tr>
         ${l?`<tr>
-          <td style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;color:#888;font-size:7.5pt">Partecipante</td>
-          <td colspan="3" style="padding:2pt 4pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:8pt">${l.cognome} ${l.nome}${l.mansione?' — '+l.mansione:''}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt">Partecipante</td>
+          <td colspan="3" style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:8.5pt">${l.cognome} ${l.nome}${l.mansione?' — '+l.mansione:''}</td>
         </tr>`:''}
       </table>
-      <div style="background:#FFF8E1;border:0.75pt solid #F5A623;border-radius:3pt;padding:1pt 4pt;margin-bottom:1mm;font-size:7.5pt">
+      <div style="background:#FFF8E1;border:0.75pt solid #F5A623;border-radius:3pt;padding:2pt 6pt;margin-bottom:1mm;font-size:8pt">
         <strong>Istruzioni:</strong> Per ogni affermazione indica il tuo grado di accordo da <strong>1</strong> (per niente d'accordo) a <strong>5</strong> (completamente d'accordo). Cerchia il numero o segna con una X nel cerchio corrispondente.
       </div>
       ${sezioniHtml}
       ${footerHtml}
     </div>`).join('');
 
-  const _gHtml='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Gradimento</title><style>@page{size:A4 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:white}</style></head><body>'+html+'</body></html>';
-  const _gWin=window.open('','_blank');
-  if(!_gWin){toast('Abilita i popup per questo sito','⚠️');return;}
-  _gWin.document.open();_gWin.document.write(_gHtml);_gWin.document.close();_gWin.focus();
-  setTimeout(()=>{try{_gWin.print();}catch(e){}},1500);
+  stampaPDF(html, 'Gradimento_'+( corso.titolo||'corso').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)+'_'+fmt(s.data)+'.pdf', true);
   toast('Questionari gradimento generati ('+targets.length+')','⭐');
 }
 
@@ -7844,23 +7835,20 @@ function getAttConfig(){
   try{ return JSON.parse(localStorage.getItem('frm_att_config')||'{}') }catch(e){ return {} }
 }
 function salvaImpostazioni(){
-  try{
-    const cfg=getAttConfig();
-    cfg.aziendaNome=document.getElementById('att-azienda-nome').value||'Framyx Srl — Società Benefit';
-    cfg.intestazione=document.getElementById('att-intestazione').value||'ATTESTATO DI PARTECIPAZIONE';
-    cfg.sottotitolo=document.getElementById('att-sottotitolo').value||"CON VERIFICA DELL'APPRENDIMENTO";
-    cfg.footer=document.getElementById('att-footer').value||'';
-    cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
-    // Logo: salva solo se è un data URI (non un URL di pagina)
-    const logoImg=document.getElementById('logo-img');
-    if(logoImg&&logoImg.src&&logoImg.src.startsWith('data:')&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
-    // Firma resp: salva solo se è un data URI
-    const firmaRespEl=document.getElementById('firma-resp-att-img');
-    if(firmaRespEl&&firmaRespEl.src&&firmaRespEl.src.startsWith('data:')&&firmaRespEl.style.display!=='none') cfg.firmaResp=firmaRespEl.src;
-    cfg.respFormativo=document.getElementById('att-resp-nome').value||cfg.respFormativo||'Franz Lanaro';
-    localStorage.setItem('frm_att_config', JSON.stringify(cfg));
-    toast('Impostazioni salvate','💾');
-  }catch(e){ toast('Errore salvataggio: '+e.message,'❌'); console.error(e); }
+  const cfg=getAttConfig();
+  cfg.aziendaNome=document.getElementById('att-azienda-nome').value||'Framyx Srl — Società Benefit';
+  cfg.intestazione=document.getElementById('att-intestazione').value||'ATTESTATO DI PARTECIPAZIONE';
+  cfg.sottotitolo=document.getElementById('att-sottotitolo').value||"CON VERIFICA DELL'APPRENDIMENTO";
+  cfg.footer=document.getElementById('att-footer').value||'';
+  cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
+  const logoImg=document.getElementById('logo-img');
+  if(logoImg&&logoImg.src&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
+  // Firma responsabile progetto formativo
+  const firmaRespEl=document.getElementById('firma-resp-att-img');
+  if(firmaRespEl&&firmaRespEl.src&&firmaRespEl.style.display!=='none') cfg.firmaResp=firmaRespEl.src;
+  cfg.respFormativo=document.getElementById('att-resp-nome').value||cfg.respFormativo||'Franz Lanaro';
+  localStorage.setItem('frm_att_config', JSON.stringify(cfg));
+  toast('Impostazioni salvate','💾');
 }
 function resetImpostazioni(){
   localStorage.removeItem('frm_att_config');
@@ -7958,7 +7946,6 @@ function getAzioniFromEditor() {
 
 // ── CRUD PIANI ──
 function renderFondimpresa() {
-  // Rileggi sempre da localStorage (aggiornato da Supabase)
   const piani = dbFondo.get();
   const tb = document.getElementById('tb-fondo');
   if(!piani.length) {
@@ -7979,29 +7966,22 @@ function renderFondimpresa() {
   </tr>`).join('');
 }
 
-
-let _azFondoList = []; // cache locale per il modal fondimpresa
-
+let _azFondoList = [];
 function _caricaAzFondo(cb){
-  // Prima prova cache/localStorage
   const az = db.aziende();
   if(az && az.length > 0){
     _azFondoList = az.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-    if(cb) cb();
-    return;
+    if(cb) cb(); return;
   }
-  // Se vuoto, carica da Supabase
   if(!supa){ if(cb) cb(); return; }
   supa.from('aziende').select('data').then(({data,error})=>{
     if(!error && data && data.length){
       _azFondoList = data.map(r=>r.data).filter(Boolean).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-      cache.aziende = _azFondoList;
-      LS.s('aziende', _azFondoList);
+      cache.aziende = _azFondoList; LS.s('aziende', _azFondoList);
     }
     if(cb) cb();
   }).catch(()=>{ if(cb) cb(); });
 }
-
 function _popolaFoAz(azId){
   const sel = document.getElementById('fo-az');
   if(!sel) return;
@@ -8010,29 +7990,25 @@ function _popolaFoAz(azId){
   sel.innerHTML = '<option value="">⏳ Caricamento...</option>';
   _caricaAzFondo(()=>{
     if(_azFondoList.length === 0){
-      sel.innerHTML = '<option value="">⚠️ Nessuna azienda in database</option>';
+      sel.innerHTML = '<option value="">⚠️ Nessuna azienda trovata</option>';
       return;
     }
     sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + _azFondoList.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
   });
 }
 function filtraFoAz(q){
+  if(_azFondoList.length === 0){ _caricaAzFondo(()=>filtraFoAz(q)); return; }
   const sel = document.getElementById('fo-az');
   if(!sel) return;
-  // Se le aziende non sono ancora caricate, caricale prima
-  if(_azFondoList.length === 0){
-    _caricaAzFondo(()=>filtraFoAz(q));
-    return;
-  }
   const cur = sel.value;
   const filtered = q ? _azFondoList.filter(a=>(a.nome||'').toLowerCase().includes(q.toLowerCase())) : _azFondoList;
   sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + filtered.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nome}</option>`).join('');
 }
+
 function openFondoModal() {
   renderAzioniEditor([]);
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
   _origOpenM('m-fondo');
-  // Popola dopo apertura (async safe)
   setTimeout(()=>_popolaFoAz(null), 50);
 }
 
@@ -8047,7 +8023,6 @@ function salvaFondo() {
   closeM('m-fondo');
   clr('fo-id','fo-titolo','fo-codice','fo-referente');
   document.getElementById('fo-az').value = '';
-  const _fai2=document.getElementById('fo-az-search'); if(_fai2) _fai2.value='';
   document.getElementById('azioni-editor').innerHTML = '';
   renderFondimpresa();
   toast('Piano salvato');
@@ -8286,15 +8261,6 @@ titles['fondimpresa'] = 'Fondimpresa';
 
 
 // ══ INIT ══
-
-// Check browser compatibility (senza eval)
-(function(){
-  var ok = typeof Promise !== 'undefined' && typeof Symbol !== 'undefined';
-  if(!ok) {
-    document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:Arial"><h2>⚠️ Browser non supportato</h2><p>Aggiorna Safari, Chrome o Firefox all\'ultima versione.</p></div>';
-  }
-})();
-
 async function init() {
   // 1. Chiudi modal
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
