@@ -3812,7 +3812,7 @@ async function generaGradimento(){
 
   // Scala di valutazione grafica con cerchi
   const scala=(id)=>[1,2,3,4,5].map(v=>`
-    <td style="text-align:center;padding:4pt 6pt;border:0.75pt solid #E0E0E0">
+    <td style="text-align:center;padding:2pt 4pt;border:0.75pt solid #E0E0E0">
       <div style="width:20pt;height:20pt;border-radius:50%;border:1.5pt solid #F5A623;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;color:#888">${v}</div>
     </td>`).join('');
 
@@ -3862,7 +3862,7 @@ async function generaGradimento(){
 
   const headerTabella=`
     <tr style="background:#F5F5F5">
-      <th style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;text-align:left;font-size:9pt;font-weight:bold;width:55%">Domanda</th>
+      <th style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;text-align:left;font-size:8.5pt;font-weight:bold;width:55%">Domanda</th>
       <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%" title="Per niente soddisfatto">1</th>
       <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%">2</th>
       <th style="padding:5pt 6pt;border:0.75pt solid #E0E0E0;text-align:center;font-size:8pt;width:9%">3</th>
@@ -3876,31 +3876,31 @@ async function generaGradimento(){
     </td>`).join('');
 
   const sezioniHtml=sezioniDomande.map(sez=>`
-    <div style="margin-bottom:3mm">
-      <div style="font-weight:bold;font-size:9pt;color:#1A1916;padding:4pt 8pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:3mm">${sez.titolo}</div>
+    <div style="margin-bottom:1mm">
+      <div style="font-weight:bold;font-size:8.5pt;color:#1A1916;padding:2pt 6pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:1mm">${sez.titolo}</div>
       <table style="width:100%;border-collapse:collapse">
         ${headerTabella}
         ${sez.domande.map((d,i)=>`
         <tr style="background:${i%2?'#FAFAFA':'white'}">
-          <td style="padding:6pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt">${d}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">${d}</td>
           ${makeScalaCerchi()}
         </tr>`).join('')}
       </table>
     </div>`).join('');
 
   const footerHtml=`
-    <div style="margin-top:5mm">
-      <div style="font-weight:bold;font-size:9.5pt;color:#1A1916;padding:4pt 8pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:3mm">5. Commenti e suggerimenti</div>
+    <div style="margin-top:2mm">
+      <div style="font-weight:bold;font-size:8.5pt;color:#1A1916;padding:2pt 6pt;background:#FFF8E1;border-left:3pt solid #F5A623;margin-bottom:1mm">5. Commenti e suggerimenti</div>
       <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:6pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt">Cosa hai apprezzato di più del corso?</td></tr>
-        <tr><td style="padding:24pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
-        <tr><td style="padding:6pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt;background:#FAFAFA">Cosa miglioreresti?</td></tr>
-        <tr><td style="padding:24pt 8pt;border:0.75pt solid #E0E0E0;background:#FAFAFA"></td></tr>
-        <tr><td style="padding:6pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt">Argomenti che avresti voluto approfondire:</td></tr>
-        <tr><td style="padding:24pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
+        <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">Cosa hai apprezzato di più del corso?</td></tr>
+        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
+        <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt;background:#FAFAFA">Cosa miglioreresti?</td></tr>
+        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0;background:#FAFAFA"></td></tr>
+        <tr><td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">Argomenti che avresti voluto approfondire:</td></tr>
+        <tr><td style="padding:10pt 8pt;border:0.75pt solid #E0E0E0"></td></tr>
       </table>
     </div>
-    <div style="margin-top:5mm;display:flex;justify-content:space-between;align-items:flex-end">
+    <div style="margin-top:2mm;display:flex;justify-content:space-between;align-items:flex-end">
       <div style="font-size:8pt;color:#888">Compilazione facoltativa e anonima — dati utilizzati esclusivamente per il miglioramento della qualità formativa</div>
       <div style="text-align:center;min-width:120pt">
         <div style="border-top:0.75pt solid #CCCCCC;padding-top:2pt;font-size:8pt;color:#888">Firma (opzionale)</div>
@@ -3914,31 +3914,31 @@ async function generaGradimento(){
   const targets=pp.length?pp:[null];
 
   const html=targets.map((l,idx)=>`
-    <div style="font-family:Helvetica,Arial,sans-serif;font-size:9pt;color:#3D3D3D;background:white;width:190mm;margin:0 auto;padding:6mm 10mm;${idx<targets.length-1?'page-break-after:always':''}">
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:8.5pt;color:#3D3D3D;background:white;width:190mm;margin:0 auto;padding:5mm 8mm 10mm;${idx<targets.length-1?'page-break-after:always':''}">
       ${intestazioneHtml}
-      <div style="margin-bottom:3mm">
-        <div style="font-size:12pt;font-weight:bold;color:#1A1916;margin-bottom:1mm">Questionario di gradimento</div>
-        <div style="font-size:9pt;color:#888">Valutazione della qualità formativa — FR-GRD-01</div>
+      <div style="margin-bottom:1mm">
+        <div style="font-size:11pt;font-weight:bold;color:#1A1916;margin-bottom:1mm">Questionario di gradimento</div>
+        <div style="font-size:8.5pt;color:#888">Valutazione della qualità formativa — FR-GRD-01</div>
       </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:3mm">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:1mm">
         <tr>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8.5pt;width:28%">Corso</td>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:9pt">${corso.titolo||'—'}</td>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8.5pt;width:18%">Data</td>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt;width:22%">${fmt(s.data)}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt;width:28%">Corso</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:8.5pt">${corso.titolo||'—'}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt;width:18%">Data</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt;width:22%">${fmt(s.data)}</td>
         </tr>
         <tr style="background:#FAFAFA">
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8.5pt">Azienda</td>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt">${az.nome||'—'}</td>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8.5pt">Formatore</td>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;font-size:9pt">${doc.cognome||''} ${doc.nome||''}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt">Azienda</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">${az.nome||'—'}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt">Formatore</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-size:8.5pt">${doc.cognome||''} ${doc.nome||''}</td>
         </tr>
         ${l?`<tr>
-          <td style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8.5pt">Partecipante</td>
-          <td colspan="3" style="padding:5pt 8pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:9pt">${l.cognome} ${l.nome}${l.mansione?' — '+l.mansione:''}</td>
+          <td style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;color:#888;font-size:8pt">Partecipante</td>
+          <td colspan="3" style="padding:3pt 6pt;border:0.75pt solid #E0E0E0;font-weight:bold;font-size:8.5pt">${l.cognome} ${l.nome}${l.mansione?' — '+l.mansione:''}</td>
         </tr>`:''}
       </table>
-      <div style="background:#FFF8E1;border:0.75pt solid #F5A623;border-radius:3pt;padding:5pt 8pt;margin-bottom:3mm;font-size:8.5pt">
+      <div style="background:#FFF8E1;border:0.75pt solid #F5A623;border-radius:3pt;padding:2pt 6pt;margin-bottom:1mm;font-size:8pt">
         <strong>Istruzioni:</strong> Per ogni affermazione indica il tuo grado di accordo da <strong>1</strong> (per niente d'accordo) a <strong>5</strong> (completamente d'accordo). Cerchia il numero o segna con una X nel cerchio corrispondente.
       </div>
       ${sezioniHtml}
