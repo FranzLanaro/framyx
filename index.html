@@ -1718,7 +1718,10 @@ async function loadFromSupabase() {
     // piani_fondo
     const {data: fd} = await supa.from('piani_fondo').select('data');
     const fondo = (fd||[]).map(r=>r.data).filter(Boolean);
-    localStorage.setItem('frm_fondo', JSON.stringify(fondo));
+    if(fondo.length || !localStorage.getItem('frm_fondo')) {
+      localStorage.setItem('frm_fondo', JSON.stringify(fondo));
+    }
+    if(currentPage==='fondimpresa') renderFondimpresa();
     showSyncStatus('ok');
     // Nascondi la barra dopo 4 secondi se tutto ok
     setTimeout(()=>{
@@ -1962,7 +1965,7 @@ function goTo(p){
   renderPage(p);
 }
 function renderPage(p){
-  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,offerte:renderOfferte,incarichi:renderIncarichi,fascicolo:renderFascicolo,contratti:renderContratti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
+  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,offerte:renderOfferte,incarichi:renderIncarichi,fascicolo:renderFascicolo,contratti:renderContratti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni,fondimpresa:renderFondimpresa})[p]?.();
 }
 function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore'){ resetLavModal(); popLavAz(); } if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
@@ -7949,6 +7952,7 @@ function getAzioniFromEditor() {
 
 // ── CRUD PIANI ──
 function renderFondimpresa() {
+  // Rileggi sempre da localStorage (aggiornato da Supabase)
   const piani = dbFondo.get();
   const tb = document.getElementById('tb-fondo');
   if(!piani.length) {
