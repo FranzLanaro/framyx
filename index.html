@@ -7979,7 +7979,25 @@ function _popolaFoAz(azId){
   const srch = document.getElementById('fo-az-search');
   if(!sel) return;
   if(srch) srch.value = '';
-  const az = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+  // Usa sempre la lista più aggiornata: cache → localStorage → Supabase
+  let az = db.aziende();
+  if(!az || az.length === 0){
+    // Aziende non ancora caricate — tenta da Supabase
+    sel.innerHTML = '<option value="">⏳ Caricamento aziende...</option>';
+    if(supa){
+      supa.from('aziende').select('data').then(({data,error})=>{
+        if(!error && data && data.length){
+          az = data.map(r=>r.data).filter(Boolean).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+          cache.aziende = az; LS.s('aziende', az);
+          sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
+        } else {
+          sel.innerHTML = '<option value="">⚠️ Nessuna azienda trovata</option>';
+        }
+      }).catch(()=>{ sel.innerHTML = '<option value="">⚠️ Errore caricamento</option>'; });
+    }
+    return;
+  }
+  az = az.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
   sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
 }
 function filtraFoAz(q){
@@ -7990,6 +8008,12 @@ function filtraFoAz(q){
   sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + filtered.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nome}</option>`).join('');
 }
 function openFondoModal() {
+  const az = db.aziende();
+  if(!az || az.length === 0) {
+    toast('Caricamento aziende...','⏳');
+    loadFromSupabase().then(()=>{ _popolaFoAz(null); renderAzioniEditor([]); document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa'; _origOpenM('m-fondo'); });
+    return;
+  }
   _popolaFoAz(null);
   renderAzioniEditor([]);
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
