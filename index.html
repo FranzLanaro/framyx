@@ -7980,50 +7980,60 @@ function renderFondimpresa() {
 }
 
 
-function _popolaFoAz(azId){
-  const sel = document.getElementById('fo-az');
-  const srch = document.getElementById('fo-az-search');
-  if(!sel) return;
-  if(srch) srch.value = '';
-  // Usa sempre la lista più aggiornata: cache → localStorage → Supabase
-  let az = db.aziende();
-  if(!az || az.length === 0){
-    // Aziende non ancora caricate — tenta da Supabase
-    sel.innerHTML = '<option value="">⏳ Caricamento aziende...</option>';
-    if(supa){
-      supa.from('aziende').select('data').then(({data,error})=>{
-        if(!error && data && data.length){
-          az = data.map(r=>r.data).filter(Boolean).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-          cache.aziende = az; LS.s('aziende', az);
-          sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
-        } else {
-          sel.innerHTML = '<option value="">⚠️ Nessuna azienda trovata</option>';
-        }
-      }).catch(()=>{ sel.innerHTML = '<option value="">⚠️ Errore caricamento</option>'; });
-    }
+let _azFondoList = []; // cache locale per il modal fondimpresa
+
+function _caricaAzFondo(cb){
+  // Prima prova cache/localStorage
+  const az = db.aziende();
+  if(az && az.length > 0){
+    _azFondoList = az.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+    if(cb) cb();
     return;
   }
-  az = az.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-  sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
+  // Se vuoto, carica da Supabase
+  if(!supa){ if(cb) cb(); return; }
+  supa.from('aziende').select('data').then(({data,error})=>{
+    if(!error && data && data.length){
+      _azFondoList = data.map(r=>r.data).filter(Boolean).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+      cache.aziende = _azFondoList;
+      LS.s('aziende', _azFondoList);
+    }
+    if(cb) cb();
+  }).catch(()=>{ if(cb) cb(); });
+}
+
+function _popolaFoAz(azId){
+  const sel = document.getElementById('fo-az');
+  if(!sel) return;
+  const srch = document.getElementById('fo-az-search');
+  if(srch) srch.value = '';
+  sel.innerHTML = '<option value="">⏳ Caricamento...</option>';
+  _caricaAzFondo(()=>{
+    if(_azFondoList.length === 0){
+      sel.innerHTML = '<option value="">⚠️ Nessuna azienda in database</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + _azFondoList.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
+  });
 }
 function filtraFoAz(q){
   const sel = document.getElementById('fo-az');
-  const az = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-  const filtered = q ? az.filter(a=>(a.nome||'').toLowerCase().includes(q.toLowerCase())) : az;
+  if(!sel) return;
+  // Se le aziende non sono ancora caricate, caricale prima
+  if(_azFondoList.length === 0){
+    _caricaAzFondo(()=>filtraFoAz(q));
+    return;
+  }
   const cur = sel.value;
+  const filtered = q ? _azFondoList.filter(a=>(a.nome||'').toLowerCase().includes(q.toLowerCase())) : _azFondoList;
   sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + filtered.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nome}</option>`).join('');
 }
 function openFondoModal() {
-  const az = db.aziende();
-  if(!az || az.length === 0) {
-    toast('Caricamento aziende...','⏳');
-    loadFromSupabase().then(()=>{ _popolaFoAz(null); renderAzioniEditor([]); document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa'; _origOpenM('m-fondo'); });
-    return;
-  }
-  _popolaFoAz(null);
   renderAzioniEditor([]);
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
   _origOpenM('m-fondo');
+  // Popola dopo apertura (async safe)
+  setTimeout(()=>_popolaFoAz(null), 50);
 }
 
 function salvaFondo() {
