@@ -298,6 +298,7 @@ textarea.fc{min-height:68px;resize:vertical}
   <!-- TOPBAR -->
   <div class="topbar">
     <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <button onclick="loadFromSupabase().then(ok=>{ renderPage(currentPage);updateFilters();renderDashboard(); if(ok) toast('Dati aggiornati ✅','☁️'); else toast('Connessione fallita','⚠️'); })" title="Ricarica tutti i dati da Supabase — utile se lavori da più PC" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:var(--text2);margin-right:8px">🔄 Aggiorna</button>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="global-search" placeholder="Cerca discente, corso, azienda..." oninput="globalSearch(this.value)" onfocus="showSearch()" autocomplete="off">
@@ -1556,8 +1557,8 @@ textarea.fc{min-height:68px;resize:vertical}
       </div>
       <div class="fr2">
         <div class="fg"><label class="fl">Azienda aderente *</label>
-          <input class="fc" id="fo-az-search" placeholder="Cerca azienda..." oninput="filterFoAz(this.value)" style="margin-bottom:4px">
-          <select class="fc" id="fo-az" size="1"><option value="">Seleziona azienda...</option></select></div>
+          <input class="fc" id="fo-az-search" placeholder="🔍 Filtra aziende..." oninput="filtraFoAz(this.value)" style="margin-bottom:4px">
+          <select class="fc" id="fo-az" style="max-height:160px"></select></div>
         <div class="fg"><label class="fl">Referente di Piano</label><input class="fc" id="fo-referente" placeholder="Nome e Cognome"></div>
       </div>
 
@@ -7968,23 +7969,26 @@ function renderFondimpresa() {
   </tr>`).join('');
 }
 
-function filterFoAz(q){
+
+function _popolaFoAz(azId){
   const sel = document.getElementById('fo-az');
-  const val = sel.value; // mantieni selezione attuale
+  const srch = document.getElementById('fo-az-search');
+  if(!sel) return;
+  if(srch) srch.value = '';
+  const az = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+  sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}"${a.id===azId?' selected':''}>${a.nome}</option>`).join('');
+}
+function filtraFoAz(q){
+  const sel = document.getElementById('fo-az');
   const az = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
   const filtered = q ? az.filter(a=>(a.nome||'').toLowerCase().includes(q.toLowerCase())) : az;
-  sel.innerHTML = '<option value="">Seleziona azienda...</option>' + filtered.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
-  if(val) sel.value = val; // ripristina selezione
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + filtered.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nome}</option>`).join('');
 }
 function openFondoModal() {
-  // populate azienda select
-  const sel = document.getElementById('fo-az');
-  const _azFondo = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-  sel.innerHTML = '<option value="">Seleziona azienda...</option>' + _azFondo.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  _popolaFoAz(null);
   renderAzioniEditor([]);
-  const _srch=document.getElementById('fo-az-search'); if(_srch) _srch.value='';
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
-  // Use _origOpenM directly to avoid loop with the override
   _origOpenM('m-fondo');
 }
 
@@ -7999,6 +8003,7 @@ function salvaFondo() {
   closeM('m-fondo');
   clr('fo-id','fo-titolo','fo-codice','fo-referente');
   document.getElementById('fo-az').value = '';
+  const _fai2=document.getElementById('fo-az-search'); if(_fai2) _fai2.value='';
   document.getElementById('azioni-editor').innerHTML = '';
   renderFondimpresa();
   toast('Piano salvato');
@@ -8006,14 +8011,11 @@ function salvaFondo() {
 
 function editFondo(id) {
   const p = dbFondo.get().find(x => x.id === id); if(!p) return;
-  const sel = document.getElementById('fo-az');
-  const _azFondo = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-  sel.innerHTML = '<option value="">Seleziona azienda...</option>' + _azFondo.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  _popolaFoAz(p.aziendaId||null);
   document.getElementById('fo-id').value = p.id;
   document.getElementById('fo-titolo').value = p.titolo||'';
   document.getElementById('fo-codice').value = p.codice||'';
   document.getElementById('fo-referente').value = p.referente||'';
-  sel.value = p.aziendaId||'';
   renderAzioniEditor(p.azioni||[]);
   document.getElementById('m-fondo-t').textContent = 'Modifica piano Fondimpresa';
   _origOpenM('m-fondo');
