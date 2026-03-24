@@ -1651,14 +1651,14 @@ async function loadFromSupabase() {
     // Test connessione con client Supabase JS
     const testResult = await Promise.race([
       supa.from('aziende').select('id').limit(1),
-      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),10000))
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))
     ]);
     if(testResult.error) throw testResult.error;
 
     // Tabelle grandi: client Supabase JS con paginazione
     async function fetchAll(table){
-      let all=[], from=0, step=1000;
-      while(true){
+      let all=[], from=0, step=1000, maxPages=10;
+      while(from < step*maxPages){
         const {data,error}=await supa.from(table).select('data').range(from, from+step-1);
         if(error){ console.warn(table, error.message); break; }
         if(!data||!data.length) break;
@@ -2445,10 +2445,9 @@ function fascicoloFormativoModal(){
 
 
 function trovaDuplicatiLavoratori(){
-  const tutti = db.lavoratori();
   const panel = document.getElementById('dup-panel');
   if(!panel) return;
-
+  const tutti = db.lavoratori();
   // Raggruppa per CF (se valido) o per cognome+nome+azienda
   const gruppi = {};
 
@@ -2624,7 +2623,8 @@ function salvaLavoratore(){
     }
   }
 
-  const lav = db.lavoratori().filter(l=>l.id!==id);
+  const _allLav = db.lavoratori();
+  const lav = _allLav.filter(l=>l.id!==id);
   lav.push({
     id,
     cognome: toUpperNome(cognome),
@@ -3628,7 +3628,7 @@ function generaAttestati(){
     const righe=args.map(a=>'<tr><td style="border:1px solid #E0E0E0;padding:6px 8px;line-height:1.35">'+esc(a)+'</td><td style="border:1px solid #E0E0E0;padding:6px 8px;color:#666;line-height:1.35">'+esc(norma)+'</td></tr>').join('');
 
     const pag2=
-      '<div style="width:210mm;min-height:297mm;background:white;padding:12mm 16mm;font-family:Helvetica,Arial,sans-serif;color:#222;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+
+      '<div style="width:210mm;background:white;padding:12mm 16mm;font-family:Helvetica,Arial,sans-serif;color:#222;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+
       '<div style="display:flex;justify-content:space-between;align-items:center">'+
         '<img src="'+LOGO+'" style="height:36px;object-fit:contain">'+
         '<div style="text-align:right"><div style="font-weight:700;font-size:12px;color:#484F54">'+esc(nome)+'</div><div style="font-size:11px;color:#888">'+esc(titoloC)+'</div></div>'+
@@ -4101,7 +4101,13 @@ function exportScadCSV(){
 }
 
 // ══ DASHBOARD ══
-function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad();
+let _dashDebounceTimer = null;
+function renderDashboard(){
+  // Debounce: se chiamata più volte in rapida successione, esegui solo l'ultima
+  if(_dashDebounceTimer) return;
+  _dashDebounceTimer = setTimeout(()=>{ _dashDebounceTimer=null; _renderDashboardReal(); }, 50);
+}
+function _renderDashboardReal(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.sessioni(),sc=computeScad();
   // Offerte stats
   const offerte=db.offerte();
   const offStati={bozza:0,inviata:0,attesa:0,accettata:0,rifiutata:0,scaduta:0};
@@ -4142,46 +4148,13 @@ function renderDashboard(){ const az=db.aziende(),lav=db.lavoratori(),sess=db.se
   document.getElementById('dash-sess').innerHTML=sessAttive.length?sessAttive.map(s=>`<div class="srow" style="cursor:pointer" onclick="goTo('sessioni')"><div class="sdot o"></div><div class="sinfo"><div class="sname">${gCorso(s.corsoId)}</div><div class="smeta">${gAz(s.aziendaId)} · ${s.partecipanti?.length||0} part.</div></div><div class="sdate">${fmt(s.data)}</div></div>`).join(''):`<div class="empty" style="padding:18px"><div class="ei">✅</div><h3>Nessuna formazione aperta</h3></div>`;
   renderCalendario();
 
-  // ── Scadenze documenti aziendali ──
-  const oggi = new Date().toISOString().slice(0,10);
-  const fascAll = JSON.parse(localStorage.getItem('frm_fascicoli_az')||'{}');
-  const scadDocs = [];
-  db.aziende().forEach(az=>{
-    const fasc = fascAll[az.id]||{};
-    DOCS_SICUREZZA.forEach(d=>{
-      const f = fasc[d.id]||{};
-      const stato = getStatoDoc(f,d,oggi);
-      if(stato==='scaduto'||stato==='scadenza'){
-        const dataRef = f.dataRev||f.dataRed;
-        const mesi = f.mesi!==undefined?f.mesi:d.mesi;
-        let scadData = null;
-        if(dataRef&&mesi>0){
-          const s=new Date(dataRef); s.setMonth(s.getMonth()+mesi);
-          scadData=s.toISOString().slice(0,10);
-        }
-        scadDocs.push({azNome:az.nome,azId:az.id,doc:d.label,stato,scadData,antisosp:d.antisosp});
-      }
-    });
-  });
-  scadDocs.sort((a,b)=>(a.scadData||'9999').localeCompare(b.scadData||'9999'));
+  // ── Scadenze documenti aziendali (lazy — solo se visibile) ──
+  const scadDocs = []; // calcolato lazy in renderDashDocsAz()
   const dashDocsEl=document.getElementById('dash-docs-az');
   if(dashDocsEl){
-    if(!scadDocs.length){
-      dashDocsEl.innerHTML='<div class="empty" style="padding:16px"><div class="ei">✅</div><h3>Tutto in regola</h3></div>';
-    } else {
-      dashDocsEl.innerHTML=scadDocs.slice(0,8).map(x=>{
-        const isScad=x.stato==='scaduto';
-        const color=isScad?'#C0392B':'#D4620A';
-        return `<div class="srow" style="cursor:pointer;${isScad?'background:#fff5f5':''}" onclick="goTo('fascicolo')">
-          <div class="sdot" style="background:${color}"></div>
-          <div class="sinfo">
-            <div class="sname" style="font-size:12px;font-weight:600">${x.azNome}</div>
-            <div class="smeta" style="font-size:10px">${x.doc}${x.antisosp?' <span style="background:#C0392B;color:white;font-size:8px;padding:1px 3px;border-radius:2px">ANTISOSP.</span>':''}</div>
-          </div>
-          <div style="font-size:10px;font-weight:600;color:${color};flex-shrink:0">${isScad?'Scaduto':x.scadData?fmt(x.scadData):''}</div>
-        </div>`;
-      }).join('')+(scadDocs.length>8?`<div style="padding:6px 12px;font-size:11px;color:var(--text2)">+${scadDocs.length-8} altri...</div>`:'');
-    }
+    dashDocsEl.innerHTML='<div style="padding:8px 12px;font-size:11px;color:var(--text2);cursor:pointer" onclick="renderDashDocsAz()">🔄 Calcola scadenze documenti...</div>';
+    // Calcola in background dopo 500ms per non bloccare la UI
+    setTimeout(renderDashDocsAz, 500);
   }
 
   // ── Appuntamenti settimana ──
@@ -4257,6 +4230,45 @@ let calMonth = new Date().getMonth();
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendario(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendario(); }
 function calToday(){ calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCalendario(); }
+
+function renderDashDocsAz(){
+  const el=document.getElementById('dash-docs-az');
+  if(!el) return;
+  const oggi=new Date().toISOString().slice(0,10);
+  const fascAll=JSON.parse(localStorage.getItem('frm_fascicoli_az')||'{}');
+  const scadDocs=[];
+  db.aziende().forEach(az=>{
+    const fasc=fascAll[az.id]||{};
+    DOCS_SICUREZZA.forEach(d=>{
+      const f=fasc[d.id]||{};
+      const stato=getStatoDoc(f,d,oggi);
+      if(stato==='scaduto'||stato==='scadenza'){
+        const dataRef=f.dataRev||f.dataRed;
+        const mesi=f.mesi!==undefined?f.mesi:d.mesi;
+        let scadData=null;
+        if(dataRef&&mesi>0){const s=new Date(dataRef);s.setMonth(s.getMonth()+mesi);scadData=s.toISOString().slice(0,10);}
+        scadDocs.push({azNome:az.nome,azId:az.id,doc:d.label,stato,scadData,antisosp:d.antisosp});
+      }
+    });
+  });
+  scadDocs.sort((a,b)=>(a.scadData||'9999').localeCompare(b.scadData||'9999'));
+  if(!scadDocs.length){
+    el.innerHTML='<div class="empty" style="padding:16px"><div class="ei">✅</div><h3>Tutto in regola</h3></div>';
+  } else {
+    el.innerHTML=scadDocs.slice(0,8).map(x=>{
+      const isScad=x.stato==='scaduto';
+      const color=isScad?'#C0392B':'#D4620A';
+      return `<div class="srow" style="cursor:pointer;${isScad?'background:#fff5f5':''}" onclick="goTo('fascicolo')">
+        <div class="sdot" style="background:${color}"></div>
+        <div class="sinfo">
+          <div class="sname" style="font-size:12px;font-weight:600">${x.azNome}</div>
+          <div class="smeta" style="font-size:10px">${x.doc}${x.antisosp?' <span style="background:#C0392B;color:white;font-size:8px;padding:1px 3px;border-radius:2px">ANTISOSP.</span>':''}</div>
+        </div>
+        <div style="font-size:10px;font-weight:600;color:${color};flex-shrink:0">${isScad?'Scaduto':x.scadData?fmt(x.scadData):''}</div>
+      </div>`;
+    }).join('')+(scadDocs.length>8?`<div style="padding:6px 12px;font-size:11px;color:var(--text2)">+${scadDocs.length-8} altri...</div>`:'');
+  }
+}
 
 function renderCalendario(){
   const calGrid = document.getElementById('cal-grid');
@@ -8165,10 +8177,18 @@ async function init() {
     cache.offerte    = LS.g('offerte')||[];
     updateFilters(); renderDashboard();
   }
+  // Mostra dati locali SUBITO senza aspettare Supabase
   const bar=document.getElementById('sync-bar');
-  if(bar) bar.style.display='block';
-  showSyncStatus('loading');
-  const loaded = await loadFromSupabase();
+  if(bar) bar.style.display='none'; // nascondi barra durante caricamento iniziale
+  // Carica Supabase in background — non bloccare la UI
+  loadFromSupabase().then(ok=>{
+    renderPage(currentPage);
+    updateFilters();
+    renderDashboard();
+    if(ok){ showSyncStatus('ok'); }
+    else { showSyncStatus('error'); if(bar) bar.style.display='block'; }
+  }).catch(()=>{ showSyncStatus('error'); if(bar) bar.style.display='block'; });
+  const loaded = true; // continua subito
   if(!loaded && !haDatiLocali) loadDemo();
   updateFilters();
   renderDashboard();
