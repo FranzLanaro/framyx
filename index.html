@@ -1555,7 +1555,9 @@ textarea.fc{min-height:68px;resize:vertical}
         <div class="fg"><label class="fl">Codice identificativo piano</label><input class="fc" id="fo-codice" placeholder="es. 254164" style="font-family:var(--font-mono)"></div>
       </div>
       <div class="fr2">
-        <div class="fg"><label class="fl">Azienda aderente *</label><select class="fc" id="fo-az"><option value="">Seleziona...</option></select></div>
+        <div class="fg"><label class="fl">Azienda aderente *</label>
+          <input class="fc" id="fo-az-search" placeholder="Cerca azienda..." oninput="filterFoAz(this.value)" style="margin-bottom:4px">
+          <select class="fc" id="fo-az" size="1"><option value="">Seleziona azienda...</option></select></div>
         <div class="fg"><label class="fl">Referente di Piano</label><input class="fc" id="fo-referente" placeholder="Nome e Cognome"></div>
       </div>
 
@@ -2979,6 +2981,10 @@ function loadFirmaRespAtt(input){
     const img=document.getElementById('firma-resp-att-img');
     img.src=data; img.style.display='block';
     document.getElementById('firma-resp-att-placeholder').style.display='none';
+    // Salva automaticamente nella config
+    const cfg=getAttConfig(); cfg.firmaResp=data;
+    localStorage.setItem('frm_att_config', JSON.stringify(cfg));
+    toast('Firma salvata ✅');
   };
   r.readAsDataURL(f); input.value='';
 }
@@ -7828,20 +7834,23 @@ function getAttConfig(){
   try{ return JSON.parse(localStorage.getItem('frm_att_config')||'{}') }catch(e){ return {} }
 }
 function salvaImpostazioni(){
-  const cfg=getAttConfig();
-  cfg.aziendaNome=document.getElementById('att-azienda-nome').value||'Framyx Srl — Società Benefit';
-  cfg.intestazione=document.getElementById('att-intestazione').value||'ATTESTATO DI PARTECIPAZIONE';
-  cfg.sottotitolo=document.getElementById('att-sottotitolo').value||"CON VERIFICA DELL'APPRENDIMENTO";
-  cfg.footer=document.getElementById('att-footer').value||'';
-  cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
-  const logoImg=document.getElementById('logo-img');
-  if(logoImg&&logoImg.src&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
-  // Firma responsabile progetto formativo
-  const firmaRespEl=document.getElementById('firma-resp-att-img');
-  if(firmaRespEl&&firmaRespEl.src&&firmaRespEl.style.display!=='none') cfg.firmaResp=firmaRespEl.src;
-  cfg.respFormativo=document.getElementById('att-resp-nome').value||cfg.respFormativo||'Franz Lanaro';
-  localStorage.setItem('frm_att_config', JSON.stringify(cfg));
-  toast('Impostazioni salvate','💾');
+  try{
+    const cfg=getAttConfig();
+    cfg.aziendaNome=document.getElementById('att-azienda-nome').value||'Framyx Srl — Società Benefit';
+    cfg.intestazione=document.getElementById('att-intestazione').value||'ATTESTATO DI PARTECIPAZIONE';
+    cfg.sottotitolo=document.getElementById('att-sottotitolo').value||"CON VERIFICA DELL'APPRENDIMENTO";
+    cfg.footer=document.getElementById('att-footer').value||'';
+    cfg.cittaDefault=document.getElementById('att-citta-default').value||'';
+    // Logo: salva solo se è un data URI (non un URL di pagina)
+    const logoImg=document.getElementById('logo-img');
+    if(logoImg&&logoImg.src&&logoImg.src.startsWith('data:')&&logoImg.style.display!=='none') cfg.logo=logoImg.src;
+    // Firma resp: salva solo se è un data URI
+    const firmaRespEl=document.getElementById('firma-resp-att-img');
+    if(firmaRespEl&&firmaRespEl.src&&firmaRespEl.src.startsWith('data:')&&firmaRespEl.style.display!=='none') cfg.firmaResp=firmaRespEl.src;
+    cfg.respFormativo=document.getElementById('att-resp-nome').value||cfg.respFormativo||'Franz Lanaro';
+    localStorage.setItem('frm_att_config', JSON.stringify(cfg));
+    toast('Impostazioni salvate','💾');
+  }catch(e){ toast('Errore salvataggio: '+e.message,'❌'); console.error(e); }
 }
 function resetImpostazioni(){
   localStorage.removeItem('frm_att_config');
@@ -7959,11 +7968,21 @@ function renderFondimpresa() {
   </tr>`).join('');
 }
 
+function filterFoAz(q){
+  const sel = document.getElementById('fo-az');
+  const val = sel.value; // mantieni selezione attuale
+  const az = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+  const filtered = q ? az.filter(a=>(a.nome||'').toLowerCase().includes(q.toLowerCase())) : az;
+  sel.innerHTML = '<option value="">Seleziona azienda...</option>' + filtered.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  if(val) sel.value = val; // ripristina selezione
+}
 function openFondoModal() {
   // populate azienda select
   const sel = document.getElementById('fo-az');
-  sel.innerHTML = '<option value="">Seleziona...</option>' + db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  const _azFondo = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+  sel.innerHTML = '<option value="">Seleziona azienda...</option>' + _azFondo.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
   renderAzioniEditor([]);
+  const _srch=document.getElementById('fo-az-search'); if(_srch) _srch.value='';
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
   // Use _origOpenM directly to avoid loop with the override
   _origOpenM('m-fondo');
@@ -7988,7 +8007,8 @@ function salvaFondo() {
 function editFondo(id) {
   const p = dbFondo.get().find(x => x.id === id); if(!p) return;
   const sel = document.getElementById('fo-az');
-  sel.innerHTML = '<option value="">Seleziona...</option>' + db.aziende().map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  const _azFondo = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
+  sel.innerHTML = '<option value="">Seleziona azienda...</option>' + _azFondo.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
   document.getElementById('fo-id').value = p.id;
   document.getElementById('fo-titolo').value = p.titolo||'';
   document.getElementById('fo-codice').value = p.codice||'';
