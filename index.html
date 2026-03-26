@@ -269,7 +269,6 @@ textarea.fc{min-height:68px;resize:vertical}
   </div>
   <div class="nav-section">
     <div class="nav-label" style="color:#FDC400">Collaboratori</div>
-    <div class="nav-item" onclick="goTo('fondimpresa')" id="nav-fondimpresa"><span class="ni">🏛</span>Fondimpresa</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Sistema</div>
@@ -542,18 +541,6 @@ textarea.fc{min-height:68px;resize:vertical}
 
 
     <!-- ═══ PREVENTIVI ═══ -->
-    <div class="page" id="page-fondimpresa">
-      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-        <div><div style="font-size:16px;font-weight:600;margin-bottom:3px">Piani Fondimpresa</div><div class="text-sm text-muted">Gestione piani formativi finanziati</div></div>
-        <button class="btn btn-primary btn-sm" onclick="openM('m-fondo')">+ Nuovo piano</button>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Piani formativi attivi</span></div>
-        <table class="tbl"><thead><tr><th>Titolo piano</th><th>Codice piano</th><th>Azioni</th><th>Azienda</th><th>Periodo</th><th></th></tr></thead><tbody id="tb-fondo"></tbody></table>
-      </div>
-    </div>
-
-    <!-- ═══ STORICO ═══ -->
     <div class="page" id="page-storico">
       <div class="stats-grid" id="st-stats"></div>
       <div id="st-diag" style="margin-bottom:10px"></div>
@@ -1526,7 +1513,7 @@ function goTo(p){
   renderPage(p);
 }
 function renderPage(p){
-  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni,fondimpresa:renderFondimpresa})[p]?.();
+  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni})[p]?.();
 }
 function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore'){ resetLavModal(); popLavAz(); } if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
@@ -7392,35 +7379,35 @@ function openRegistroFondo(pianoId) {
     </div>`;
 
   fregSelPart=[...(az.partecipanti||[])];
-  renderFregChip();
+  fregPianoId=pianoId;
+  renderFregChip(pianoId);
 
   openM('m-fondo-reg');
 }
 
 function toggleFregPart(id){
   fregSelPart=fregSelPart.includes(id)?fregSelPart.filter(p=>p!==id):[...fregSelPart,id];
-  renderFregChip();
+  renderFregChip(fregPianoId);
 }
 function fregSelTutti(){
-  const pianoId=document.getElementById('freg-fondo-id').value;
-  const piano=dbFondo.get().find(p=>p.id===pianoId);
+  const piano=dbFondo.get().find(p=>p.id===fregPianoId);
   if(piano) fregSelPart=db.lavoratori().filter(l=>l.aziendaId===piano.aziendaId).map(l=>l.id);
-  renderFregChip();
+  renderFregChip(fregPianoId);
 }
-function renderFregChip(){
-  const pianoId=document.getElementById('freg-fondo-id').value;
+function renderFregChip(pianoIdArg){
+  const pianoId=pianoIdArg||fregPianoId||document.getElementById('freg-fondo-id').value;
   const piano=dbFondo.get().find(p=>p.id===pianoId);
   const lista=document.getElementById('freg-lista');
   const toolbar=document.getElementById('freg-toolbar');
   const cntEl=document.getElementById('freg-count');
   if(!lista)return;
-  if(!piano){lista.innerHTML='';return;}
+  if(!piano){lista.innerHTML='<div style="padding:12px;text-align:center;color:var(--text2)">Piano non trovato</div>';return;}
   if(db.lavoratori().length===0){
     lista.innerHTML='<div style="padding:12px;text-align:center;color:var(--text2)">⏳ Caricamento lavoratori...</div>';
     supa.from('lavoratori').select('data').then(res=>{
       if(!res.error&&res.data&&res.data.length){cache.lavoratori=res.data.map(r=>r.data).filter(Boolean);LS.s('lavoratori',cache.lavoratori);}
-      renderFregChip();
-    }).catch(()=>renderFregChip());
+      renderFregChip(pianoId);
+    }).catch(()=>renderFregChip(pianoId));
     return;
   }
   const lav=db.lavoratori().filter(l=>l.aziendaId===piano.aziendaId).slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'));

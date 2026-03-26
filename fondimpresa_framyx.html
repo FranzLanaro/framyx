@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fondimpresa — Framyx</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg:#1A1916; --surface:#242320; --surface2:#2A2825; --border:#3A3835;
+  --text:#F0EDE8; --text2:#9A9690; --accent:#FDC400; --accent2:#E6B000;
+  --green:#2D7D46; --red:#C0392B; --blue:#1A56DB; --purple:#7C3AED;
+  --r:8px; --shadow:0 2px 8px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.brand{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.5px;}
+.brand-sub{font-size:10px;color:var(--text2);margin-top:2px;}
+.nav-section{padding:8px 0;}
+.nav-label{padding:6px 16px;font-size:10px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+.nav-item{padding:8px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);border-radius:0;transition:background 0.15s;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(253,196,0,0.12);color:var(--accent);font-weight:600;}
+.ni{font-size:15px;width:20px;text-align:center;}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;}
+.topbar-title{font-weight:700;font-size:15px;flex:1;}
+.sync-info{font-size:11px;color:var(--text2);}
+.content{flex:1;padding:20px;overflow-y:auto;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-weight:700;font-size:14px;}
+.card-body{padding:16px;}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:500;transition:opacity 0.15s;}
+.btn:hover{opacity:0.85;}
+.btn-primary{background:var(--accent);color:#1A1916;border-color:var(--accent);font-weight:700;}
+.btn-danger{background:var(--red);color:white;border-color:var(--red);}
+.btn-green{background:var(--green);color:white;border-color:var(--green);}
+.btn-sm{padding:4px 10px;font-size:12px;}
+.btn-xs{padding:3px 8px;font-size:11px;}
+
+/* FORM */
+.fc{width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;}
+.fc:focus{outline:none;border-color:var(--accent);}
+.fl{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.fg{margin-bottom:12px;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse;font-size:13px;}
+.table th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);}
+.table td{padding:8px 12px;border-bottom:1px solid var(--border);}
+.table tr:hover td{background:var(--surface2);}
+.actions{display:flex;gap:4px;justify-content:flex-end;}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;}
+.bg{background:#1B4332;color:#2ECC71;}
+.bo{background:#7C2D12;color:#FB923C;}
+.bb{background:#1E3A5F;color:#60A5FA;}
+.bv{background:#3B1F6E;color:#A78BFA;}
+
+/* MODAL */
+.modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-wrap.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:90%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.modal-lg{max-width:820px;}
+.mh{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.mt{font-weight:700;font-size:15px;}
+.mx{cursor:pointer;font-size:18px;color:var(--text2);padding:4px;}
+.mx:hover{color:var(--text);}
+.mb{padding:18px;overflow-y:auto;flex:1;}
+.mf{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--text2);}
+.empty .ei{font-size:40px;margin-bottom:8px;}
+
+/* CHIP */
+.chip-container{border:1px solid var(--border);border-radius:var(--r);max-height:240px;overflow-y:auto;}
+.chip-row{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);}
+.chip-row:hover{background:var(--surface2);}
+.chip-check{width:18px;height:18px;border:2px solid var(--border);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.chip-row.on .chip-check{background:var(--blue);border-color:var(--blue);}
+.chip-info{flex:1;}
+.chip-name{font-weight:600;font-size:13px;}
+.chip-sub{font-size:11px;color:var(--text2);}
+
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px;}
+.toast-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:13px;box-shadow:var(--shadow);animation:slideIn 0.2s ease;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Framyx</div>
+    <div class="brand-sub">Fondimpresa v1.0</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Principale</div>
+    <div class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard"><span class="ni">◉</span>Dashboard</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label" style="color:var(--accent)">Gestione</div>
+    <div class="nav-item" onclick="goTo('piani')" id="nav-piani"><span class="ni">📋</span>Piani formativi</div>
+    <div class="nav-item" onclick="goTo('aziende')" id="nav-aziende"><span class="ni">🏢</span>Aziende</div>
+    <div class="nav-item" onclick="goTo('lavoratori')" id="nav-lavoratori"><span class="ni">👷</span>Lavoratori</div>
+    <div class="nav-item" onclick="goTo('docenti')" id="nav-docenti"><span class="ni">🎓</span>Docenti</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Sistema</div>
+    <div class="nav-item" onclick="goTo('impostazioni')" id="nav-impostazioni"><span class="ni">⚙️</span>Impostazioni</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <span class="sync-info" id="sync-info">⏳ Connessione...</span>
+    <button class="btn btn-sm" onclick="syncAll()">↻ Sincronizza</button>
+  </div>
+  <div class="content" id="content"><!-- rendered by JS --></div>
+</div>
+
+</div><!-- #app -->
+
+<!-- MODALI -->
+<!-- Modal Piano -->
+<div class="modal-wrap" id="m-piano">
+  <div class="modal modal-lg">
+    <div class="mh"><span class="mt" id="m-piano-t">Nuovo piano</span><span class="mx" onclick="closeM('m-piano')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="piano-id">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Titolo piano *</label><input class="fc" id="piano-titolo" placeholder="es. NUOVI MODELLI ORGANIZZATIVI"></div>
+        <div class="fg"><label class="fl">Codice piano</label><input class="fc" id="piano-codice" placeholder="es. 254164"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Azienda aderente *</label><select class="fc" id="piano-azienda"></select></div>
+        <div class="fg"><label class="fl">Referente di piano</label><input class="fc" id="piano-referente" placeholder="Nome e Cognome"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Data inizio</label><input class="fc" type="date" id="piano-dataini"></div>
+        <div class="fg"><label class="fl">Data fine</label><input class="fc" type="date" id="piano-datafine"></div>
+      </div>
+      <div class="fg"><label class="fl">Note</label><textarea class="fc" id="piano-note" rows="2"></textarea></div>
+      
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-weight:700;font-size:13px;">Azioni formative</span>
+          <button class="btn btn-sm btn-primary" onclick="addAzione()">+ Aggiungi azione</button>
+        </div>
+        <div id="azioni-list"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM('m-piano')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaPiano()">Salva piano</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Azione -->
+<div class="modal-wrap" id="m-azione">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-azione-t">Nuova azione formativa</span><span class="mx" onclick="closeM('m-azione')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="az-piano-id">
+      <input type="hidden" id="az-idx">
+      <div class="fg"><label class="fl">Titolo azione *</label><input class="fc" id="az-titolo" placeholder="es. Sicurezza sul lavoro"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Data inizio</label><input class="fc" type="date" id="az-dataini"></div>
+        <div class="fg"><label class="fl">Data fine</label><input class="fc" type="date" id="az-datafine"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Ore totali</label><input class="fc" type="number" id="az-ore" placeholder="8"></div>
+        <div class="fg"><label class="fl">Docente</label><select class="fc" id="az-docente"></select></div>
+      </div>
+      <div class="fg"><label class="fl">Sede</label><input class="fc" id="az-sede" placeholder="Es. Presso azienda"></div>
+      <div class="fg"><label class="fl">Argomenti</label><textarea class="fc" id="az-argomenti" rows="3" placeholder="Un argomento per riga"></textarea></div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM('m-azione')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaAzione()">Salva azione</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registro -->
+<div class="modal-wrap" id="m-registro">
+  <div class="modal modal-lg">
+    <div class="mh"><span class="mt">Genera Registro Fondimpresa</span><span class="mx" onclick="closeM('m-registro')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="reg-piano-id">
+      <input type="hidden" id="reg-az-idx">
+      <div id="reg-info" style="background:var(--surface2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;"></div>
+      
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Partecipanti</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;" id="reg-toolbar">
+        <input id="reg-cerca" class="fc" placeholder="🔍 Cerca lavoratore..." oninput="renderRegChip()" style="flex:1;min-width:140px;margin:0;">
+        <button class="btn btn-xs btn-primary" onclick="regSelTutti()">✓ Tutti</button>
+        <button class="btn btn-xs" onclick="regSelPart=[];renderRegChip()">✕ Nessuno</button>
+      </div>
+      <div class="chip-container" id="reg-lista"></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;" id="reg-count">0 selezionati</div>
+      
+      <div class="fr2" style="margin-top:14px;">
+        <div class="fg"><label class="fl">Tutor aziendale</label><input class="fc" id="reg-tutor" placeholder="Nome e Cognome"></div>
+        <div class="fg"><label class="fl">Coordinatore</label><input class="fc" id="reg-coord" placeholder="Nome e Cognome"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM('m-registro')">Annulla</button>
+      <button class="btn btn-primary" onclick="generaRegistro()">📄 Genera registro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Azienda -->
+<div class="modal-wrap" id="m-azienda">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-az-t">Nuova azienda</span><span class="mx" onclick="closeM('m-azienda')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="azf-id">
+      <div class="fg"><label class="fl">Ragione sociale *</label><input class="fc" id="azf-nome" placeholder="Es. ROSSI SRL"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">P.IVA / CF</label><input class="fc" id="azf-piva"></div>
+        <div class="fg"><label class="fl">Settore</label><input class="fc" id="azf-settore"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Indirizzo</label><input class="fc" id="azf-indirizzo"></div>
+        <div class="fg"><label class="fl">Città</label><input class="fc" id="azf-citta"></div>
+      </div>
+      <div class="fg"><label class="fl">Email</label><input class="fc" id="azf-email" type="email"></div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM('m-azienda')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaAzienda()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lavoratore -->
+<div class="modal-wrap" id="m-lavoratore">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-lav-t">Nuovo lavoratore</span><span class="mx" onclick="closeM('m-lavoratore')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="lavf-id">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Cognome *</label><input class="fc" id="lavf-cognome" style="text-transform:uppercase"></div>
+        <div class="fg"><label class="fl">Nome *</label><input class="fc" id="lavf-nome"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Azienda *</label><select class="fc" id="lavf-azienda"></select></div>
+        <div class="fg"><label class="fl">Mansione</label><input class="fc" id="lavf-mansione"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Codice Fiscale</label><input class="fc" id="lavf-cf" style="text-transform:uppercase"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fc" id="lavf-email" type="email"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM('m-lavoratore')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaLavoratore()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Docente -->
+<div class="modal-wrap" id="m-docente">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="m-doc-t">Nuovo docente</span><span class="mx" onclick="closeM('m-docente')">✕</span></div>
+    <div class="mb">
+      <input type="hidden" id="docf-id">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Cognome *</label><input class="fc" id="docf-cognome"></div>
+        <div class="fg"><label class="fl">Nome *</label><input class="fc" id="docf-nome"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Qualifica</label><input class="fc" id="docf-qualifica"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fc" id="docf-email" type="email"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM('m-docente')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaDocente()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ══ CONFIG SUPABASE ══
+const SUPA_URL = 'https://jmdoeqzsyrjhcvacqhub.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ══ STORAGE ══
+const LS = {
+  g: function(k){ try{ return JSON.parse(localStorage.getItem('frm_fond_'+k)||'[]'); }catch(e){ return []; } },
+  s: function(k,v){ localStorage.setItem('frm_fond_'+k, JSON.stringify(v)); }
+};
+
+const cache = { piani:null, aziende:null, lavoratori:null, docenti:null };
+
+const db = {
+  piani:      function(){ return cache.piani      || LS.g('piani'); },
+  aziende:    function(){ return cache.aziende    || JSON.parse(localStorage.getItem('frm_aziende')||'[]'); },
+  lavoratori: function(){ return cache.lavoratori || JSON.parse(localStorage.getItem('frm_lavoratori')||'[]'); },
+  docenti:    function(){ return cache.docenti    || LS.g('docenti'); },
+  save: {
+    piani:      function(v){ cache.piani=v;      LS.s('piani',v);      upsert('piani_fondo',v); },
+    aziende:    function(v){ cache.aziende=v;    localStorage.setItem('frm_aziende',JSON.stringify(v));    upsert('aziende',v); },
+    lavoratori: function(v){ cache.lavoratori=v; localStorage.setItem('frm_lavoratori',JSON.stringify(v)); upsert('lavoratori',v); },
+    docenti:    function(v){ cache.docenti=v;    LS.s('docenti',v);    upsert('docenti',v); },
+  }
+};
+
+function upsert(table, records) {
+  if(!records || !records.length) return;
+  var rows = records.map(function(r){ return {id:r.id, data:r, updated_at:new Date().toISOString()}; });
+  supa.from(table).upsert(rows, {onConflict:'id'}).then(function(){}).catch(function(e){ console.warn('upsert '+table, e); });
+}
+
+// ══ UTILS ══
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function v(id){ var e=document.getElementById(id); return e?e.value:''; }
+function fmt(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('it-IT'); }catch(e){ return d; } }
+
+function toast(msg, icon){
+  icon = icon || '✓';
+  var w = document.getElementById('toast-wrap');
+  var el = document.createElement('div');
+  el.className = 'toast-item';
+  el.textContent = icon + ' ' + msg;
+  w.appendChild(el);
+  setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 3000);
+}
+
+function openM(id){ document.getElementById(id).classList.add('open'); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+
+// ══ NAVIGATION ══
+var currentPage = 'dashboard';
+
+function goTo(page){
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
+  var navEl = document.getElementById('nav-'+page);
+  if(navEl) navEl.classList.add('active');
+  var pages = { dashboard:renderDashboard, piani:renderPiani, aziende:renderAziende, lavoratori:renderLavoratori, docenti:renderDocenti, impostazioni:renderImpostazioni };
+  document.getElementById('topbar-title').textContent = {dashboard:'Dashboard',piani:'Piani formativi',aziende:'Aziende',lavoratori:'Lavoratori',docenti:'Docenti',impostazioni:'Impostazioni'}[page]||page;
+  if(pages[page]) pages[page]();
+}
+
+// ══ SYNC ══
+async function syncAll(){
+  document.getElementById('sync-info').textContent = '⏳ Sincronizzazione...';
+  try {
+    var tables = ['piani_fondo','aziende','lavoratori','docenti'];
+    var keys   = ['piani','aziende','lavoratori','docenti'];
+    for(var i=0; i<tables.length; i++){
+      var res = await supa.from(tables[i]).select('data');
+      if(!res.error && res.data && res.data.length){
+        var data = res.data.map(function(r){ return r.data; }).filter(Boolean);
+        cache[keys[i]] = data;
+        // aziende e lavoratori condivisi con gestionale formazione
+        if(keys[i]==='aziende') localStorage.setItem('frm_aziende',JSON.stringify(data));
+        else if(keys[i]==='lavoratori') localStorage.setItem('frm_lavoratori',JSON.stringify(data));
+        else LS.s(keys[i], data);
+      }
+    }
+    document.getElementById('sync-info').textContent = '✅ Sincronizzato';
+    goTo(currentPage);
+    toast('Dati sincronizzati');
+  } catch(e) {
+    document.getElementById('sync-info').textContent = '⚠️ Errore sync';
+    console.warn('sync error', e);
+  }
+}
+
+// ══ DASHBOARD ══
+function renderDashboard(){
+  var piani = db.piani();
+  var lav   = db.lavoratori();
+  var az    = db.aziende();
+  var doc   = db.docenti();
+  
+  document.getElementById('content').innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">'
+    +'<div class="card"><div class="card-body" style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--accent)">'+piani.length+'</div><div style="color:var(--text2);font-size:12px">Piani formativi</div></div></div>'
+    +'<div class="card"><div class="card-body" style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--accent)">'+az.length+'</div><div style="color:var(--text2);font-size:12px">Aziende</div></div></div>'
+    +'<div class="card"><div class="card-body" style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--accent)">'+lav.length+'</div><div style="color:var(--text2);font-size:12px">Lavoratori</div></div></div>'
+    +'<div class="card"><div class="card-body" style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--accent)">'+doc.length+'</div><div style="color:var(--text2);font-size:12px">Docenti</div></div></div>'
+    +'</div>'
+    +'<div class="card"><div class="card-header"><span class="card-title">Piani attivi recenti</span><button class="btn btn-sm btn-primary" onclick="goTo(\'piani\')">Vedi tutti →</button></div>'
+    +'<div class="card-body">'
+    +(piani.length===0?'<div class="empty"><div class="ei">📋</div><p>Nessun piano. <a href="#" onclick="openNewPiano()">Crea il primo</a></p></div>'
+    :piani.slice(0,5).map(function(p){
+      var azNome = (az.find(function(a){return a.id===p.aziendaId;})||{}).nome||'—';
+      return '<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+        +'<div><div style="font-weight:600;font-size:13px">'+p.titolo+'</div><div style="font-size:11px;color:var(--text2)">'+azNome+' · '+((p.azioni||[]).length)+' azioni</div></div>'
+        +'<button class="btn btn-xs" onclick="editPiano(\''+p.id+'\')">Apri</button></div>';
+    }).join(''))
+    +'</div></div>';
+}
+
+// ══ PIANI ══
+function renderPiani(){
+  var piani = db.piani().slice().sort(function(a,b){ return (b.dataini||'').localeCompare(a.dataini||''); });
+  var az    = db.aziende();
+  
+  var html = '<div class="card"><div class="card-header"><span class="card-title">Piani formativi Fondimpresa</span>'
+    +'<button class="btn btn-primary btn-sm" onclick="openNewPiano()">+ Nuovo piano</button></div>'
+    +'<div class="card-body">'
+    +(piani.length===0?'<div class="empty"><div class="ei">📋</div><h3>Nessun piano</h3></div>'
+    :'<table class="table"><thead><tr><th>Titolo piano</th><th>Codice</th><th>Azienda</th><th>Azioni</th><th>Periodo</th><th></th></tr></thead><tbody>'
+    +piani.map(function(p){
+      var azNome = (az.find(function(a){return a.id===p.aziendaId;})||{}).nome||'—';
+      var nAzioni = (p.azioni||[]).length;
+      return '<tr><td><strong>'+p.titolo+'</strong></td><td class="font-mono" style="font-size:12px">'+( p.codice||'—')+'</td>'
+        +'<td>'+azNome+'</td><td><span class="badge bb">'+nAzioni+'</span></td>'
+        +'<td style="font-size:12px">'+fmt(p.dataini)+(p.datafine?' → '+fmt(p.datafine):'')+'</td>'
+        +'<td class="actions">'
+        +'<button class="btn btn-xs btn-green" onclick="openRegistro(\''+p.id+'\')">📄 Registro</button>'
+        +'<button class="btn btn-xs" onclick="editPiano(\''+p.id+'\')">Modifica</button>'
+        +'<button class="btn btn-xs btn-danger" onclick="delPiano(\''+p.id+'\')">✕</button>'
+        +'</td></tr>';
+    }).join('')+'</tbody></table>')
+    +'</div></div>';
+  
+  document.getElementById('content').innerHTML = html;
+}
+
+var _pianoAzioni = [];
+
+function openNewPiano(){
+  _pianoAzioni = [];
+  document.getElementById('piano-id').value='';
+  document.getElementById('piano-titolo').value='';
+  document.getElementById('piano-codice').value='';
+  document.getElementById('piano-referente').value='';
+  document.getElementById('piano-dataini').value='';
+  document.getElementById('piano-datafine').value='';
+  document.getElementById('piano-note').value='';
+  document.getElementById('m-piano-t').textContent='Nuovo piano Fondimpresa';
+  // Popola select aziende
+  var sel = document.getElementById('piano-azienda');
+  var az = db.aziende().slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'','it'); });
+  sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(function(a){ return '<option value="'+a.id+'">'+a.nome+'</option>'; }).join('');
+  renderAzioniList();
+  openM('m-piano');
+}
+
+function editPiano(id){
+  var p = db.piani().find(function(x){ return x.id===id; });
+  if(!p) return;
+  _pianoAzioni = (p.azioni||[]).map(function(a){ return Object.assign({},a); });
+  document.getElementById('piano-id').value = p.id;
+  document.getElementById('piano-titolo').value = p.titolo||'';
+  document.getElementById('piano-codice').value = p.codice||'';
+  document.getElementById('piano-referente').value = p.referente||'';
+  document.getElementById('piano-dataini').value = p.dataini||'';
+  document.getElementById('piano-datafine').value = p.datafine||'';
+  document.getElementById('piano-note').value = p.note||'';
+  document.getElementById('m-piano-t').textContent = 'Modifica piano';
+  var sel = document.getElementById('piano-azienda');
+  var az = db.aziende().slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'','it'); });
+  sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(function(a){ return '<option value="'+a.id+'"'+(a.id===p.aziendaId?' selected':'')+'>'+a.nome+'</option>'; }).join('');
+  renderAzioniList();
+  openM('m-piano');
+}
+
+function renderAzioniList(){
+  var el = document.getElementById('azioni-list');
+  if(!_pianoAzioni.length){
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Nessuna azione formativa. Clicca "+ Aggiungi azione".</div>';
+    return;
+  }
+  el.innerHTML = _pianoAzioni.map(function(az,i){
+    var doc = db.docenti().find(function(d){ return d.id===az.docenteId; });
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">'
+      +'<div><div style="font-weight:600;font-size:13px">'+az.titolo+'</div>'
+      +'<div style="font-size:11px;color:var(--text2)">'+(az.dataini||'')+(az.datafine?' → '+az.datafine:'')+' · '+(az.ore||'—')+'h'+(doc?' · '+doc.cognome+' '+doc.nome:'')+'</div></div>'
+      +'<div style="display:flex;gap:4px">'
+      +'<button class="btn btn-xs" onclick="editAzione('+i+')">Modifica</button>'
+      +'<button class="btn btn-xs btn-danger" onclick="delAzione('+i+')">✕</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+function addAzione(){ openAzioneModal(-1); }
+function editAzione(i){ openAzioneModal(i); }
+function delAzione(i){ _pianoAzioni.splice(i,1); renderAzioniList(); }
+
+function openAzioneModal(idx){
+  var az = idx>=0 ? _pianoAzioni[idx] : {};
+  document.getElementById('az-idx').value = idx;
+  document.getElementById('az-titolo').value = az.titolo||'';
+  document.getElementById('az-dataini').value = az.dataini||'';
+  document.getElementById('az-datafine').value = az.datafine||'';
+  document.getElementById('az-ore').value = az.ore||'';
+  document.getElementById('az-sede').value = az.sede||'';
+  document.getElementById('az-argomenti').value = (az.argomenti||[]).join('\n');
+  document.getElementById('m-azione-t').textContent = idx>=0?'Modifica azione':'Nuova azione formativa';
+  // Popola docenti
+  var sel = document.getElementById('az-docente');
+  var doc = db.docenti().slice().sort(function(a,b){ return (a.cognome||'').localeCompare(b.cognome||'','it'); });
+  sel.innerHTML = '<option value="">— Nessun docente —</option>' + doc.map(function(d){ return '<option value="'+d.id+'"'+(d.id===az.docenteId?' selected':'')+'>'+d.cognome+' '+d.nome+'</option>'; }).join('');
+  openM('m-azione');
+}
+
+function salvaAzione(){
+  var idx = parseInt(document.getElementById('az-idx').value);
+  var az = {
+    titolo: v('az-titolo'), dataini: v('az-dataini'), datafine: v('az-datafine'),
+    ore: v('az-ore'), sede: v('az-sede'), docenteId: v('az-docente'),
+    argomenti: v('az-argomenti').split('\n').map(function(s){ return s.trim(); }).filter(Boolean),
+    partecipanti: idx>=0 ? (_pianoAzioni[idx].partecipanti||[]) : []
+  };
+  if(!az.titolo){ alert('Titolo obbligatorio'); return; }
+  if(idx>=0){ _pianoAzioni[idx]=az; } else { _pianoAzioni.push(az); }
+  closeM('m-azione');
+  renderAzioniList();
+}
+
+function salvaPiano(){
+  var id = v('piano-id')||uid();
+  var azId = v('piano-azienda');
+  var titolo = v('piano-titolo');
+  if(!titolo){ alert('Titolo piano obbligatorio'); return; }
+  if(!azId){ alert('Seleziona un\'azienda'); return; }
+  var piano = { id:id, titolo:titolo, codice:v('piano-codice'), aziendaId:azId, referente:v('piano-referente'), dataini:v('piano-dataini'), datafine:v('piano-datafine'), note:v('piano-note'), azioni:_pianoAzioni };
+  var piani = db.piani().filter(function(p){ return p.id!==id; });
+  piani.push(piano);
+  db.save.piani(piani);
+  closeM('m-piano');
+  toast('Piano salvato');
+  renderPiani();
+}
+
+function delPiano(id){
+  if(!confirm('Eliminare questo piano?')) return;
+  db.save.piani(db.piani().filter(function(p){ return p.id!==id; }));
+  renderPiani();
+}
+
+// ══ REGISTRO ══
+var regSelPart = [];
+var _regPianoId = null;
+var _regAzIdx = 0;
+
+function openRegistro(pianoId){
+  var piano = db.piani().find(function(p){ return p.id===pianoId; });
+  if(!piano) return;
+  _regPianoId = pianoId;
+  
+  // Scegli azione se ce ne sono più di una
+  if((piano.azioni||[]).length > 1){
+    var idx = parseInt(prompt('Il piano ha '+(piano.azioni.length)+' azioni. Quale generare? (1-'+piano.azioni.length+')')) - 1;
+    _regAzIdx = isNaN(idx)||idx<0 ? 0 : Math.min(idx, piano.azioni.length-1);
+  } else { _regAzIdx = 0; }
+  
+  var az = piano.azioni[_regAzIdx] || {};
+  regSelPart = [...(az.partecipanti||[])];
+  
+  document.getElementById('reg-piano-id').value = pianoId;
+  document.getElementById('reg-az-idx').value = _regAzIdx;
+  document.getElementById('reg-tutor').value = '';
+  document.getElementById('reg-coord').value = '';
+  
+  var azNome = (db.aziende().find(function(a){ return a.id===piano.aziendaId; })||{}).nome||'—';
+  document.getElementById('reg-info').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<div><div style="color:var(--text2);font-size:11px">Piano</div><div style="font-weight:600">'+piano.titolo+'</div><div style="font-size:11px;color:var(--text2)">'+azNome+(piano.codice?' · Cod. '+piano.codice:'')+'</div></div>'
+    +'<div><div style="color:var(--text2);font-size:11px">Azione '+((_regAzIdx)+1)+'</div><div style="font-weight:600">'+(az.titolo||'—')+'</div><div style="font-size:11px;color:var(--text2)">'+(az.dataini||'')+(az.datafine?' → '+az.datafine:'')+' · '+(az.ore||'—')+'h</div></div>'
+    +'</div>';
+  
+  renderRegChip();
+  openM('m-registro');
+}
+
+function renderRegChip(){
+  var piano = db.piani().find(function(p){ return p.id===_regPianoId; });
+  var lista = document.getElementById('reg-lista');
+  var cntEl = document.getElementById('reg-count');
+  if(!lista || !piano) return;
+  
+  var lav = db.lavoratori().filter(function(l){ return l.aziendaId===piano.aziendaId; })
+    .slice().sort(function(a,b){ return (a.cognome||'').localeCompare(b.cognome||'','it'); });
+  
+  if(lav.length===0 && db.lavoratori().length===0){
+    lista.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text2)">⏳ Caricamento...</div>';
+    supa.from('lavoratori').select('data').then(function(res){
+      if(!res.error&&res.data&&res.data.length){ cache.lavoratori=res.data.map(function(r){return r.data;}).filter(Boolean); LS.s('lavoratori',cache.lavoratori); }
+      renderRegChip();
+    }).catch(function(){ renderRegChip(); });
+    return;
+  }
+  
+  var q = (document.getElementById('reg-cerca')?document.getElementById('reg-cerca').value||'':'').toLowerCase();
+  var lavF = q ? lav.filter(function(l){ return (l.cognome+' '+l.nome).toLowerCase().includes(q); }) : lav;
+  
+  lista.innerHTML = lavF.length ? lavF.map(function(l){
+    var on = regSelPart.includes(l.id);
+    return '<div class="chip-row'+(on?' on':'')+'" onclick="toggleRegPart(\''+l.id+'\')"><div class="chip-check">'+(on?'<svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':'')+'</div><div class="chip-info"><div class="chip-name">'+l.cognome+' '+l.nome+'</div><div class="chip-sub">'+(l.mansione||'—')+'</div></div></div>';
+  }).join('') : '<div style="padding:12px;text-align:center;color:var(--text2)">Nessun lavoratore per questa azienda</div>';
+  
+  if(cntEl) cntEl.textContent = regSelPart.length + ' / ' + lav.length + ' selezionati';
+}
+
+function toggleRegPart(id){
+  regSelPart = regSelPart.includes(id) ? regSelPart.filter(function(p){ return p!==id; }) : [...regSelPart, id];
+  renderRegChip();
+}
+
+function regSelTutti(){
+  var piano = db.piani().find(function(p){ return p.id===_regPianoId; });
+  if(piano) regSelPart = db.lavoratori().filter(function(l){ return l.aziendaId===piano.aziendaId; }).map(function(l){ return l.id; });
+  renderRegChip();
+}
+
+function generaRegistro(){
+  var pianoId = document.getElementById('reg-piano-id').value;
+  var ai = parseInt(document.getElementById('reg-az-idx').value)||0;
+  var piano = db.piani().find(function(p){ return p.id===pianoId; });
+  if(!piano) return;
+  var az = piano.azioni[ai]; if(!az) return;
+  
+  // Salva partecipanti
+  az.partecipanti = [...regSelPart];
+  db.save.piani(db.piani().map(function(p){ return p.id===pianoId?piano:p; }));
+  
+  var azienda = db.aziende().find(function(a){ return a.id===piano.aziendaId; })||{};
+  var docente = db.docenti().find(function(d){ return d.id===az.docenteId; })||{};
+  var pp = regSelPart.map(function(id){ return db.lavoratori().find(function(l){ return l.id===id; }); }).filter(Boolean);
+  var tutor = v('reg-tutor');
+  var coord = v('reg-coord');
+  
+  // Date
+  var dates = [];
+  if(az.dataini){
+    var d = new Date(az.dataini);
+    var fine = az.datafine ? new Date(az.datafine) : new Date(az.dataini);
+    while(d <= fine){
+      var wd = d.getDay();
+      if(wd!==0&&wd!==6) dates.push(new Date(d));
+      d.setDate(d.getDate()+1);
+    }
+  }
+  if(!dates.length && az.dataini) dates.push(new Date(az.dataini));
+  
+  var fmtD = function(d){ return d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}); };
+  
+  var html = '<div style="font-family:Arial,sans-serif;font-size:12px;color:#222;background:white;padding:10mm">'
+  +'<div style="text-align:center;border-bottom:3px solid #003366;padding-bottom:12px;margin-bottom:16px">'
+  +'<div style="font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:1px">REGISTRO DIDATTICO E DELLE PRESENZE</div>'
+  +'<div style="font-size:11px;color:#666;margin-top:4px">Fondo Paritetico Interprofessionale Nazionale per la Formazione Continua</div>'
+  +'</div>'
+  +'<table style="width:100%;border-collapse:collapse;margin-bottom:12px">'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic;width:40%">Titolo Piano Formativo</td><td style="padding:5px 10px;border:1px solid #003366;font-weight:700">"'+piano.titolo+'"</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Codice Piano</td><td style="padding:5px 10px;border:1px solid #003366">'+(piano.codice||'—')+'</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Azienda aderente</td><td style="padding:5px 10px;border:1px solid #003366;font-weight:700">'+(azienda.nome||'—')+'</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Titolo Azione Formativa</td><td style="padding:5px 10px;border:1px solid #003366;font-weight:700">'+(az.titolo||'—')+'</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Sede formazione</td><td style="padding:5px 10px;border:1px solid #003366">'+(az.sede||azienda.indirizzo||'—')+'</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Docente / Esperto</td><td style="padding:5px 10px;border:1px solid #003366">'+(docente.cognome?docente.cognome+' '+docente.nome+(docente.qualifica?', '+docente.qualifica:''):'—')+'</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Tutor aziendale</td><td style="padding:5px 10px;border:1px solid #003366">'+(tutor||'—')+'</td></tr>'
+  +'<tr><td style="padding:5px 10px;border:1px solid #003366;background:#EEF2FF;font-style:italic">Coordinatore</td><td style="padding:5px 10px;border:1px solid #003366">'+(coord||'—')+'</td></tr>'
+  +'</table>'
+  
+  // Giornate
+  + dates.map(function(date, gi){
+    var oreGiorno = az.ore ? Math.ceil(az.ore/dates.length) : 4;
+    var args = (az.argomenti||[]);
+    var argGiorno = args.length > gi ? args[gi] : (args[args.length-1]||'');
+    return '<div style="margin-bottom:16px">'
+      +'<div style="background:#003366;color:white;padding:5px 10px;font-weight:700;font-size:11px;text-transform:uppercase">GIORNATA '+(gi+1)+' — '+fmtD(date)+' — ORE '+oreGiorno+'</div>'
+      +'<table style="width:100%;border-collapse:collapse">'
+      +'<tr><td style="padding:5px 10px;border:1px solid #ddd;background:#f5f5f5;font-size:11px;width:25%">Argomento trattato</td>'
+      +'<td style="padding:8px 10px;border:1px solid #ddd;font-size:11px" colspan="3">'+argGiorno+'</td></tr>'
+      +'</table>'
+      +'<table style="width:100%;border-collapse:collapse;margin-top:6px">'
+      +'<thead><tr><th style="padding:5px 8px;border:1px solid #003366;background:#003366;color:white;font-size:10px;text-align:center">#</th>'
+      +'<th style="padding:5px 8px;border:1px solid #003366;background:#003366;color:white;font-size:10px">Cognome e Nome</th>'
+      +'<th style="padding:5px 8px;border:1px solid #003366;background:#003366;color:white;font-size:10px;text-align:center">Firma entrata</th>'
+      +'<th style="padding:5px 8px;border:1px solid #003366;background:#003366;color:white;font-size:10px;text-align:center">Firma uscita</th></tr></thead><tbody>'
+      + pp.map(function(l,i){ return '<tr style="background:'+(i%2?'#f9f9f9':'white')+'">'
+        +'<td style="padding:5px 8px;border:1px solid #ddd;text-align:center;font-weight:700">'+(i+1)+'</td>'
+        +'<td style="padding:5px 8px;border:1px solid #ddd">'+(l.cognome||'')+' '+(l.nome||'')+'</td>'
+        +'<td style="padding:5px 8px;border:1px solid #ddd;width:120px">&nbsp;</td>'
+        +'<td style="padding:5px 8px;border:1px solid #ddd;width:120px">&nbsp;</td></tr>'; }).join('')
+      + Array.from({length:Math.max(0,10-pp.length)},function(_,i){ return '<tr><td style="padding:5px 8px;border:1px solid #ddd;text-align:center;color:#ccc">'+(pp.length+i+1)+'</td><td style="padding:5px 8px;border:1px solid #ddd"></td><td style="padding:5px 8px;border:1px solid #ddd"></td><td style="padding:5px 8px;border:1px solid #ddd"></td></tr>'; }).join('')
+      +'<tr><td colspan="4" style="padding:5px 10px;border:1px solid #ddd;font-size:11px"><strong>Presenti:</strong> ______ &nbsp; <strong>Assenti:</strong> ______</td></tr>'
+      +'</tbody></table>'
+      +'<div style="display:flex;justify-content:flex-end;margin-top:8px;gap:40px">'
+      +'<div style="font-size:11px">Il Docente<br><br>_________________________________</div>'
+      +'<div style="font-size:11px">Il Referente di Piano<br><br>'+(piano.referente||'_________________________________')+'</div>'
+      +'</div></div>';
+  }).join('') + '</div>';
+  
+  closeM('m-registro');
+  var blob = new Blob([html], {type:'text/html'});
+  var url = URL.createObjectURL(blob);
+  var win = window.open(url, '_blank');
+  if(!win){ toast('Abilita i popup per stampare','⚠️'); return; }
+  win.addEventListener('load', function(){ win.print(); });
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+  toast('Registro generato');
+}
+
+// ══ AZIENDE ══
+function renderAziende(){
+  var az = db.aziende().slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'','it'); });
+  document.getElementById('content').innerHTML =
+    '<div class="card"><div class="card-header"><span class="card-title">Aziende</span>'
+    +'<button class="btn btn-primary btn-sm" onclick="openNewAzienda()">+ Nuova azienda</button></div><div class="card-body">'
+    +(az.length===0?'<div class="empty"><div class="ei">🏢</div><h3>Nessuna azienda</h3></div>'
+    :'<table class="table"><thead><tr><th>Ragione sociale</th><th>P.IVA/CF</th><th>Città</th><th>Lavoratori</th><th></th></tr></thead><tbody>'
+    +az.map(function(a){
+      var nLav = db.lavoratori().filter(function(l){ return l.aziendaId===a.id; }).length;
+      return '<tr><td><strong>'+a.nome+'</strong></td><td style="font-size:12px">'+(a.piva||'—')+'</td><td>'+(a.citta||'—')+'</td>'
+        +'<td><span class="badge bb">'+nLav+'</span></td>'
+        +'<td class="actions"><button class="btn btn-xs" onclick="editAzienda(\''+a.id+'\')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delAzienda(\''+a.id+'\')">✕</button></td></tr>';
+    }).join('')+'</tbody></table>')
+    +'</div></div>';
+}
+
+function openNewAzienda(){
+  ['azf-id','azf-nome','azf-piva','azf-settore','azf-indirizzo','azf-citta','azf-email'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('m-az-t').textContent = 'Nuova azienda';
+  openM('m-azienda');
+}
+
+function editAzienda(id){
+  var a = db.aziende().find(function(x){ return x.id===id; }); if(!a) return;
+  document.getElementById('azf-id').value=a.id; document.getElementById('azf-nome').value=a.nome||'';
+  document.getElementById('azf-piva').value=a.piva||''; document.getElementById('azf-settore').value=a.settore||'';
+  document.getElementById('azf-indirizzo').value=a.indirizzo||''; document.getElementById('azf-citta').value=a.citta||'';
+  document.getElementById('azf-email').value=a.email||'';
+  document.getElementById('m-az-t').textContent='Modifica azienda'; openM('m-azienda');
+}
+
+function salvaAzienda(){
+  var id=v('azf-id')||uid(), nome=v('azf-nome');
+  if(!nome){ alert('Nome obbligatorio'); return; }
+  var az=db.aziende().filter(function(x){ return x.id!==id; });
+  az.push({id:id,nome:nome,piva:v('azf-piva'),settore:v('azf-settore'),indirizzo:v('azf-indirizzo'),citta:v('azf-citta'),email:v('azf-email')});
+  db.save.aziende(az); closeM('m-azienda'); toast('Azienda salvata'); renderAziende();
+}
+
+function delAzienda(id){
+  if(!confirm('Eliminare questa azienda?')) return;
+  db.save.aziende(db.aziende().filter(function(a){ return a.id!==id; })); renderAziende();
+}
+
+// ══ LAVORATORI ══
+function renderLavoratori(){
+  var lav = db.lavoratori().slice().sort(function(a,b){ return (a.cognome||'').localeCompare(b.cognome||'','it'); });
+  var html = '<div class="card"><div class="card-header"><span class="card-title">Lavoratori ('+lav.length+')</span>'
+    +'<button class="btn btn-primary btn-sm" onclick="openNewLavoratore()">+ Nuovo</button></div><div class="card-body">';
+  
+  if(!lav.length){
+    html += '<div class="empty"><div class="ei">👷</div><h3>Nessun lavoratore</h3></div>';
+  } else {
+    html += '<input class="fc" placeholder="🔍 Cerca per nome, CF..." oninput="filtroLav(this.value)" style="margin-bottom:12px">'
+    +'<table class="table" id="tb-lav"><thead><tr><th>Cognome</th><th>Nome</th><th>Azienda</th><th>Mansione</th><th>CF</th><th></th></tr></thead><tbody>'
+    +lav.map(function(l){
+      var azNome=(db.aziende().find(function(a){return a.id===l.aziendaId;})||{}).nome||'—';
+      return '<tr><td><strong>'+l.cognome+'</strong></td><td>'+l.nome+'</td><td>'+azNome+'</td><td>'+(l.mansione||'—')+'</td><td style="font-size:11px">'+(l.cf||'—')+'</td>'
+        +'<td class="actions"><button class="btn btn-xs" onclick="editLavoratore(\''+l.id+'\')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delLavoratore(\''+l.id+'\')">✕</button></td></tr>';
+    }).join('')+'</tbody></table>';
+  }
+  html += '</div></div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+function filtroLav(q){
+  q = q.toLowerCase();
+  var rows = document.querySelectorAll('#tb-lav tbody tr');
+  rows.forEach(function(r){ r.style.display = r.textContent.toLowerCase().includes(q)?'':'none'; });
+}
+
+function openNewLavoratore(){
+  ['lavf-id','lavf-cognome','lavf-nome','lavf-mansione','lavf-cf','lavf-email'].forEach(function(id){ document.getElementById(id).value=''; });
+  var sel=document.getElementById('lavf-azienda');
+  var az=db.aziende().slice().sort(function(a,b){return(a.nome||'').localeCompare(b.nome||'','it');});
+  sel.innerHTML='<option value="">— Seleziona azienda —</option>'+az.map(function(a){return '<option value="'+a.id+'">'+a.nome+'</option>';}).join('');
+  document.getElementById('m-lav-t').textContent='Nuovo lavoratore'; openM('m-lavoratore');
+}
+
+function editLavoratore(id){
+  var l=db.lavoratori().find(function(x){return x.id===id;}); if(!l) return;
+  document.getElementById('lavf-id').value=l.id; document.getElementById('lavf-cognome').value=l.cognome||'';
+  document.getElementById('lavf-nome').value=l.nome||''; document.getElementById('lavf-mansione').value=l.mansione||'';
+  document.getElementById('lavf-cf').value=l.cf||''; document.getElementById('lavf-email').value=l.email||'';
+  var sel=document.getElementById('lavf-azienda');
+  var az=db.aziende().slice().sort(function(a,b){return(a.nome||'').localeCompare(b.nome||'','it');});
+  sel.innerHTML='<option value="">— Seleziona —</option>'+az.map(function(a){return '<option value="'+a.id+'"'+(a.id===l.aziendaId?' selected':'')+'>'+a.nome+'</option>';}).join('');
+  document.getElementById('m-lav-t').textContent='Modifica lavoratore'; openM('m-lavoratore');
+}
+
+function salvaLavoratore(){
+  var id=v('lavf-id')||uid(), cognome=v('lavf-cognome'), nome=v('lavf-nome');
+  if(!cognome||!nome){alert('Nome e cognome obbligatori');return;}
+  var lav=db.lavoratori().filter(function(x){return x.id!==id;});
+  lav.push({id:id,cognome:cognome.toUpperCase(),nome:nome,aziendaId:v('lavf-azienda'),mansione:v('lavf-mansione'),cf:v('lavf-cf').toUpperCase(),email:v('lavf-email')});
+  db.save.lavoratori(lav); closeM('m-lavoratore'); toast('Lavoratore salvato'); renderLavoratori();
+}
+
+function delLavoratore(id){
+  if(!confirm('Eliminare?')) return;
+  db.save.lavoratori(db.lavoratori().filter(function(l){return l.id!==id;})); renderLavoratori();
+}
+
+// ══ DOCENTI ══
+function renderDocenti(){
+  var doc = db.docenti().slice().sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'','it');});
+  document.getElementById('content').innerHTML =
+    '<div class="card"><div class="card-header"><span class="card-title">Docenti ('+doc.length+')</span>'
+    +'<button class="btn btn-primary btn-sm" onclick="openNewDocente()">+ Nuovo</button></div><div class="card-body">'
+    +(doc.length===0?'<div class="empty"><div class="ei">🎓</div><h3>Nessun docente</h3></div>'
+    :'<table class="table"><thead><tr><th>Cognome</th><th>Nome</th><th>Qualifica</th><th>Email</th><th></th></tr></thead><tbody>'
+    +doc.map(function(d){
+      return '<tr><td><strong>'+d.cognome+'</strong></td><td>'+d.nome+'</td><td>'+(d.qualifica||'—')+'</td><td>'+(d.email||'—')+'</td>'
+        +'<td class="actions"><button class="btn btn-xs" onclick="editDocente(\''+d.id+'\')">Modifica</button><button class="btn btn-xs btn-danger" onclick="delDocente(\''+d.id+'\')">✕</button></td></tr>';
+    }).join('')+'</tbody></table>')
+    +'</div></div>';
+}
+
+function openNewDocente(){
+  ['docf-id','docf-cognome','docf-nome','docf-qualifica','docf-email'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('m-doc-t').textContent='Nuovo docente'; openM('m-docente');
+}
+
+function editDocente(id){
+  var d=db.docenti().find(function(x){return x.id===id;}); if(!d) return;
+  document.getElementById('docf-id').value=d.id; document.getElementById('docf-cognome').value=d.cognome||'';
+  document.getElementById('docf-nome').value=d.nome||''; document.getElementById('docf-qualifica').value=d.qualifica||'';
+  document.getElementById('docf-email').value=d.email||'';
+  document.getElementById('m-doc-t').textContent='Modifica docente'; openM('m-docente');
+}
+
+function salvaDocente(){
+  var id=v('docf-id')||uid(), cognome=v('docf-cognome'), nome=v('docf-nome');
+  if(!cognome||!nome){alert('Nome e cognome obbligatori');return;}
+  var doc=db.docenti().filter(function(x){return x.id!==id;});
+  doc.push({id:id,cognome:cognome,nome:nome,qualifica:v('docf-qualifica'),email:v('docf-email')});
+  db.save.docenti(doc); closeM('m-docente'); toast('Docente salvato'); renderDocenti();
+}
+
+function delDocente(id){
+  if(!confirm('Eliminare?')) return;
+  db.save.docenti(db.docenti().filter(function(d){return d.id!==id;})); renderDocenti();
+}
+
+// ══ IMPOSTAZIONI ══
+function renderImpostazioni(){
+  document.getElementById('content').innerHTML =
+    '<div class="card"><div class="card-header"><span class="card-title">⚙️ Impostazioni</span></div><div class="card-body">'
+    +'<p style="color:var(--text2);margin-bottom:16px;font-size:13px">Gestionale Fondimpresa — database dedicato su Supabase.</p>'
+    +'<button class="btn btn-danger btn-sm" onclick="if(confirm(\'Cancellare tutti i dati locali?\')) { localStorage.clear(); cache.piani=null; cache.aziende=null; cache.lavoratori=null; cache.docenti=null; toast(\'Dati locali cancellati\'); }">🗑 Cancella dati locali</button>'
+    +'<button class="btn btn-sm" style="margin-left:8px" onclick="syncAll()">↻ Sincronizza con Supabase</button>'
+    +'</div></div>';
+}
+
+// ══ INIT ══
+function init(){
+  syncAll();
+  goTo('dashboard');
+}
+
+init();
+</script>
+</body>
+</html>
