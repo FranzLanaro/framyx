@@ -268,15 +268,7 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="nav-item" onclick="goTo('scadenze')" id="nav-scadenze"><span class="ni">⏰</span>Scadenze</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label" style="color:#FDC400">Commerciale</div>
-    <div class="nav-item" onclick="goTo('offerte')" id="nav-offerte"><span class="ni">📋</span>Offerte servizi<span id="badge-offerte" class="badge bb" style="display:none;margin-left:auto;font-size:10px"></span></div>
-    <div class="nav-item" onclick="goTo('preventivi')" id="nav-preventivi"><span class="ni">💼</span>Offerte formazione</div>
-    <div class="nav-item" onclick="goTo('fascicolo')" id="nav-fascicolo"><span class="ni">🏢</span>Fascicolo aziende</div>
-    <div class="nav-item" onclick="goTo('contratti')" id="nav-contratti"><span class="ni">📁</span>Incarichi attivi</div>
-  </div>
-  <div class="nav-section">
     <div class="nav-label" style="color:#FDC400">Collaboratori</div>
-    <div class="nav-item" onclick="goTo('incarichi')" id="nav-incarichi"><span class="ni">✉️</span>Lettere incarico</div>
     <div class="nav-item" onclick="goTo('fondimpresa')" id="nav-fondimpresa"><span class="ni">🏛</span>Fondimpresa</div>
   </div>
   <div class="nav-section">
@@ -314,9 +306,9 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="page active" id="page-dashboard">
       <div class="grid-2">
         <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti <span id="dash-scad-count" style="font-size:11px;font-weight:400;color:var(--text2)"></span></span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte →</button></div><div id="dash-scad"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📁 Documenti aziendali in scadenza</span><button class="btn btn-sm" onclick="goTo('fascicolo')">Fascicolo →</button></div><div id="dash-docs-az"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📅 Appuntamenti settimana</span><button class="btn btn-sm" onclick="goTo('contratti')">Agenda →</button></div><div id="dash-appunt"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📋 Offerte / Preventivi da confermare</span><button class="btn btn-sm" onclick="goTo('offerte')">Vedi tutte</button></div><div id="dash-offerte"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📁 Documenti aziendali in scadenza</span></div><div id="dash-docs-az"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📅 Appuntamenti settimana</span></div><div id="dash-appunt"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">📋 Offerte / Preventivi da confermare</span></div><div id="dash-offerte"></div></div>
         <div class="card"><div class="card-header"><span class="card-title">📚 Formazione in corso</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
       </div>
       <div class="card mt-2">
@@ -550,418 +542,6 @@ textarea.fc{min-height:68px;resize:vertical}
 
 
     <!-- ═══ PREVENTIVI ═══ -->
-    <div class="page" id="page-preventivi">
-      <div style="background:#EBF5FF;border:1px solid #93C5FD;border-radius:6px;padding:9px 14px;margin-bottom:12px;font-size:12px">💼 <strong>Offerta Formazione</strong> — elenca i corsi con prezzi e genera un preventivo Word. Per i corsi di formazione.</div>
-      <div class="grid-2">
-        <!-- Colonna sinistra: configuratore -->
-        <div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">💼 Nuovo preventivo</span></div>
-            <div style="padding:16px">
-              <div class="fg">
-                <label class="fl">Cliente *</label>
-                <select class="fc" id="prev-az" onchange="onPrevAzChange()"><option value="">Seleziona azienda...</option></select>
-              </div>
-              <div id="prev-cliente-info" style="background:var(--surface2);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:10px;display:none"></div>
-              <div class="fr2">
-                <div class="fg"><label class="fl">N° offerta</label><input class="fc" id="prev-num" placeholder="es. 001/2026"></div>
-                <div class="fg"><label class="fl">Data offerta</label><input class="fc" id="prev-data" type="date"></div>
-              </div>
-              <div class="fg"><label class="fl">Referente cliente (CA)</label><input class="fc" id="prev-referente" placeholder="es. Mario Rossi"></div>
-              <div class="fg"><label class="fl">Note / oggetto aggiuntivo</label><input class="fc" id="prev-note" placeholder="es. Corsi per nuovi assunti"></div>
-            </div>
-          </div>
-
-          <div class="card mt-2">
-            <div class="card-header"><span class="card-title">📋 Corsi preventivati</span>
-              <div style="display:flex;gap:6px">
-                <button class="btn btn-primary btn-xs" onclick="openSelettoreCorsi()">📋 Dal catalogo</button>
-                <button class="btn btn-xs" onclick="addRigaPrev()">+ Riga libera</button>
-              </div>
-            </div>
-            <!-- Selettore corsi dal catalogo -->
-            <div id="selettore-corsi-panel" style="display:none;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface2)">
-              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-                <input class="fc" id="sel-cor-q" placeholder="🔍 Cerca nel catalogo..." oninput="renderSelettoreCorsi()" style="flex:1">
-                <select class="fc" id="sel-cor-tipo" onchange="renderSelettoreCorsi()" style="max-width:140px">
-                  <option value="">Tutti i tipi</option>
-                  <option>Sicurezza</option><option>Antincendio</option><option>Primo soccorso</option><option>Attrezzature</option><option>Altro</option>
-                </select>
-                <button class="btn btn-xs" onclick="closeSelettoreCorsi()">✕</button>
-              </div>
-              <div id="sel-cor-lista" style="max-height:240px;overflow-y:auto"></div>
-            </div>
-            <div style="padding:12px">
-              <div id="prev-righe-list"></div>
-              <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
-                <div id="prev-totali" style="font-size:13px;text-align:right"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card mt-2">
-            <div class="card-header"><span class="card-title">💰 Condizioni economiche</span></div>
-            <div style="padding:14px">
-              <div class="fr3">
-                <div class="fg"><label class="fl" style="font-size:11px">Sconto % (opzionale)</label><input class="fc" id="prev-sconto" type="number" min="0" max="100" placeholder="0" oninput="aggiornaTotaliPrev()"></div>
-                <div class="fg"><label class="fl" style="font-size:11px">IVA %</label><select class="fc" id="prev-iva"><option value="22">22%</option><option value="0">Esente</option><option value="4">4%</option><option value="10">10%</option></select></div>
-                <div class="fg"><label class="fl" style="font-size:11px">Validità offerta (gg)</label><input class="fc" id="prev-validita" type="number" value="30" min="1"></div>
-              </div>
-              <div class="fg" style="margin-top:8px"><label class="fl" style="font-size:11px">Note compensi aggiuntive</label><textarea class="fc" id="prev-note-compensi" rows="2" placeholder="es. Trasferta inclusa / Sconto applicato per accordo..." style="resize:vertical"></textarea></div>
-            </div>
-          </div>
-
-          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="generaPreventivo()">📄 Genera PDF preventivo</button>
-            <button class="btn btn-sm" onclick="salvaPrevBozza()">💾 Salva bozza</button>
-            <button class="btn btn-xs btn-danger" onclick="resetPreventivo()">✕ Reset</button>
-          </div>
-        </div>
-
-        <!-- Colonna destra: listino + bozze salvate -->
-        <div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">📊 Listino prezzi</span></div>
-            <div style="padding:12px;font-size:11px">
-              <table class="tbl" style="font-size:11px">
-                <thead><tr><th>Prestazione</th><th style="width:90px">Prezzo</th><th style="width:40px"></th></tr></thead>
-                <tbody id="tb-listino"></tbody>
-              </table>
-              <button class="btn btn-xs btn-primary" style="margin-top:8px" onclick="aggiungiVocePrev()">+ Nuova voce listino</button>
-            </div>
-          </div>
-          <div class="card mt-2">
-            <div class="card-header"><span class="card-title">📁 Bozze salvate</span></div>
-            <div id="prev-bozze-list" style="padding:12px;font-size:12px"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ═══ OFFERTE ═══ -->
-    <div class="page" id="page-offerte">
-      <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:6px;padding:9px 14px;margin-bottom:10px;font-size:12px">📋 <strong>Offerta Servizi</strong> — documento completo con incarico, prestazioni e compensi. Per DVR, RSPP, SLC, Piani di emergenza e altri servizi professionali.</div>
-      <div id="off-riepilogo" style="margin-bottom:14px"></div>
-      <div class="grid-2">
-
-        <!-- Colonna sinistra: genera offerta -->
-        <div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">📋 Genera offerta</span></div>
-            <div style="padding:16px">
-              <div class="fg">
-                <label class="fl">Tipo offerta *</label>
-                <select class="fc" id="off-tipo" onchange="onOffTipoChange()">
-                  <option value="">Seleziona template...</option>
-                </select>
-              </div>
-              <div id="off-tipo-desc" style="display:none;background:var(--surface2);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
-              <div class="fg">
-                <label class="fl">Cliente *</label>
-                <select class="fc" id="off-az" onchange="onOffAzChange()"><option value="">Seleziona azienda...</option></select>
-              </div>
-              <div id="off-cliente-info" style="display:none;background:var(--surface2);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
-              <div class="fr2">
-                <div class="fg"><label class="fl">N° offerta</label><input class="fc" id="off-num" placeholder="es. 001/2026"></div>
-                <div class="fg"><label class="fl">Data offerta</label><input class="fc" id="off-data" type="date"></div>
-              </div>
-              <div class="fg"><label class="fl">Referente cliente (CA)</label><input class="fc" id="off-referente" placeholder="es. Mario Rossi"></div>
-              <div class="fg"><label class="fl">Note aggiuntive</label><input class="fc" id="off-note" placeholder="es. Sede aggiuntiva inclusa"></div>
-              <!-- Campi extra RSPP — visibili solo con template RSPP -->
-              <div id="off-rspp-extra" style="display:none;background:#FFF8E1;border:1px solid #FDC400;border-radius:6px;padding:12px;margin-bottom:10px">
-                <div style="font-weight:700;font-size:12px;color:#484F54;margin-bottom:8px">⚙️ Personalizzazione RSPP</div>
-                <div class="fr2">
-                  <div class="fg"><label class="fl" style="font-size:11px">N° sopralluoghi/anno</label><input class="fc" id="off-rspp-visite" type="number" min="1" max="52" value="4" style="max-width:80px"></div>
-                  <div class="fg"><label class="fl" style="font-size:11px">Ore/anno incluse</label><input class="fc" id="off-rspp-ore" type="number" min="1" value="16" style="max-width:80px"></div>
-                </div>
-                <div class="fr2">
-                  <div class="fg"><label class="fl" style="font-size:11px">Canone annuo (€)</label><input class="fc" id="off-rspp-canone" placeholder="es. 1200" style="max-width:120px"></div>
-                  <div class="fg"><label class="fl" style="font-size:11px">Costo sopralluogo extra (€)</label><input class="fc" id="off-rspp-extra-visita" placeholder="es. 120" style="max-width:120px"></div>
-                </div>
-                <div class="fg"><label class="fl" style="font-size:11px">Servizi inclusi (uno per riga)</label>
-                  <textarea class="fc" id="off-rspp-servizi" rows="4" style="font-size:11px;resize:vertical" placeholder="Nomina formale come RSPP esterno&#10;Sopralluogo periodico presso la sede&#10;Collaborazione al DVR&#10;Partecipazione riunioni periodiche art. 35&#10;Assistenza gestione infortuni&#10;Aggiornamento normativo continuo"></textarea>
-                </div>
-                <div class="fg"><label class="fl" style="font-size:11px">Esclusioni specifiche</label>
-                  <textarea class="fc" id="off-rspp-esclusioni" rows="2" style="font-size:11px;resize:vertical" placeholder="es. Redazione DVR — Valutazioni specialistiche"></textarea>
-                </div>
-              </div>
-              <div class="fg">
-                <label class="fl">Validità offerta (giorni)</label>
-                <input class="fc" id="off-validita" type="number" value="30" min="1" style="max-width:100px">
-              </div>
-              <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-primary" onclick="generaOfferta()">📄 Genera PDF</button>
-                <button class="btn btn-sm" onclick="togglePersonalizza()">✏️ Personalizza</button>
-                <button class="btn btn-sm" onclick="salvaOffertaBozza('bozza')">💾 Salva bozza</button>
-                <button class="btn btn-sm" style="background:#1A56DB;color:white" onclick="salvaOffertaBozza('inviata')">📤 Inviata</button>
-                <button class="btn btn-sm" style="background:#D4620A;color:white" onclick="salvaOffertaBozza('attesa')">⏳ In attesa</button>
-                <button class="btn btn-xs btn-danger" onclick="resetOfferta()">✕ Reset</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bozze salvate -->
-          <!-- Personalizzazione voci -->
-          <div class="card mt-2" id="off-custom-panel" style="display:none">
-            <div class="card-header">
-              <span class="card-title">✏️ Personalizza voci offerta</span>
-              <button class="btn btn-xs" onclick="document.getElementById('off-custom-panel').style.display='none'">✕</button>
-            </div>
-            <div style="padding:12px">
-              <p class="text-xs text-muted" style="margin-bottom:8px">Modifica le voci prima di scaricare. Lascia vuoto per usare quelle standard del template.</p>
-              <div id="off-voci-custom-list"></div>
-              <button class="btn btn-xs btn-primary" style="margin-top:6px" onclick="addVoceCustom()">+ Aggiungi voce</button>
-              <div class="fg" style="margin-top:10px">
-                <label class="fl" style="font-size:11px">Note personalizzate (sostituisce note standard)</label>
-                <textarea class="fc" id="off-note-custom" rows="3" placeholder="Lascia vuoto per usare le note standard del template..." style="resize:vertical;font-size:11px"></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div class="card mt-2">
-            <div class="card-header">
-              <span class="card-title">📁 Storico offerte</span>
-              <div style="display:flex;gap:6px;align-items:center">
-                <input class="fc" id="off-search" placeholder="🔍 Cerca..." oninput="renderOfferteBozze()" style="max-width:140px;font-size:11px">
-                <select class="fc" id="off-filter-stato" onchange="renderOfferteBozze()" style="max-width:110px;font-size:11px">
-                  <option value="">Tutti</option>
-                  <option value="bozza">📝 Bozza</option>
-                  <option value="inviata">📤 Inviata</option>
-                  <option value="attesa">⏳ In attesa</option>
-                  <option value="accettata">✅ Accettata</option>
-                  <option value="rifiutata">❌ Rifiutata</option>
-                  <option value="scaduta">⌛ Scaduta</option>
-                </select>
-              </div>
-            </div>
-            <div id="off-bozze-list" style="padding:12px"></div>
-          </div>
-        </div>
-
-        <!-- Colonna destra: catalogo template -->
-        <div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">📚 Catalogo template offerte</span>
-              <button class="btn btn-xs btn-primary" onclick="importaTemplateOfferta()">⬆️ Importa CSV</button>
-            </div>
-            <div style="padding:12px">
-              <p class="text-xs text-muted" style="margin-bottom:10px">Questi sono i template di offerta disponibili. Seleziona un tipo dalla lista a sinistra per generare l'offerta per il cliente.</p>
-              <div id="off-catalogo-list"></div>
-              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-xs" style="background:#FDC400;color:#1A1916;font-weight:600" onclick="ripristinaCatalogoStandard()">⚡ Ripristina standard</button>
-                <button class="btn btn-xs btn-primary" onclick="scaricaTemplateCatalogoOfferte()">⬇️ Scarica template CSV</button>
-                <button class="btn btn-xs" onclick="aggiungiTemplateOfferta()">+ Nuovo template</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <input type="file" id="off-import-file" accept=".csv" style="display:none" onchange="onImportTemplateOfferta(this)">
-    </div>
-
-
-    <!-- ═══ INCARICHI ═══ -->
-    <div class="page" id="page-incarichi">
-      <div style="background:#F3E8FF;border:1px solid #C4B5FD;border-radius:6px;padding:9px 14px;margin-bottom:14px;font-size:12px">
-        ✉️ <strong>Lettere di incarico</strong> — genera lettere formali per docenti, consulenti, RSPP esterni, medici competenti e qualsiasi collaboratore occasionale. Le lettere vengono generate in <strong>stile grafico Framyx</strong> pronte per la stampa e firma.
-      </div>
-      <div class="grid-2">
-        <!-- Colonna sinistra: form -->
-        <div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">✉️ Nuova lettera di incarico</span></div>
-            <div style="padding:16px">
-
-              <!-- Tipo prestazione -->
-              <div class="fg">
-                <label class="fl">Tipo di prestazione *</label>
-                <select class="fc" id="inc-tipo" onchange="onIncTipoChange()">
-                  <option value="formazione">📚 Docente / Formatore</option>
-                  <option value="consulenza">💼 Consulente sicurezza</option>
-                  <option value="dvr">📋 Redazione DVR</option>
-                  <option value="sopralluogo">🔍 Sopralluogo / Audit</option>
-                  <option value="rspp">🦺 RSPP esterno</option>
-                  <option value="medico">🩺 Medico Competente</option>
-                  <option value="pos">🏗️ Coordinatore sicurezza / POS</option>
-                  <option value="formazione_fondimpresa">🏛 Docente Fondimpresa</option>
-                  <option value="custom">✏️ Prestazione personalizzata</option>
-                </select>
-              </div>
-              <div id="inc-tipo-desc" style="background:var(--surface2);border-radius:var(--r);padding:7px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
-
-              <!-- Collaboratore -->
-              <div class="fg">
-                <label class="fl">Collaboratore *</label>
-                <select class="fc" id="inc-doc" onchange="onIncDocChange()">
-                  <option value="">Seleziona collaboratore...</option>
-                </select>
-              </div>
-              <div id="inc-doc-info" style="display:none;background:var(--surface2);border-radius:var(--r);padding:7px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
-
-              <!-- Azienda committente -->
-              <div class="fg">
-                <label class="fl">Azienda committente</label>
-                <select class="fc" id="inc-az" onchange="onIncAzChange()">
-                  <option value="">Seleziona azienda (opzionale)...</option>
-                </select>
-              </div>
-              <div id="inc-az-info" style="display:none;background:var(--surface2);border-radius:var(--r);padding:7px 12px;font-size:11px;color:var(--text2);margin-bottom:10px"></div>
-
-              <!-- Sessione collegata (solo per formazione) -->
-              <div class="fg" id="inc-sess-box" style="display:none">
-                <label class="fl">Sessione collegata (opzionale)</label>
-                <select class="fc" id="inc-sess">
-                  <option value="">Nessuna sessione selezionata</option>
-                </select>
-              </div>
-
-              <!-- Oggetto personalizzato -->
-              <div class="fg" id="inc-oggetto-box" style="display:none">
-                <label class="fl">Oggetto lettera</label>
-                <input class="fc" id="inc-oggetto" placeholder="es. Incarico di consulenza sicurezza sul lavoro">
-              </div>
-
-              <div class="fr2">
-                <div class="fg">
-                  <label class="fl">Compenso *</label>
-                  <input class="fc" id="inc-compenso" placeholder="es. € 300,00 + IVA 22%">
-                </div>
-                <div class="fg">
-                  <label class="fl">Modalità pagamento</label>
-                  <select class="fc" id="inc-pagamento">
-                    <option>Bonifico bancario 30 gg DFFM</option>
-                    <option>Bonifico bancario a 30 giorni</option>
-                    <option>Bonifico alla consegna</option>
-                    <option>Acconto 30% + saldo a consegna</option>
-                    <option>Pagamento in unica soluzione</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="fr2">
-                <div class="fg">
-                  <label class="fl">Data lettera *</label>
-                  <input class="fc" id="inc-data" type="date">
-                </div>
-                <div class="fg">
-                  <label class="fl">Rif. contratto / ordine</label>
-                  <input class="fc" id="inc-rif" placeholder="es. RIF-2026-001">
-                </div>
-              </div>
-
-              <div class="fg">
-                <label class="fl">Descrizione attività</label>
-                <textarea class="fc" id="inc-desc" rows="3" placeholder="es. Periodo: gennaio–dicembre 2026. Attività: 1 sopralluogo mensile, aggiornamento DVR, supporto normativo..." style="resize:vertical"></textarea>
-              </div>
-
-              <div class="fg">
-                <label class="fl">Note aggiuntive</label>
-                <input class="fc" id="inc-note" placeholder="es. La lettera include allegato PROT-OP-01">
-              </div>
-
-              <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-primary" onclick="generaLettIncarico2()">📄 Genera lettera PDF</button>
-                <button class="btn btn-xs btn-danger" onclick="resetIncarico()">✕ Reset</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Colonna destra: info tipi -->
-        <div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">📋 Tipologie disponibili</span></div>
-            <div style="padding:12px;font-size:11px">
-              <div id="inc-tipi-lista"></div>
-            </div>
-          </div>
-          <div class="card mt-2">
-            <div class="card-header"><span class="card-title">👤 Collaboratori registrati</span>
-              <button class="btn btn-xs btn-primary" onclick="goTo('docenti')">+ Aggiungi</button>
-            </div>
-            <div id="inc-collab-lista" style="padding:10px;font-size:11px"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ═══ CONTRATTI / INCARICHI ATTIVI ═══ -->
-    <div class="page" id="page-contratti">
-
-      <!-- Toolbar -->
-      <div class="fbar" style="margin-bottom:12px">
-        <input class="fc" id="ct-q" placeholder="🔍 Cerca cliente, consulente, tipo..." oninput="renderContratti()" style="max-width:260px">
-        <select class="fc" id="ct-cons" onchange="renderContratti()" style="max-width:180px"><option value="">Tutti i consulenti</option></select>
-        <select class="fc" id="ct-tipo" onchange="renderContratti()" style="max-width:160px">
-          <option value="">Tutti i tipi</option>
-          <option>RSPP esterno</option>
-          <option>DVR</option>
-          <option>Consulenza</option>
-          <option>Medico Competente</option>
-          <option>Sopralluogo</option>
-          <option>Piano Emergenza</option>
-          <option>Altro</option>
-        </select>
-        <select class="fc" id="ct-stato" onchange="renderContratti()" style="max-width:140px">
-          <option value="">Tutti gli stati</option>
-          <option value="attivo">Attivi</option>
-          <option value="sospeso">Sospesi</option>
-          <option value="concluso">Conclusi</option>
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="openContrattoModal()">+ Nuovo incarico</button>
-        <button class="btn btn-sm" onclick="scaricaTemplateContratti()">⬇️ Template CSV</button>
-        <label class="btn btn-sm" style="cursor:pointer">⬆️ Importa CSV<input type="file" accept=".csv,.xlsx" style="display:none" onchange="importaContratti(this)"></label>
-      </div>
-
-      <!-- Riepilogo economico e per consulente -->
-      <div id="ct-riepilogo" style="margin-bottom:14px"></div>
-
-      <!-- Lista incarichi -->
-      <div id="ct-lista"></div>
-
-    </div>
-
-
-    <!-- ═══ FASCICOLO AZIENDALE ═══ -->
-    <div class="page" id="page-fascicolo">
-      <div style="background:#EBF5FF;border:1px solid #93C5FD;border-radius:6px;padding:9px 14px;margin-bottom:14px;font-size:12px">
-        🏢 <strong>Fascicolo aziendale</strong> — traccia lo stato di tutti i documenti sicurezza per ogni cliente. Genera il report trimestrale da inviare all'azienda.
-      </div>
-      <div class="fbar" style="margin-bottom:12px">
-        <select class="fc" id="fasc-az-sel" onchange="renderFascicolo()" style="max-width:300px"><option value="">Seleziona azienda...</option></select>
-        <select class="fc" id="fasc-filter" onchange="renderFascicoloDoc()" style="max-width:160px">
-          <option value="">Tutti i documenti</option>
-          <option value="mancante">❌ Mancanti</option>
-          <option value="scaduto">🔴 Scaduti</option>
-          <option value="scadenza">🟠 In scadenza</option>
-          <option value="ok">✅ OK</option>
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="reportAzienda()">📄 Report PDF azienda</button>
-        <button class="btn btn-sm" onclick="reportTutteAziende()">📊 Report tutte le aziende</button>
-      </div>
-      <div id="fasc-az-info" style="display:none;margin-bottom:12px"></div>
-      <div id="fasc-doc-panel" style="display:none">
-        <div id="fasc-stats-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
-        <div id="fasc-doc-list"></div>
-        <div style="margin-top:14px">
-          <div style="font-weight:600;font-size:13px;margin-bottom:8px">📚 Formazione dipendenti</div>
-          <div id="fasc-form-list"></div>
-        </div>
-      </div>
-      <div id="fasc-empty" style="display:none">
-        <div class="card"><div class="empty" style="padding:28px">
-          <div class="ei">🏢</div>
-          <h3>Seleziona un'azienda</h3>
-          <p>Scegli un cliente per vedere e gestire il suo fascicolo sicurezza</p>
-        </div></div>
-      </div>
-    </div>
-
-    <!-- ═══ FONDIMPRESA ═══ -->
     <div class="page" id="page-fondimpresa">
       <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
         <div><div style="font-size:16px;font-weight:600;margin-bottom:3px">Piani Fondimpresa</div><div class="text-sm text-muted">Gestione piani formativi finanziati</div></div>
@@ -1941,7 +1521,7 @@ function goTo(p){
   renderPage(p);
 }
 function renderPage(p){
-  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,preventivi:renderPreventivi,offerte:renderOfferte,incarichi:renderIncarichi,fascicolo:renderFascicolo,contratti:renderContratti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni,fondimpresa:renderFondimpresa})[p]?.();
+  ({dashboard:renderDashboard,aziende:renderAziende,lavoratori:renderLavoratori,docenti:renderDocenti,corsi:renderCorsi,sessioni:renderSessioni,documenti:renderDocumenti,storico:renderStorico,scadenze:renderScadenze,impostazioni:renderImpostazioni,fondimpresa:renderFondimpresa})[p]?.();
 }
 function openM(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('open'); if(id==='m-lavoratore'){ resetLavModal(); popLavAz(); } if(id==='m-sessione') popSessSelects(); if(id==='m-corso'){if(!document.getElementById('sez-editor').innerHTML) renderSezEditor([]); if(!document.getElementById('test-editor').innerHTML) renderTestEditor([]); } }
 function closeM(id){ document.getElementById(id).classList.remove('open') }
@@ -2551,10 +2131,10 @@ function renderLavoratori(){
   if(q) lav=lav.filter(l=>((l.cognome||'')+' '+(l.nome||'')+' '+(l.cf||'')).toLowerCase().includes(q));
   const tb=document.getElementById('tb-lav');
   if(!lav.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">👷</div><h3>Nessun lavoratore</h3></div></td></tr>';return}
-  const _tutteScad=computeScad();
+  const _scadAll=computeScad();
   tb.innerHTML=lav.map(l=>{
     const sessLav=db.sessioni().filter(s=>s.stato==='completata'&&(s.partecipanti||[]).includes(l.id));
-    const scad=_tutteScad.filter(x=>x.lid===l.id);
+    const scad=_scadAll.filter(x=>x.lid===l.id);
     const scaduti=scad.filter(x=>diffDays(x.sc)<0).length;
     const inScad=scad.filter(x=>diffDays(x.sc)>=0&&diffDays(x.sc)<=90).length;
     const badge=scaduti>0?`<span class="badge br" style="font-size:9px;margin-left:4px">🔴${scaduti}</span>`:
@@ -3775,7 +3355,6 @@ function apriDettaglioStorico(sessId){
 }
 
 function renderStorico(){
-  var _corSto=_corSto; var _azSto=_azSto;
   const sess=db.sessioni().filter(s=>s.stato==='completata').sort((a,b)=>b.data.localeCompare(a.data));
   const tot=sess.reduce((a,s)=>a+(s.partecipanti?.length||0),0);
 
@@ -3784,7 +3363,7 @@ function renderStorico(){
   if(diagEl){
     const conPart=sess.filter(s=>s.partecipanti&&s.partecipanti.length>0).length;
     const senzaPart=sess.filter(s=>!s.partecipanti||s.partecipanti.length===0).length;
-    const conValidita=sess.filter(s=>{ const c=_corSto.find(x=>x.id===s.corsoId); return c&&c.validita; }).length;
+    const conValidita=sess.filter(s=>{ const c=db.corsi().find(x=>x.id===s.corsoId); return c&&c.validita; }).length;
     const scad=computeScad();
     if(senzaPart>0){
       diagEl.innerHTML=`<div style="background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;padding:8px 14px;font-size:12px">
@@ -3807,7 +3386,7 @@ function renderStorico(){
   }
 
   document.getElementById('st-stats').innerHTML=[{l:'Sessioni completate',v:sess.length,s:'totali'},{l:'Attestati emessi',v:tot,s:'partecipanti'},{l:'Corsi diversi',v:new Set(sess.map(s=>s.corsoId)).size,s:'tipologie'},{l:'Aziende formate',v:new Set(sess.map(s=>s.aziendaId)).size,s:'clienti'}].map(x=>`<div class="stat-card"><div class="stat-label">${x.l}</div><div class="stat-value">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join(''); const tb=document.getElementById('tb-storico'); if(!sess.length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">🗂</div><h3>Nessuna sessione completata</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>{
-    const c=_corSto.find(x=>x.id===s.corsoId)||{};
+    const c=db.corsi().find(x=>x.id===s.corsoId)||{};
     const sc=c.validita?addYears(s.data,c.validita):null;
     const doc=db.docenti().find(d=>d.id===s.docenteId)||{};
     return`<tr style="cursor:pointer" onclick="apriDettaglioStorico('${s.id}')" title="Clicca per vedere i dettagli">
@@ -3824,7 +3403,6 @@ function renderStorico(){
 // ══ SCADENZE ══
 function computeScad(){ const result=[]; db.sessioni().filter(s=>s.stato==='completata').forEach(s=>{ const c=db.corsi().find(x=>x.id===s.corsoId); if(!c?.validita) return; const sc=addYears(s.data,c.validita); (s.partecipanti||[]).forEach(lid=>{ const l=db.lavoratori().find(x=>x.id===lid); if(!l) return; const ex=result.findIndex(r=>r.lid===lid&&r.cid===s.corsoId); const e={lid,cid:s.corsoId,aid:s.aziendaId,data:s.data,sc}; if(ex>=0){if(s.data>result[ex].data)result[ex]=e}else result.push(e) }) }); return result.sort((a,b)=>a.sc.localeCompare(b.sc)) }
 function renderScadenze(){
-  var _lavSc=_lavSc; var _azSc=_azSc; var _corSc=_corSc;
   const faz=v('fsc-az'),fst=v('fsc-st');
   let sc=computeScad();
   // Stats bar
@@ -3838,7 +3416,7 @@ function renderScadenze(){
   // Diagnostica inline
   const diagSessComplete=db.sessioni().filter(s=>s.stato==='completata');
   const diagConPart=diagSessComplete.filter(s=>s.partecipanti&&s.partecipanti.length>0);
-  const diagConValidita=diagConPart.filter(s=>{ const c=_corSc.find(x=>x.id===s.corsoId); return c&&c.validita&&c.validita>0; });
+  const diagConValidita=diagConPart.filter(s=>{ const c=db.corsi().find(x=>x.id===s.corsoId); return c&&c.validita&&c.validita>0; });
   const diagEl=document.getElementById('scad-diag');
   if(diagEl){
     let diagHtml='';
@@ -3851,7 +3429,7 @@ function renderScadenze(){
         '\u26a0\ufe0f <strong>'+diagSessComplete.length+' sessioni completate ma senza partecipanti.</strong> Modifica le sessioni e aggiungi i lavoratori. '+
         '<button class="btn btn-xs btn-primary" style="margin-left:8px" onclick="goTo(\'sessioni\')">\u2192 Vai alle Sessioni</button></div>';
     } else if(diagConValidita.length===0){
-      const corsiSenzaVal=[...new Set(diagConPart.map(s=>s.corsoId))].map(id=>_corSc.find(c=>c.id===id)).filter(c=>c&&!c.validita).map(c=>c.titolo).join(', ');
+      const corsiSenzaVal=[...new Set(diagConPart.map(s=>s.corsoId))].map(id=>db.corsi().find(c=>c.id===id)).filter(c=>c&&!c.validita).map(c=>c.titolo).join(', ');
       diagHtml='<div style="background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;padding:8px 14px;font-size:12px;margin-bottom:10px">'+
         '\u26a0\ufe0f <strong>I corsi non hanno la validit\u00e0 (anni) impostata.</strong> Aggiornare: <em>'+corsiSenzaVal+'</em>. '+
         '<button class="btn btn-xs btn-primary" style="margin-left:8px" onclick="goTo(\'corsi\')">\u2192 Vai ai Corsi</button></div>';
@@ -3883,7 +3461,7 @@ function renderScadenze(){
     const sessAll=db.sessioni();
     const sessComplete=sessAll.filter(s=>s.stato==='completata');
     const sessConPart=sessComplete.filter(s=>s.partecipanti&&s.partecipanti.length>0);
-    const sessConValidita=sessConPart.filter(s=>{ const c=_corSc.find(x=>x.id===s.corsoId); return c&&c.validita; });
+    const sessConValidita=sessConPart.filter(s=>{ const c=db.corsi().find(x=>x.id===s.corsoId); return c&&c.validita; });
     let motivo='';
     if(!sessAll.length) motivo='Non ci sono sessioni registrate.';
     else if(!sessComplete.length) motivo='Nessuna sessione è in stato <strong>Completata</strong>. Vai in Sessioni e cambia lo stato.';
@@ -3901,7 +3479,7 @@ function renderScadenze(){
     else if(d<=60){badge='bo';txt='🟠 '+d+'gg';rowStyle='background:#fff9f0'}
     else if(d<=90){badge='by';txt='🟡 '+d+'gg';rowStyle='background:#fffde7'}
     else{badge='bg';txt='✅ In regola'} 
-    const lScad=_lavSc.find(l=>l.id===x.lid)||{}; const azScad=_azSc.find(a=>a.id===x.aid)||{}; const hasEmail=azScad.email||lScad.email; return '<tr style="'+rowStyle+'"><td><strong>'+gLav(x.lid)+'</strong></td><td>'+gAz(x.aid)+'</td><td>'+gCorso(x.cid)+'</td><td class="font-mono text-xs">'+fmt(x.data)+'</td><td class="font-mono text-xs">'+fmt(x.sc)+'</td><td><span class="badge '+badge+'">'+txt+'</span></td><td><button class="btn btn-xs" title="'+(hasEmail?'Invia avviso a '+(azScad.email||lScad.email):'Nessuna email — si apre mailto:')+' " onclick="mailScadenza(\''+x.lid+'\',\''+x.cid+'\',\''+x.aid+'\')">'+(hasEmail?'📧':'✉️')+'</button></td></tr>'
+    const lScad=db.lavoratori().find(l=>l.id===x.lid)||{}; const azScad=db.aziende().find(a=>a.id===x.aid)||{}; const hasEmail=azScad.email||lScad.email; return '<tr style="'+rowStyle+'"><td><strong>'+gLav(x.lid)+'</strong></td><td>'+gAz(x.aid)+'</td><td>'+gCorso(x.cid)+'</td><td class="font-mono text-xs">'+fmt(x.data)+'</td><td class="font-mono text-xs">'+fmt(x.sc)+'</td><td><span class="badge '+badge+'">'+txt+'</span></td><td><button class="btn btn-xs" title="'+(hasEmail?'Invia avviso a '+(azScad.email||lScad.email):'Nessuna email — si apre mailto:')+' " onclick="mailScadenza(\''+x.lid+'\',\''+x.cid+'\',\''+x.aid+'\')">'+(hasEmail?'📧':'✉️')+'</button></td></tr>'
   }).join('') 
 }
 
