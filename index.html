@@ -2517,9 +2517,29 @@ function renderDocenti(){
     </tr>`;
   }).join('') 
 }
-function salvaDocente(){ const id=v('doc-id')||uid(),nome=v('doc-nome'),cognome=v('doc-cognome'); if(!nome||!cognome){alert('Nome e cognome obbligatori');return} const d=db.docenti().filter(x=>x.id!==id); const _firma = document.getElementById('doc-firma')?.value || null;
-    const _firmaResp = document.getElementById('doc-firma-resp')?.value || null;
-    d.push({id,nome,cognome,qualifica:v('doc-qualifica'),resp:v('doc-resp'),email:v('doc-email'),tel:v('doc-tel'),firma:_firma,firmaResp:_firmaResp}); db.save.docenti(d); closeM('m-docente'); clr('doc-id','doc-nome','doc-cognome','doc-qualifica','doc-resp','doc-email','doc-tel','doc-firma','doc-firma-resp'); clearFirma('doc'); clearFirma('resp'); document.getElementById('m-doc-t').textContent='Nuovo docente'; renderDocenti(); toast('Docente salvato') }
+function salvaDocente(){
+  const id=v('doc-id')||uid();
+  const nome=v('doc-nome');
+  const cognome=v('doc-cognome');
+  if(!nome||!cognome){alert('Nome e cognome obbligatori');return;}
+  const firma = document.getElementById('doc-firma') ? document.getElementById('doc-firma').value || null : null;
+  const firmaResp = document.getElementById('doc-firma-resp') ? document.getElementById('doc-firma-resp').value || null : null;
+  const d=db.docenti().filter(function(x){return x.id!==id;});
+  d.push({
+    id:id, nome:nome, cognome:cognome,
+    qualifica:v('doc-qualifica'), resp:v('doc-resp'),
+    email:v('doc-email'), tel:v('doc-tel'),
+    firma:firma, firmaResp:firmaResp
+  });
+  db.save.docenti(d);
+  closeM('m-docente');
+  clr('doc-id','doc-nome','doc-cognome','doc-qualifica','doc-resp','doc-email','doc-tel','doc-firma','doc-firma-resp');
+  clearFirma('doc');
+  clearFirma('resp');
+  document.getElementById('m-doc-t').textContent='Nuovo docente';
+  renderDocenti();
+  toast('Docente salvato');
+}
 function editDoc(id){ const d=db.docenti().find(x=>x.id===id); if(!d) return; sv({'doc':{id:d.id,nome:d.nome,cognome:d.cognome,qualifica:d.qualifica||'',resp:d.resp||'',email:d.email||'',tel:d.tel||''}}); // restore firme
   clearFirma('doc'); clearFirma('resp');
   if(d.firma){ document.getElementById('doc-firma').value=d.firma; document.getElementById('firma-doc-img').src=d.firma; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; }
@@ -7221,13 +7241,13 @@ function loadDemo(){
 
 // Store Fondimpresa piani
 const dbFondo = {
-  get: () => { try { return JSON.parse(localStorage.getItem('frm_fondo')||'[]') } catch(e){ return [] } },
-  save: async v => {
+  get: function(){ try { return JSON.parse(localStorage.getItem('frm_fondo')||'[]'); } catch(e){ return []; } },
+  save: function(v) {
     localStorage.setItem('frm_fondo', JSON.stringify(v));
     try {
-      const rows = v.map(r => ({id: r.id, data: r, updated_at: new Date().toISOString()}));
-      await supa.from('piani_fondo').upsert(rows, {onConflict:'id'});
-    } catch(e){ console.warn('fondo save error:', e) }
+      const rows = v.map(function(r){ return {id: r.id, data: r, updated_at: new Date().toISOString()}; });
+      supa.from('piani_fondo').upsert(rows, {onConflict:'id'}).then(function(){}).catch(function(e){ console.warn('fondo save error:', e); });
+    } catch(e){ console.warn('fondo save error:', e); }
   }
 };
 
@@ -7427,6 +7447,7 @@ function fregSelTutti() {
   fregSelPart = db.lavoratori().filter(l=>l.aziendaId===piano.aziendaId).map(l=>l.id);
   renderFregChip();
 }
+
 function renderFregChip(pianoIdOverride) {
   const pianoId = pianoIdOverride || document.getElementById('freg-fondo-id')?.value;
   const piano = dbFondo.get().find(p=>p.id===pianoId);
