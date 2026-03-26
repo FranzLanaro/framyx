@@ -1192,7 +1192,13 @@ const db = {
   save: {
     aziende:    v => { cache.aziende=v;    LS.s('aziende',v);    supaUpsert('aziende',v).catch(e=>console.warn('sync aziende:',e)) },
     lavoratori: v => { cache.lavoratori=v; LS.s('lavoratori',v); supaUpsert('lavoratori',v).catch(e=>console.warn('sync lav:',e)) },
-    docenti:    v => { cache.docenti=v;    LS.s('docenti',v);    supaUpsert('docenti',v).catch(e=>console.warn('sync doc:',e)) },
+    docenti:    v => {
+      cache.docenti=v;
+      LS.s('docenti',v);
+      // Manda a Supabase senza le firme (troppo grandi)
+      var vNoFirma = v.map(function(d){ var x=Object.assign({},d); delete x.firma; delete x.firmaResp; return x; });
+      supaUpsert('docenti',vNoFirma).catch(function(e){console.warn('sync doc:',e);});
+    },
     corsi:      v => { cache.corsi=v;      LS.s('corsi',v);      supaUpsert('corsi',v).catch(e=>console.warn('sync corsi:',e)) },
     sessioni:   v => { cache.sessioni=v;   LS.s('sessioni',v);   supaUpsert('sessioni',v).catch(e=>console.warn('sync sess:',e)) },
     offerte:    v => { cache.offerte=v;    LS.s('offerte',v);    supaUpsert('offerte',v).catch(e=>console.warn('sync off:',e)) },

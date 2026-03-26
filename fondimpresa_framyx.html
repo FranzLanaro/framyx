@@ -329,7 +329,7 @@ const db = {
     piani:      function(v){ cache.piani=v;      LS.s('piani',v);      upsert('piani_fondo',v); },
     aziende:    function(v){ cache.aziende=v;    localStorage.setItem('frm_aziende',JSON.stringify(v));    upsert('aziende',v); },
     lavoratori: function(v){ cache.lavoratori=v; localStorage.setItem('frm_lavoratori',JSON.stringify(v)); upsert('lavoratori',v); },
-    docenti:    function(v){ cache.docenti=v;    LS.s('docenti',v);    upsert('docenti',v); },
+    docenti:    function(v){ cache.docenti=v;    LS.s('docenti',v);    upsert('docenti_fondo',v); },
   }
 };
 
@@ -371,25 +371,42 @@ function goTo(page){
 }
 
 // ══ SYNC ══
+async function fetchAll(table){
+  var all=[]; var from=0; var step=1000;
+  while(true){
+    var res = await supa.from(table).select('data').range(from, from+step-1);
+    if(res.error){ console.warn(table, res.error.message); break; }
+    if(!res.data||!res.data.length) break;
+    all = all.concat(res.data.map(function(r){ return r.data; }).filter(Boolean));
+    if(res.data.length < step) break;
+    from += step;
+  }
+  return all;
+}
+
 async function syncAll(){
   document.getElementById('sync-info').textContent = '⏳ Sincronizzazione...';
   try {
-    var tables = ['piani_fondo','aziende','lavoratori','docenti'];
-    var keys   = ['piani','aziende','lavoratori','docenti'];
-    for(var i=0; i<tables.length; i++){
-      var res = await supa.from(tables[i]).select('data');
-      if(!res.error && res.data && res.data.length){
-        var data = res.data.map(function(r){ return r.data; }).filter(Boolean);
-        cache[keys[i]] = data;
-        // aziende e lavoratori condivisi con gestionale formazione
-        if(keys[i]==='aziende') localStorage.setItem('frm_aziende',JSON.stringify(data));
-        else if(keys[i]==='lavoratori') localStorage.setItem('frm_lavoratori',JSON.stringify(data));
-        else LS.s(keys[i], data);
-      }
+    // Aziende e lavoratori: paginazione completa, condivisi con gestionale formazione
+    var aziende = await fetchAll('aziende');
+    if(aziende.length > 0){
+      cache.aziende = aziende;
+      localStorage.setItem('frm_aziende', JSON.stringify(aziende));
     }
-    document.getElementById('sync-info').textContent = '✅ Sincronizzato';
+    var lavoratori = await fetchAll('lavoratori');
+    if(lavoratori.length > 0){
+      cache.lavoratori = lavoratori;
+      localStorage.setItem('frm_lavoratori', JSON.stringify(lavoratori));
+    }
+    // Piani e docenti: solo fondimpresa
+    var piani = await fetchAll('piani_fondo');
+    if(piani.length > 0){ cache.piani=piani; LS.s('piani',piani); }
+    var docenti = await fetchAll('docenti_fondo');
+    if(docenti.length > 0){ cache.docenti=docenti; LS.s('docenti',docenti); }
+    
+    document.getElementById('sync-info').textContent = '✅ '+lavoratori.length+' lav, '+aziende.length+' az';
     goTo(currentPage);
-    toast('Dati sincronizzati');
+    toast('Sincronizzato: '+lavoratori.length+' lavoratori, '+aziende.length+' aziende');
   } catch(e) {
     document.getElementById('sync-info').textContent = '⚠️ Errore sync';
     console.warn('sync error', e);
