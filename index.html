@@ -7284,24 +7284,35 @@ function renderFondimpresa() {
 function openFondoModal() {
   renderAzioniEditor([]);
   document.getElementById('m-fondo-t').textContent = 'Nuovo piano Fondimpresa';
-  _origOpenM('m-fondo');
-  function _pop() {
+  function _apri() {
     const sel = document.getElementById('fo-az');
     if(!sel) return;
     const az = db.aziende().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','it'));
-    sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+    console.log('[Fondimpresa] aziende disponibili:', az.length);
+    if(az.length === 0) {
+      sel.innerHTML = '<option value="">⚠️ Nessuna azienda trovata</option>';
+    } else {
+      sel.innerHTML = '<option value="">— Seleziona azienda —</option>' + az.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+    }
+    _origOpenM('m-fondo');
   }
-  if(db.aziende().length > 0) { _pop(); }
-  else {
-    const sel = document.getElementById('fo-az');
-    if(sel) sel.innerHTML = '<option value="">⏳ Caricamento...</option>';
+  const azNow = db.aziende();
+  console.log('[Fondimpresa] cache aziende:', azNow.length);
+  if(azNow.length > 0) {
+    _apri();
+  } else {
+    console.log('[Fondimpresa] carico da Supabase...');
     supa.from('aziende').select('data').then(res => {
+      console.log('[Fondimpresa] Supabase risposta:', res.error ? 'ERRORE:'+res.error.message : (res.data||[]).length+' record');
       if(!res.error && res.data && res.data.length) {
         cache.aziende = res.data.map(r=>r.data).filter(Boolean);
         LS.s('aziende', cache.aziende);
       }
-      _pop();
-    }).catch(() => _pop());
+      _apri();
+    }).catch(e => {
+      console.log('[Fondimpresa] Supabase catch:', e.message);
+      _apri();
+    });
   }
 }
 
