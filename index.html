@@ -266,9 +266,6 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="nav-item" onclick="goTo('documenti')" id="nav-documenti"><span class="ni">📄</span>Documenti</div>
     <div class="nav-item" onclick="goTo('storico')" id="nav-storico"><span class="ni">🗂</span>Storico corsi</div>
     <div class="nav-item" onclick="goTo('scadenze')" id="nav-scadenze"><span class="ni">⏰</span>Scadenze</div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label" style="color:#FDC400">Collaboratori</div>
     <div class="nav-item" onclick="goTo('fondimpresa')" id="nav-fondimpresa"><span class="ni">🏛</span>Fondimpresa</div>
   </div>
   <div class="nav-section">
@@ -2777,7 +2774,7 @@ function renderSessioni(){
       });
     });
   });
-  sess.sort((a,b)=>(b.data||'').localeCompare(a.data||'')); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${s._isFond?'<span class="badge" style="background:#7C3AED;color:white;font-size:10px">FOND</span> '+s._titoloFond:gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
+  sess.sort((a,b)=>(b.data||'').localeCompare(a.data||'')); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s._isFond || s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${s._isFond?'<span class="badge" style="background:#7C3AED;color:white;font-size:10px">FOND</span> '+s._titoloFond:gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
 function editSess(id){
   const s=db.sessioni().find(x=>x.id===id); if(!s) return;
   popSessSelects();
@@ -7414,7 +7411,7 @@ function openRegistroFondo(pianoId) {
   // chip lavoratori dell'azienda
   const preselezionati = az.partecipanti || [];
   fregSelPart = [...preselezionati];
-  renderFregChip();
+  renderFregChip(pianoId);
 
   openM('m-fondo-reg');
 }
@@ -7430,8 +7427,8 @@ function fregSelTutti() {
   fregSelPart = db.lavoratori().filter(l=>l.aziendaId===piano.aziendaId).map(l=>l.id);
   renderFregChip();
 }
-function renderFregChip() {
-  const pianoId = document.getElementById('freg-fondo-id').value;
+function renderFregChip(pianoIdOverride) {
+  const pianoId = pianoIdOverride || document.getElementById('freg-fondo-id')?.value;
   const piano = dbFondo.get().find(p=>p.id===pianoId);
   const lista = document.getElementById('freg-part-lista');
   const toolbar = document.getElementById('freg-part-toolbar');
