@@ -306,9 +306,9 @@ textarea.fc{min-height:68px;resize:vertical}
     <div class="page active" id="page-dashboard">
       <div class="grid-2">
         <div class="card"><div class="card-header"><span class="card-title">⏰ Scadenze urgenti <span id="dash-scad-count" style="font-size:11px;font-weight:400;color:var(--text2)"></span></span><button class="btn btn-sm" onclick="goTo('scadenze')">Vedi tutte →</button></div><div id="dash-scad"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📁 Documenti aziendali in scadenza</span></div><div id="dash-docs-az"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📅 Appuntamenti settimana</span></div><div id="dash-appunt"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">📋 Offerte / Preventivi da confermare</span></div><div id="dash-offerte"></div></div>
+        <div class="card" style="display:none"><div class="card-header"><span class="card-title">📁 Documenti aziendali in scadenza</span></div><div id="dash-docs-az"></div></div>
+        <div class="card" style="display:none"><div class="card-header"><span class="card-title">📅 Appuntamenti settimana</span></div><div id="dash-appunt"></div></div>
+        <div class="card" style="display:none"><div class="card-header"><span class="card-title">📋 Offerte / Preventivi da confermare</span></div><div id="dash-offerte"></div></div>
         <div class="card"><div class="card-header"><span class="card-title">📚 Formazione in corso</span><button class="btn btn-sm" onclick="goTo('sessioni')">Vedi tutte</button></div><div id="dash-sess"></div></div>
       </div>
       <div class="card mt-2">
@@ -7084,8 +7084,7 @@ function riparaDuplicati(){
 }
 
 
-async 
-function syncAndRefresh(){
+async function syncAndRefresh(){
   loadFromSupabase().then(ok=>{
     renderPage(currentPage); updateFilters(); renderDashboard();
     if(ok) toast('Connesso ✅ — dati aggiornati','☁️');
