@@ -1146,8 +1146,13 @@ textarea.fc{min-height:68px;resize:vertical}
       <input type="hidden" id="freg-azione-idx">
       <div id="freg-info" style="background:var(--surface2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px"></div>
       <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">Partecipanti all'azione</div>
-      <div class="chip-list" id="freg-chip"></div>
-      <p class="text-xs text-muted" style="margin-top:6px">Seleziona i lavoratori dell'azienda del piano</p>
+      <div id="freg-part-toolbar" style="display:none;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+        <input id="freg-part-cerca" class="fc" placeholder="🔍 Cerca lavoratore..." oninput="renderFregChip()" style="flex:1;min-width:160px;margin:0">
+        <button class="btn btn-xs" onclick="fregSelPart=[];renderFregChip()">✕ Deseleziona tutti</button>
+        <button class="btn btn-xs btn-primary" onclick="fregSelTutti()">✓ Tutti</button>
+      </div>
+      <div id="freg-part-lista" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r)"></div>
+      <div id="freg-part-count" style="font-size:11px;color:var(--text2);margin-top:4px">0 selezionati</div>
       <div class="fr2" style="margin-top:14px">
         <div class="fg"><label class="fl">Tutor</label><input class="fc" id="freg-tutor" placeholder="Nome e Cognome (stampatello)"></div>
         <div class="fg"><label class="fl">Coordinatore</label><input class="fc" id="freg-coord" placeholder="Nome e Cognome (stampatello)"></div>
@@ -2515,7 +2520,9 @@ function renderDocenti(){
     </tr>`;
   }).join('') 
 }
-function salvaDocente(){ const id=v('doc-id')||uid(),nome=v('doc-nome'),cognome=v('doc-cognome'); if(!nome||!cognome){alert('Nome e cognome obbligatori');return} const d=db.docenti().filter(x=>x.id!==id); d.push({id,nome,cognome,qualifica:v('doc-qualifica'),resp:v('doc-resp'),email:v('doc-email'),tel:v('doc-tel'),firma:v('doc-firma')||null,firmaResp:v('doc-firma-resp')||null}); db.save.docenti(d); closeM('m-docente'); clr('doc-id','doc-nome','doc-cognome','doc-qualifica','doc-resp','doc-email','doc-tel','doc-firma','doc-firma-resp'); clearFirma('doc'); clearFirma('resp'); document.getElementById('m-doc-t').textContent='Nuovo docente'; renderDocenti(); toast('Docente salvato') }
+function salvaDocente(){ const id=v('doc-id')||uid(),nome=v('doc-nome'),cognome=v('doc-cognome'); if(!nome||!cognome){alert('Nome e cognome obbligatori');return} const d=db.docenti().filter(x=>x.id!==id); const _firma = document.getElementById('doc-firma')?.value || null;
+    const _firmaResp = document.getElementById('doc-firma-resp')?.value || null;
+    d.push({id,nome,cognome,qualifica:v('doc-qualifica'),resp:v('doc-resp'),email:v('doc-email'),tel:v('doc-tel'),firma:_firma,firmaResp:_firmaResp}); db.save.docenti(d); closeM('m-docente'); clr('doc-id','doc-nome','doc-cognome','doc-qualifica','doc-resp','doc-email','doc-tel','doc-firma','doc-firma-resp'); clearFirma('doc'); clearFirma('resp'); document.getElementById('m-doc-t').textContent='Nuovo docente'; renderDocenti(); toast('Docente salvato') }
 function editDoc(id){ const d=db.docenti().find(x=>x.id===id); if(!d) return; sv({'doc':{id:d.id,nome:d.nome,cognome:d.cognome,qualifica:d.qualifica||'',resp:d.resp||'',email:d.email||'',tel:d.tel||''}}); // restore firme
   clearFirma('doc'); clearFirma('resp');
   if(d.firma){ document.getElementById('doc-firma').value=d.firma; document.getElementById('firma-doc-img').src=d.firma; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; }
@@ -2749,7 +2756,28 @@ function onIntestazioneChange(){
 }
 
 function resetSess(){ clr('ss-id','ss-corso','ss-az','ss-data','ss-sede','ss-doc','ss-note','ss-intestazione-custom','ss-citta'); document.getElementById('ss-mod').value='In presenza'; document.getElementById('ss-stato').value='pianificata'; document.getElementById('ss-intestazione-tipo').value='framyx'; document.getElementById('ss-intestazione-custom').style.display='none'; const fEl=document.getElementById('ss-fondimpresa'); if(fEl) fEl.checked=false; selPart=[]; document.getElementById('ss-arg-list').innerHTML=''; const _cp2=document.getElementById('chip-part'); if(_cp2) _cp2.innerHTML=''; document.getElementById('m-sess-t').textContent='Nuova sessione corso'; renderGiornate([]); }
-function renderSessioni(){ const faz=v('fs-az'),fst=v('fs-st'); let sess=db.sessioni().slice().sort((a,b)=>b.data.localeCompare(a.data)); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
+function renderSessioni(){
+  const faz=v('fs-az'),fst=v('fs-st');
+  // Sessioni normali
+  let sess=db.sessioni().slice().sort((a,b)=>b.data.localeCompare(a.data));
+  // Aggiungi azioni Fondimpresa come sessioni virtuali
+  const piani=dbFondo.get();
+  piani.forEach(p=>{
+    (p.azioni||[]).forEach((az,ai)=>{
+      if(!az.titolo) return;
+      sess.push({
+        id:'fond_'+p.id+'_'+ai,
+        corsoId:null, _titoloFond:az.titolo+' ('+p.titolo+')',
+        aziendaId:p.aziendaId,
+        docenteId:az.docenteId||null,
+        data:az.dataIni||'',
+        stato:az.dataFine?'completata':'pianificata',
+        partecipanti:az.partecipanti||[],
+        _isFond:true
+      });
+    });
+  });
+  sess.sort((a,b)=>(b.data||'').localeCompare(a.data||'')); if(faz) sess=sess.filter(s=>s.aziendaId===faz); if(fst) sess=sess.filter(s=>s.stato===fst); const tb=document.getElementById('tb-sess'); if(!sess.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ei">📅</div><h3>Nessuna sessione</h3></div></td></tr>';return} tb.innerHTML=sess.map(s=>`<tr><td class="font-mono text-xs">${s.giornate&&s.giornate.length>1?s.giornate.map(g=>fmt(g.data)).join('<br>'):fmt(s.data)}</td><td><strong>${s._isFond?'<span class="badge" style="background:#7C3AED;color:white;font-size:10px">FOND</span> '+s._titoloFond:gCorso(s.corsoId)}</strong></td><td>${gAz(s.aziendaId)}</td><td>${gDoc(s.docenteId)}</td><td><span class="badge bb">${s.partecipanti?.length||0}</span></td><td>${s.stato==='completata'?'<span class="badge bg">Completata</span>':'<span class="badge bo">Pianificata</span>'}</td><td class="actions"><button class="btn btn-xs" onclick="editSess('${s.id}')">Modifica</button>${s.stato==='completata'?`<button class="btn btn-xs btn-green" onclick="goDoc('${s.id}')">📄 Doc</button>`:''}<button class="btn btn-xs btn-danger" onclick="delSess('${s.id}')">✕</button></td></tr>`).join('') }
 function editSess(id){
   const s=db.sessioni().find(x=>x.id===id); if(!s) return;
   popSessSelects();
@@ -7384,18 +7412,50 @@ function openRegistroFondo(pianoId) {
     </div>`;
 
   // chip lavoratori dell'azienda
-  const lavs = db.lavoratori().filter(l => l.aziendaId === piano.aziendaId);
-  document.getElementById('freg-chip').innerHTML = lavs.map(l =>
-    `<div class="chip" onclick="toggleFregPart('${l.id}')" id="freg-chip-${l.id}">${l.cognome} ${l.nome}</div>`
-  ).join('') || '<p class="text-xs text-muted">Nessun lavoratore per questa azienda</p>';
+  const preselezionati = az.partecipanti || [];
+  fregSelPart = [...preselezionati];
+  renderFregChip();
 
   openM('m-fondo-reg');
 }
 
 function toggleFregPart(id) {
   fregSelPart = fregSelPart.includes(id) ? fregSelPart.filter(p=>p!==id) : [...fregSelPart, id];
-  document.querySelectorAll('[id^=freg-chip-]').forEach(el => el.classList.remove('on'));
-  fregSelPart.forEach(id => document.getElementById('freg-chip-'+id)?.classList.add('on'));
+  renderFregChip();
+}
+function fregSelTutti() {
+  const pianoId = document.getElementById('freg-fondo-id').value;
+  const piano = dbFondo.get().find(p=>p.id===pianoId);
+  if(!piano) return;
+  fregSelPart = db.lavoratori().filter(l=>l.aziendaId===piano.aziendaId).map(l=>l.id);
+  renderFregChip();
+}
+function renderFregChip() {
+  const pianoId = document.getElementById('freg-fondo-id').value;
+  const piano = dbFondo.get().find(p=>p.id===pianoId);
+  const lista = document.getElementById('freg-part-lista');
+  const toolbar = document.getElementById('freg-part-toolbar');
+  const cntEl = document.getElementById('freg-part-count');
+  if(!lista || !piano) return;
+  const lav = db.lavoratori().filter(l=>l.aziendaId===piano.aziendaId)
+    .slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it'));
+  if(toolbar) toolbar.style.display = lav.length ? 'flex' : 'none';
+  const q = (document.getElementById('freg-part-cerca')?.value||'').toLowerCase();
+  const lavFilt = q ? lav.filter(l=>(l.cognome+' '+l.nome+' '+(l.cf||'')).toLowerCase().includes(q)) : lav;
+  lista.innerHTML = lavFilt.length ? lavFilt.map(l=>{
+    const on = fregSelPart.includes(l.id);
+    return `<div onclick="event.stopPropagation();toggleFregPart('${l.id}')"
+      style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--border);background:${on?'#EBF5FF':'white'}">
+      <div style="width:18px;height:18px;border:2px solid ${on?'#1A56DB':'#CCC'};border-radius:3px;background:${on?'#1A56DB':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${on?'<svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':''}
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:${on?'700':'500'};font-size:13px">${l.cognome} ${l.nome}</div>
+        <div style="font-size:11px;color:var(--text2)">${l.mansione||'—'}${l.cf?' · '+l.cf:''}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="padding:12px;text-align:center;color:var(--text2);font-size:12px">Nessun lavoratore trovato</div>';
+  if(cntEl) cntEl.textContent = fregSelPart.length+' / '+lav.length+' selezionati';
 }
 
 function generaRegistroFondo() {
@@ -7403,6 +7463,11 @@ function generaRegistroFondo() {
   const ai = parseInt(document.getElementById('freg-azione-idx').value) || 0;
   const piano = dbFondo.get().find(p => p.id === pianoId); if(!piano) return;
   const az = piano.azioni[ai]; if(!az) return;
+  // Salva partecipanti selezionati nell'azione
+  if(fregSelPart.length > 0) {
+    az.partecipanti = [...fregSelPart];
+    dbFondo.save(dbFondo.get().map(p => p.id===pianoId ? piano : p));
+  }
   const azienda = db.aziende().find(a => a.id === piano.aziendaId) || {};
   const docente = db.docenti().find(d => d.id === az.docenteId) || {};
   const pp = fregSelPart.map(id => db.lavoratori().find(l => l.id === id)).filter(Boolean);
