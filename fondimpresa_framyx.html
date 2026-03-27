@@ -125,6 +125,10 @@ body{font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tex
         <div class="fg"><label class="fl">Referente di piano</label><input class="fc" id="piano-referente" placeholder="Nome e Cognome"></div>
       </div>
       <div class="fr2">
+        <div class="fg"><label class="fl">Docente responsabile</label><select class="fc" id="piano-docente"></select></div>
+        <div class="fg"><label class="fl">Conto formazione (matricola)</label><input class="fc" id="piano-matricola" placeholder="es. M123456"></div>
+      </div>
+      <div class="fr2">
         <div class="fg"><label class="fl">Data inizio</label><input class="fc" type="date" id="piano-dataini"></div>
         <div class="fg"><label class="fl">Data fine</label><input class="fc" type="date" id="piano-datafine"></div>
       </div>
@@ -193,6 +197,7 @@ body{font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tex
     </div>
     <div class="mf">
       <button class="btn" onclick="closeM('m-registro')">Annulla</button>
+      <button class="btn btn-green" onclick="salvaPartecipanti()">💾 Salva partecipanti</button>
       <button class="btn btn-primary" onclick="generaRegistro()">📄 Genera registro</button>
     </div>
   </div>
@@ -281,15 +286,7 @@ body{font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tex
     </div>
     <div class="mf">
       <button class="btn" onclick="closeM('m-docente')">Annulla</button>
-      <button class="btn btn-primary" onclick="salvaDocente()">Salva</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-wrap" id="toast-wrap"></div>
-
-<script>
-// ══ CONFIG ══
+      <button class="btn btn-primary" onclick="salvaDocente()">Salv// ══ CONFIG ══
 var SUPA_URL='https://jmdoeqzsyrjhcvacqhub.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s';
 var supa=supabase.createClient(SUPA_URL,SUPA_KEY);
@@ -308,7 +305,13 @@ var db={
   lavoratori: function(){return cache.lavoratori ||LS.g('frm_lavoratori');},
   docenti:    function(){return cache.docenti    ||LS.g('frm_docenti');},
   save:{
-    piani:      function(v){cache.piani=v;      LS.s('frm_fond_piani',v);      upsert('piani_fondo',v);},
+    piani:      function(v){
+      cache.piani=v;
+      LS.s('frm_fond_piani',v);
+      // Salva su Supabase con retry
+      upsert('piani_fondo',v);
+      console.log('Piani salvati: locale='+v.length);
+    },
     aziende:    function(v){cache.aziende=v;    LS.s('frm_aziende',v);         upsert('aziende',v);},
     lavoratori: function(v){cache.lavoratori=v; LS.s('frm_lavoratori',v);      upsert('lavoratori',v);},
     docenti:    function(v){cache.docenti=v;    LS.s('frm_docenti',v);    upsert('docenti',v);}
@@ -368,7 +371,16 @@ async function syncAll(){
     var lav=await fetchAll('lavoratori');
     if(lav.length){cache.lavoratori=lav;LS.s('frm_lavoratori',lav);}
     var piani=await fetchAll('piani_fondo');
-    if(piani.length){cache.piani=piani;LS.s('frm_fond_piani',piani);}
+    var pianiLocali=LS.g('frm_fond_piani');
+    if(piani.length>0 && piani.length>=pianiLocali.length){
+      // Supabase ha più piani o uguale -> usa Supabase
+      cache.piani=piani;LS.s('frm_fond_piani',piani);
+    } else if(pianiLocali.length>piani.length){
+      // Locale ha più piani -> carica locale su Supabase
+      cache.piani=pianiLocali;
+      upsert('piani_fondo',pianiLocali);
+      console.log('piani: locale ('+pianiLocali.length+') > supabase ('+piani.length+') - upload');
+    }
     var doc=await fetchAll('docenti');
     if(doc.length){cache.docenti=doc;LS.s('frm_docenti',doc);}
     document.getElementById('sync-info').textContent='✅ '+lav.length+' lav · '+az.length+' az';
@@ -540,11 +552,14 @@ function renderPiani(){
 
 function openNewPiano(){
   _pianoAzioni=[];
-  ['piano-id','piano-titolo','piano-codice','piano-referente','piano-dataini','piano-datafine','piano-note'].forEach(function(id){document.getElementById(id).value='';});
+  ['piano-id','piano-titolo','piano-codice','piano-referente','piano-dataini','piano-datafine','piano-note','piano-matricola'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('m-piano-t').textContent='Nuovo piano Fondimpresa';
-  var sel=document.getElementById('piano-azienda');
+  var selAz=document.getElementById('piano-azienda');
   var az=db.aziende().slice().sort(function(a,b){return(a.nome||'').localeCompare(b.nome||'','it');});
-  sel.innerHTML='<option value="">— Seleziona azienda —</option>'+az.map(function(a){return'<option value="'+a.id+'">'+a.nome+'</option>';}).join('');
+  selAz.innerHTML='<option value="">— Seleziona azienda —</option>'+az.map(function(a){return'<option value="'+a.id+'">'+a.nome+'</option>';}).join('');
+  var selDoc=document.getElementById('piano-docente');
+  var doc=db.docenti().slice().sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'','it');});
+  selDoc.innerHTML='<option value="">— Nessun docente —</option>'+doc.map(function(d){return'<option value="'+d.id+'">'+d.cognome+' '+d.nome+'</option>';}).join('');
   renderAzioniList();openM('m-piano');
 }
 
@@ -559,9 +574,13 @@ function editPiano(id){
   document.getElementById('piano-datafine').value=p.datafine||'';
   document.getElementById('piano-note').value=p.note||'';
   document.getElementById('m-piano-t').textContent='Modifica piano';
-  var sel=document.getElementById('piano-azienda');
+  document.getElementById('piano-matricola').value=p.matricola||'';
+  var selAz=document.getElementById('piano-azienda');
   var az=db.aziende().slice().sort(function(a,b){return(a.nome||'').localeCompare(b.nome||'','it');});
-  sel.innerHTML='<option value="">— Seleziona —</option>'+az.map(function(a){return'<option value="'+a.id+'"'+(a.id===p.aziendaId?' selected':'')+'>'+a.nome+'</option>';}).join('');
+  selAz.innerHTML='<option value="">— Seleziona —</option>'+az.map(function(a){return'<option value="'+a.id+'"'+(a.id===p.aziendaId?' selected':'')+'>'+a.nome+'</option>';}).join('');
+  var selDoc=document.getElementById('piano-docente');
+  var doc=db.docenti().slice().sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'','it');});
+  selDoc.innerHTML='<option value="">— Nessun docente —</option>'+doc.map(function(d){return'<option value="'+d.id+'"'+(d.id===p.docenteId?' selected':'')+'>'+d.cognome+' '+d.nome+'</option>';}).join('');
   renderAzioniList();openM('m-piano');
 }
 
@@ -622,7 +641,7 @@ function salvaPiano(){
   var id=v('piano-id')||uid(),titolo=v('piano-titolo'),azId=v('piano-azienda');
   if(!titolo){alert('Titolo piano obbligatorio');return;}
   if(!azId){alert('Seleziona un\'azienda');return;}
-  var piano={id:id,titolo:titolo,codice:v('piano-codice'),aziendaId:azId,referente:v('piano-referente'),dataini:v('piano-dataini'),datafine:v('piano-datafine'),note:v('piano-note'),azioni:_pianoAzioni};
+  var piano={id:id,titolo:titolo,codice:v('piano-codice'),aziendaId:azId,referente:v('piano-referente'),docenteId:v('piano-docente'),matricola:v('piano-matricola'),dataini:v('piano-dataini'),datafine:v('piano-datafine'),note:v('piano-note'),azioni:_pianoAzioni};
   var piani=db.piani().filter(function(p){return p.id!==id;});
   piani.push(piano);db.save.piani(piani);closeM('m-piano');toast('Piano salvato');renderPiani();
 }
@@ -716,6 +735,18 @@ function regSelTutti(){
   var azFiltro=selAz?selAz.value:(piano?piano.aziendaId:'');
   regSelPart=db.lavoratori().filter(function(l){return azFiltro?l.aziendaId===azFiltro:true;}).map(function(l){return l.id;});
   renderRegChip();
+}
+
+function salvaPartecipanti(){
+  var pianoId=document.getElementById('reg-piano-id').value;
+  var ai=parseInt(document.getElementById('reg-az-idx').value)||0;
+  var piani=db.piani();
+  var piano=piani.find(function(p){return p.id===pianoId;});
+  if(!piano){toast('Piano non trovato','⚠️');return;}
+  if(!piano.azioni[ai]){toast('Azione non trovata','⚠️');return;}
+  piano.azioni[ai].partecipanti=[...regSelPart];
+  db.save.piani(piani.map(function(p){return p.id===pianoId?piano:p;}));
+  toast('Partecipanti salvati ('+regSelPart.length+')','💾');
 }
 
 function generaRegistro(){
