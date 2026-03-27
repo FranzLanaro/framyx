@@ -213,7 +213,10 @@ body{font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tex
       
       <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Partecipanti</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;" id="reg-toolbar">
-        <input id="reg-cerca" class="fc" placeholder="🔍 Cerca lavoratore..." oninput="renderRegChip()" style="flex:1;min-width:140px;margin:0;">
+        <input id="reg-cerca" class="fc" placeholder="🔍 Cerca nome, CF, mansione..." oninput="renderRegChip()" style="flex:1;min-width:160px;margin:0;">
+        <select id="reg-filtro-az" class="fc" onchange="renderRegChip()" style="flex:0 0 180px;margin:0;">
+          <option value="">Tutte le aziende</option>
+        </select>
         <button class="btn btn-xs btn-primary" onclick="regSelTutti()">✓ Tutti</button>
         <button class="btn btn-xs" onclick="regSelPart=[];renderRegChip()">✕ Nessuno</button>
       </div>
@@ -298,15 +301,7 @@ body{font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tex
       </div>
     </div>
     <div class="mf">
-      <button class="btn" onclick="closeM('m-docente')">Annulla</button>
-      <button class="btn btn-primary" onclick="salvaDocente()">Salva</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-wrap" id="toast-wrap"></div>
-
-<script>
+      <button class="btn" onclick="closeM('m-doce
 // ══ CONFIG SUPABASE ══
 const SUPA_URL = 'https://jmdoeqzsyrjhcvacqhub.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZG9lcXpzeXJqaGN2YWNxaHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTA4NzksImV4cCI6MjA4OTU4Njg3OX0.CCUePhNa8TOvk89XySNeFGc66InTCS3Uhb9tDwt9I6s';
@@ -894,6 +889,17 @@ function renderImpostazioni(){
     +'<p style="color:var(--text2);margin-bottom:16px;font-size:13px">Gestionale Fondimpresa — database dedicato su Supabase.</p>'
     +'<button class="btn btn-danger btn-sm" onclick="if(confirm(\'Cancellare tutti i dati locali?\')) { localStorage.clear(); cache.piani=null; cache.aziende=null; cache.lavoratori=null; cache.docenti=null; toast(\'Dati locali cancellati\'); }">🗑 Cancella dati locali</button>'
     +'<button class="btn btn-sm" style="margin-left:8px" onclick="syncAll()">↻ Sincronizza con Supabase</button>'
+    +'</div></div>';
+}
+
+// ══ INIT ══
+function init(){
+  syncAll();
+  goTo('dashboard');
+}
+
+init();
+-sm" style="margin-left:8px" onclick="syncAll()">↻ Sincronizza con Supabase</button>'
     +'</div></div>';
 }
 

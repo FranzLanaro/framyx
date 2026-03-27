@@ -2485,6 +2485,9 @@ function scaricaTemplateCorsi(){
 }
 
 // ══ DOCENTI ══
+function getFirmaDoc(id){ return localStorage.getItem('frm_firma_'+id)||null; }
+function getFirmaResp(id){ return localStorage.getItem('frm_firmaResp_'+id)||null; }
+
 function renderDocenti(){
   const d=db.docenti().slice().sort((a,b)=>(a.cognome||'').localeCompare(b.cognome||'','it')),tb=document.getElementById('tb-doc'); 
   if(!d.length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">🎓</div><h3>Nessun docente</h3><p>Aggiungi il primo docente con il pulsante + Nuovo</p></div></td></tr>';return} 
@@ -2518,8 +2521,12 @@ function salvaDocente(){
   if(!nome||!cognome){alert('Nome e cognome obbligatori');return;}
   const firma=document.getElementById('doc-firma')?document.getElementById('doc-firma').value||null:null;
   const firmaResp=document.getElementById('doc-firma-resp')?document.getElementById('doc-firma-resp').value||null:null;
+  // Salva firme SEPARATAMENTE per evitare limite 5MB localStorage
+  if(firma) { try{ localStorage.setItem('frm_firma_'+id, firma); }catch(e){ console.warn('firma troppo grande',e); } }
+  if(firmaResp) { try{ localStorage.setItem('frm_firmaResp_'+id, firmaResp); }catch(e){ console.warn('firmaResp troppo grande',e); } }
   const d=db.docenti().filter(x=>x.id!==id);
-  d.push({id:id,nome:nome,cognome:cognome,qualifica:v('doc-qualifica'),resp:v('doc-resp'),email:v('doc-email'),tel:v('doc-tel'),firma:firma,firmaResp:firmaResp});
+  d.push({id:id,nome:nome,cognome:cognome,qualifica:v('doc-qualifica'),resp:v('doc-resp'),email:v('doc-email'),tel:v('doc-tel'),
+    hasFirma:!!firma, hasFirmaResp:!!firmaResp});
   db.save.docenti(d);closeM('m-docente');
   clr('doc-id','doc-nome','doc-cognome','doc-qualifica','doc-resp','doc-email','doc-tel','doc-firma','doc-firma-resp');
   clearFirma('doc');clearFirma('resp');
@@ -2528,8 +2535,11 @@ function salvaDocente(){
 }
 function editDoc(id){ const d=db.docenti().find(x=>x.id===id); if(!d) return; sv({'doc':{id:d.id,nome:d.nome,cognome:d.cognome,qualifica:d.qualifica||'',resp:d.resp||'',email:d.email||'',tel:d.tel||''}}); // restore firme
   clearFirma('doc'); clearFirma('resp');
-  if(d.firma){ document.getElementById('doc-firma').value=d.firma; document.getElementById('firma-doc-img').src=d.firma; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; }
-  if(d.firmaResp){ document.getElementById('doc-firma-resp').value=d.firmaResp; document.getElementById('firma-resp-img').src=d.firmaResp; document.getElementById('firma-resp-img').style.display='block'; document.getElementById('firma-resp-placeholder').style.display='none'; }
+  // Carica firma dalla chiave separata
+  const firma=localStorage.getItem('frm_firma_'+id)||d.firma||null;
+  const firmaResp=localStorage.getItem('frm_firmaResp_'+id)||d.firmaResp||null;
+  if(firma){ document.getElementById('doc-firma').value=firma; document.getElementById('firma-doc-img').src=firma; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; }
+  if(firmaResp){ document.getElementById('doc-firma-resp').value=firmaResp; document.getElementById('firma-resp-img').src=firmaResp; document.getElementById('firma-resp-img').style.display='block'; document.getElementById('firma-resp-placeholder').style.display='none'; }
   document.getElementById('m-doc-t').textContent='Modifica docente'; openM('m-docente') }
 function loadFirma(tipo, input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ const data=e.target.result; if(tipo==='doc'){ document.getElementById('doc-firma').value=data; document.getElementById('firma-doc-img').src=data; document.getElementById('firma-doc-img').style.display='block'; document.getElementById('firma-doc-placeholder').style.display='none'; } else { document.getElementById('doc-firma-resp').value=data; document.getElementById('firma-resp-img').src=data; document.getElementById('firma-resp-img').style.display='block'; document.getElementById('firma-resp-placeholder').style.display='none'; } }; r.readAsDataURL(f); input.value=''; }
 function clearFirma(tipo){ if(tipo==='doc'){ document.getElementById('doc-firma').value=''; document.getElementById('firma-doc-img').src=''; document.getElementById('firma-doc-img').style.display='none'; document.getElementById('firma-doc-placeholder').style.display='block'; } else { document.getElementById('doc-firma-resp').value=''; document.getElementById('firma-resp-img').src=''; document.getElementById('firma-resp-img').style.display='none'; document.getElementById('firma-resp-placeholder').style.display='block'; } }
@@ -3060,7 +3070,7 @@ async function generaRegistro(){
       </tr>
       <tr>
         <td style="border:1px solid #ddd;height:50px;padding:4px 10px;vertical-align:bottom">
-          ${doc.firma?`<img src="${doc.firma}" style="max-height:42px;max-width:150px;display:block">`:``}
+          ${getFirmaDoc(doc.id)?`<img src="${getFirmaDoc(doc.id)}" style="max-height:42px;max-width:150px;display:block">`:``}
         </td>
         <td style="border:1px solid #ddd;height:50px"></td>
       </tr>
@@ -3709,6 +3719,33 @@ function renderCalendario(){
     });
   });
 
+  // ── Azioni Fondimpresa ──
+  try {
+    const pianiFond = JSON.parse(localStorage.getItem('frm_fond_piani')||'[]');
+    pianiFond.forEach(p=>{
+      (p.azioni||[]).forEach(az=>{
+        if(!az.dataini) return;
+        const start = new Date(az.dataini);
+        const fine  = az.datafine ? new Date(az.datafine) : new Date(az.dataini);
+        let cur = new Date(start);
+        while(cur <= fine){
+          if(cur.getFullYear()===calYear && cur.getMonth()===calMonth){
+            const day=cur.getDate();
+            if(!eventsMap[day]) eventsMap[day]=[];
+            eventsMap[day].push({
+              tipo:'fondimpresa', color:'#7C3AED', bg:'#F3F0FF',
+              label1: (db.aziende().find(a=>a.id===p.aziendaId)||{nome:'—'}).nome.slice(0,16),
+              label2: az.titolo.slice(0,16),
+              title: az.titolo+' — '+p.titolo,
+              onclick: ''
+            });
+          }
+          cur.setDate(cur.getDate()+1);
+        }
+      });
+    });
+  } catch(e){}
+
   // ── Appuntamenti contratti ──
   dbContratti().forEach(ct=>{
     const az=db.aziende().find(a=>a.id===ct.azId)||{};
@@ -4253,7 +4290,7 @@ function generaAutocertFormatore(){
   <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
     <tr>
       <td style="border:1px solid #ccc;padding:10px 12px;width:50%">Cognome e Nome (stampatello)<br><br><strong>${doc.cognome||''} ${doc.nome||''}</strong></td>
-      <td style="border:1px solid #ccc;padding:10px 12px;width:30%">Firma<br><br>${doc.firma?`<img src="${doc.firma}" style="max-height:40px">`:'_________________________'}</td>
+      <td style="border:1px solid #ccc;padding:10px 12px;width:30%">Firma<br><br>${getFirmaDoc(doc.id)?`<img src="${getFirmaDoc(doc.id)}" style="max-height:40px">`:'_________________________'}</td>
       <td style="border:1px solid #ccc;padding:10px 12px">Data<br><br>${oggi}</td>
     </tr>
   </table>
