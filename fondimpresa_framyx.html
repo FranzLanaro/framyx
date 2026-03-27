@@ -595,9 +595,19 @@ function openAzioneModal(idx){
   document.getElementById('az-argomenti').value=(az.argomenti||[]).join('\n');
   document.getElementById('m-azione-t').textContent=idx>=0?'Modifica azione':'Nuova azione formativa';
   var sel=document.getElementById('az-docente');
-  var doc=db.docenti().slice().sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'','it');});
-  sel.innerHTML='<option value="">— Nessun docente —</option>'+doc.map(function(d){return'<option value="'+d.id+'"'+(d.id===az.docenteId?' selected':'')+'>'+d.cognome+' '+d.nome+'</option>';}).join('');
-  openM('m-azione');
+  function _popDocSel(){
+    var doc=db.docenti().slice().sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'','it');});
+    sel.innerHTML='<option value="">— Nessun docente —</option>'+doc.map(function(d){return'<option value="'+d.id+'"'+(d.id===az.docenteId?' selected':'')+'>'+d.cognome+' '+d.nome+'</option>';}).join('');
+    openM('m-azione');
+  }
+  if(db.docenti().length>0){ _popDocSel(); }
+  else{
+    sel.innerHTML='<option value="">⏳ Caricamento...</option>';
+    fetchAll('docenti').then(function(data){
+      if(data.length){cache.docenti=data;LS.s('frm_docenti',data);}
+      _popDocSel();
+    }).catch(function(){ _popDocSel(); });
+  }
 }
 
 function salvaAzione(){
@@ -889,6 +899,15 @@ function delLavoratore(id){
 
 // ══ DOCENTI ══
 function renderDocenti(){
+  // Se cache vuota e localStorage vuoto, carica da Supabase
+  if(db.docenti().length===0){
+    document.getElementById('content').innerHTML='<div style="padding:40px;text-align:center;color:var(--text2);">⏳ Caricamento docenti...</div>';
+    fetchAll('docenti').then(function(data){
+      if(data.length){cache.docenti=data;LS.s('frm_docenti',data);}
+      renderDocenti();
+    }).catch(function(){ renderDocenti(); });
+    return;
+  }
   var doc=db.docenti().slice().sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'','it');});
   document.getElementById('content').innerHTML=
     '<div class="card"><div class="card-header"><span class="card-title">Docenti ('+doc.length+')</span>'
