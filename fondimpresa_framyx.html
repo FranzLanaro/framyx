@@ -306,12 +306,12 @@ var db={
   piani:      function(){return cache.piani      ||LS.g('frm_fond_piani');},
   aziende:    function(){return cache.aziende    ||LS.g('frm_aziende');},
   lavoratori: function(){return cache.lavoratori ||LS.g('frm_lavoratori');},
-  docenti:    function(){return cache.docenti    ||LS.g('frm_fond_docenti');},
+  docenti:    function(){return cache.docenti    ||LS.g('frm_docenti');},
   save:{
     piani:      function(v){cache.piani=v;      LS.s('frm_fond_piani',v);      upsert('piani_fondo',v);},
     aziende:    function(v){cache.aziende=v;    LS.s('frm_aziende',v);         upsert('aziende',v);},
     lavoratori: function(v){cache.lavoratori=v; LS.s('frm_lavoratori',v);      upsert('lavoratori',v);},
-    docenti:    function(v){cache.docenti=v;    LS.s('frm_fond_docenti',v);    upsert('docenti_fondo',v);}
+    docenti:    function(v){cache.docenti=v;    LS.s('frm_docenti',v);    upsert('docenti',v);}
   }
 };
 
@@ -369,8 +369,8 @@ async function syncAll(){
     if(lav.length){cache.lavoratori=lav;LS.s('frm_lavoratori',lav);}
     var piani=await fetchAll('piani_fondo');
     if(piani.length){cache.piani=piani;LS.s('frm_fond_piani',piani);}
-    var doc=await fetchAll('docenti_fondo');
-    if(doc.length){cache.docenti=doc;LS.s('frm_fond_docenti',doc);}
+    var doc=await fetchAll('docenti');
+    if(doc.length){cache.docenti=doc;LS.s('frm_docenti',doc);}
     document.getElementById('sync-info').textContent='✅ '+lav.length+' lav · '+az.length+' az';
     toast('Sincronizzato: '+lav.length+' lavoratori');
     goTo(currentPage);
@@ -619,7 +619,15 @@ function salvaPiano(){
 
 function delPiano(id){
   if(!confirm('Eliminare questo piano?'))return;
-  db.save.piani(db.piani().filter(function(p){return p.id!==id;}));renderPiani();
+  var nuovi=db.piani().filter(function(p){return p.id!==id;});
+  cache.piani=nuovi;
+  LS.s('frm_fond_piani',nuovi);
+  // Cancella da Supabase
+  supa.from('piani_fondo').delete().eq('id',id).then(function(res){
+    if(res.error) console.warn('del piano supabase:',res.error);
+  }).catch(function(e){console.warn('del piano:',e);});
+  renderPiani();
+  toast('Piano eliminato','🗑');
 }
 
 // ══ REGISTRO ══
@@ -814,7 +822,10 @@ function salvaAzienda(){
 }
 function delAzienda(id){
   if(!confirm('Eliminare questa azienda?'))return;
-  db.save.aziende(db.aziende().filter(function(a){return a.id!==id;}));renderAziende();
+  var nuovi=db.aziende().filter(function(a){return a.id!==id;});
+  db.save.aziende(nuovi);
+  supa.from('aziende').delete().eq('id',id).then(function(){}).catch(function(e){console.warn(e);});
+  renderAziende();toast('Azienda eliminata','🗑');
 }
 
 // ══ LAVORATORI ══
@@ -870,7 +881,10 @@ function salvaLavoratore(){
 }
 function delLavoratore(id){
   if(!confirm('Eliminare?'))return;
-  db.save.lavoratori(db.lavoratori().filter(function(l){return l.id!==id;}));renderLavoratori();
+  var nuovi=db.lavoratori().filter(function(l){return l.id!==id;});
+  db.save.lavoratori(nuovi);
+  supa.from('lavoratori').delete().eq('id',id).then(function(){}).catch(function(e){console.warn(e);});
+  renderLavoratori();toast('Lavoratore eliminato','🗑');
 }
 
 // ══ DOCENTI ══
@@ -907,7 +921,10 @@ function salvaDocente(){
 }
 function delDocente(id){
   if(!confirm('Eliminare?'))return;
-  db.save.docenti(db.docenti().filter(function(d){return d.id!==id;}));renderDocenti();
+  var nuovi=db.docenti().filter(function(d){return d.id!==id;});
+  db.save.docenti(nuovi);
+  supa.from('docenti').delete().eq('id',id).then(function(){}).catch(function(e){console.warn(e);});
+  renderDocenti();toast('Docente eliminato','🗑');
 }
 
 // ══ IMPOSTAZIONI ══
